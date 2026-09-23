@@ -94,6 +94,17 @@ test("prestige apply is refused once the season has started", { skip }, async ()
 });
 
 test("prestige apply sets next season's opening prices and records the scores", { skip }, async () => {
+  // A player holding shares going into the new season.
+  const uid = "22222222-2222-2222-2222-222222222222";
+  await pool.query("insert into auth.users (id) values ($1)", [uid]);
+  await pool.query("select execute_trade($1, $2, 'buy', 10)", [uid, teams[10].id]);
+  const snapshot = async () => ({
+    holding: (await pool.query("select shares, avg_cost from holdings where user_id = $1", [uid])).rows,
+    cash: (await pool.query("select cash from users where id = $1", [uid])).rows[0].cash,
+    trades: (await pool.query("select count(*)::int as n from transactions where user_id = $1", [uid])).rows[0].n,
+  });
+  const before = await snapshot();
+
   const n = await applyPrestige(pool, prestigeResult(2027));
   assert.equal(n, 138);
   const { rows } = await pool.query(
@@ -105,6 +116,12 @@ test("prestige apply sets next season's opening prices and records the scores", 
     "select count(*)::int as n, count(*) filter (where manual)::int as manual from prestige_scores where season = 2027"
   );
   assert.deepEqual(scores[0], { n: 138, manual: 1 });
+  // Holdings carry over: same shares, cost basis, cash and history; only
+  // their value moves to the new opening price.
+  assert.deepEqual(await snapshot(), before);
+  const { rows: nw } = await pool.query("select holdings_value from user_net_worth where user_id = $1", [uid]);
+  assert.equal(nw[0].holdings_value, 10 * 15.5);
+
   // Re-applying before any 2027 game overwrites cleanly.
   await applyPrestige(pool, prestigeResult(2027));
 });
@@ -131,6 +148,11 @@ test("buildPrestige reads raw CFBD responses (v1 and v2 shapes) and falls back t
           { id: 2, season: 2025, week: 2, season_type: "regular", neutral_site: false, home_id: 333, home_team: "Alabama",
             home_conference: "SEC", home_division: "fbs", home_points: 31, away_id: 61, away_team: "Georgia",
             away_conference: "SEC", away_division: "fbs", away_points: 28 },
+          // A late-season FCS game so the season runs to week 14 like a real one
+          // (otherwise the week-2 SEC game would sit in the "final two weeks").
+          { id: 3, season: 2025, week: 14, seasonType: "regular", neutralSite: false, homeTeam: "Montana",
+            homeConference: "Big Sky", homeClassification: "fcs", homePoints: 20, awayTeam: "Idaho",
+            awayConference: "Big Sky", awayClassification: "fcs", awayPoints: 17 },
         ];
       }
       return [];

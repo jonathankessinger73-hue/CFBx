@@ -42,7 +42,13 @@ test("conference championship detection is structural and excludes Army-Navy", (
   assert.equal(isConferenceChampionship(base, 15), true); // second-to-final week
   assert.equal(isConferenceChampionship({ ...base, week: 15 }, 15), true); // final week
   assert.equal(isConferenceChampionship({ ...base, week: 13 }, 15), false);
-  assert.equal(isConferenceChampionship({ ...base, neutralSite: false }, 15), false);
+  // Neutral site: counts even if the conference has other games that week.
+  assert.equal(isConferenceChampionship(base, 15, 3), true);
+  // On campus: counts only as the conference's lone conference game that week
+  // (hosted title games), not in rivalry week.
+  assert.equal(isConferenceChampionship({ ...base, neutralSite: false }, 15, 1), true);
+  assert.equal(isConferenceChampionship({ ...base, neutralSite: false }, 15, 6), false);
+  assert.equal(isConferenceChampionship({ ...base, neutralSite: false, week: 12 }, 15, 1), false);
   assert.equal(isConferenceChampionship({ ...base, awayConference: "ACC" }, 15), false);
   assert.equal(
     isConferenceChampionship({ ...base, homeConference: "FBS Independents", awayConference: "FBS Independents" }, 15),
@@ -80,11 +86,19 @@ const fixture = {
     // Conference championship: neutral, second-to-final week (Army-Navy is week 15).
     g({ week: 14, neutralSite: true, home: "Alpha", homeConference: SEC, away: "Bravo", awayConference: SEC, homePoints: 24, awayPoints: 27 }),
     g({ week: 15, neutralSite: true, home: "Army", homeConference: "American Athletic", away: "Navy", awayConference: "American Athletic", homePoints: 17, awayPoints: 10 }),
+    // Hosted title game: on campus, the Sun Belt's only conference game in week 14.
+    g({ week: 14, home: "Sierra", homeConference: "Sun Belt", away: "Tango", awayConference: "Sun Belt", homePoints: 31, awayPoints: 24 }),
+    // Rivalry week: two on-campus SEC games in week 15. Not title games.
+    g({ week: 15, home: "Kilo", homeConference: SEC, away: "Lima", awayConference: SEC, homePoints: 20, awayPoints: 17 }),
+    g({ week: 15, home: "Mike", homeConference: SEC, away: "Oscar", awayConference: SEC, homePoints: 14, awayPoints: 10 }),
     g({ seasonType: "postseason", week: 1, neutralSite: true, home: "Alpha", homeConference: SEC, away: "Charlie", awayConference: "Big Ten", homePoints: 17, awayPoints: 21, notes: "College Football Playoff Semifinal at the Orange Bowl" }),
     g({ seasonType: "postseason", week: 1, neutralSite: true, home: "Bravo", homeConference: SEC, away: "Delta", awayConference: "FBS Independents", homePoints: 10, awayPoints: 13, notes: "Duke's Mayo Bowl" }),
   ],
 };
-const TICKERS = { Alpha: "A", Bravo: "B", Charlie: "C", Delta: "D", Echo: "E", Pac: "P", Army: "ARMY", Navy: "NAVY" };
+const TICKERS = {
+  Alpha: "A", Bravo: "B", Charlie: "C", Delta: "D", Echo: "E", Pac: "P", Army: "ARMY", Navy: "NAVY",
+  Sierra: "S", Tango: "T", Kilo: "K", Lima: "L", Mike: "M", Oscar: "O",
+};
 
 function run(extra = {}) {
   return computePrestige({
@@ -97,7 +111,7 @@ function run(extra = {}) {
     ],
     window: { start: 2024, end: 2025 },
     resolve: (n) => TICKERS[n] ?? null,
-    tickers: ["A", "B", "C", "D", "E", "P", "ARMY", "NAVY", "NEWBIE"],
+    tickers: ["A", "B", "C", "D", "E", "P", "ARMY", "NAVY", "S", "T", "K", "L", "M", "O", "NEWBIE"],
     manualPrices: { NEWBIE: 13 },
     ...extra,
   });
@@ -122,7 +136,15 @@ test("prestige components follow each rule", () => {
   close(row("A").conf_championship, 8 * R, "A ccg");
   close(row("B").conf_championship, 24 * R, "B ccg");
   assert.equal(row("ARMY").conf_championship, 0);
-  assert.equal(r.report.championships.length, 1);
+  // Hosted Sun Belt title game counts; rivalry-week SEC games don't.
+  close(row("S").conf_championship, 24 * R, "S ccg");
+  close(row("T").conf_championship, 8 * R, "T ccg");
+  assert.equal(row("K").conf_championship, 0);
+  assert.equal(row("M").conf_championship, 0);
+  assert.deepEqual(
+    r.report.championships.map((c) => [c.conference, c.site]).sort(),
+    [["SEC", "neutral"], ["Sun Belt", "on campus"]]
+  );
 
   // Semifinal: appear 26, win +19. Non-playoff bowl: 3, +6 for the winner.
   close(row("A").cfp, 26 * R, "A cfp");

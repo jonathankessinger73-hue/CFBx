@@ -68,19 +68,28 @@ const isArmyNavy = (g) => {
 };
 
 // Conference championship games, detected structurally (not from labels):
-// final or second-to-final regular-season week, neutral site, both teams in
-// the same real conference. Army-Navy matches that shape and is excluded.
-export function isConferenceChampionship(g, finalWeek) {
+// a regular-season game in the final or second-to-final week between two
+// teams of the same real conference (Army-Navy matches that shape and is
+// excluded by name), that is EITHER
+//   - at a neutral site (SEC, Big Ten, ACC, Big 12, MAC title games), OR
+//   - on campus, but the conference's only conference game that week.
+//     Several conferences (American, Mountain West, Sun Belt, C-USA) host the
+//     title game at the higher seed. A lone game tells a title week apart
+//     from rivalry week, when a conference plays many games against itself.
+// `confGamesThisWeek` = that conference's conference games in g's week.
+export function isConferenceChampionship(g, finalWeek, confGamesThisWeek = 1) {
   return (
     g.seasonType !== "postseason" &&
-    g.neutralSite &&
     (g.week === finalWeek || g.week === finalWeek - 1) &&
-    g.homeConference &&
+    !!g.homeConference &&
     g.homeConference === g.awayConference &&
     g.homeConference !== INDEPENDENTS &&
-    !isArmyNavy(g)
+    !isArmyNavy(g) &&
+    (g.neutralSite || confGamesThisWeek === 1)
   );
 }
+
+const confWeekKey = (g) => `${g.week}|${g.homeConference}`;
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -162,7 +171,14 @@ export function computePrestige({ gamesByYear, talent, window, resolve, tickers,
       return s.fbs ? 0.5 + s.w / s.g : FCS_OPP_QUALITY;
     };
 
-    const finalWeek = Math.max(0, ...games.filter((g) => g.seasonType !== "postseason").map((g) => g.week || 0));
+    const regular = games.filter((g) => g.seasonType !== "postseason");
+    const finalWeek = Math.max(0, ...regular.map((g) => g.week || 0));
+    const confGames = new Map(); // "week|conference" -> conference games that week
+    for (const g of regular) {
+      if (g.homeConference && g.homeConference === g.awayConference) {
+        confGames.set(confWeekKey(g), (confGames.get(confWeekKey(g)) || 0) + 1);
+      }
+    }
 
     for (const g of games) {
       const hKey = String(g.homeId ?? g.home);
@@ -186,13 +202,20 @@ export function computePrestige({ gamesByYear, talent, window, resolve, tickers,
           else acc(key).bowls += (BOWL_APPEAR + (won ? BOWL_WIN : 0)) * rec;
         }
         if (stage) report.playoff.push({ year, stage, home: g.home, away: g.away, notes: g.notes });
-      } else if (isConferenceChampionship(g, finalWeek)) {
+      } else if (isConferenceChampionship(g, finalWeek, confGames.get(confWeekKey(g)))) {
         // Both teams get the appearance bonus; the winner also gets the win
         // bonus (8 + 16), mirroring how the CFP appear/win bonuses stack.
         for (const key of [hKey, aKey]) {
           if (season.get(key).fbs) acc(key).conf_championship += CCG_APPEAR * rec + (key === winner ? CCG_WIN * rec : 0);
         }
-        report.championships.push({ year, week: g.week, conference: g.homeConference, home: g.home, away: g.away });
+        report.championships.push({
+          year,
+          week: g.week,
+          conference: g.homeConference,
+          site: g.neutralSite ? "neutral" : "on campus",
+          home: g.home,
+          away: g.away,
+        });
       }
     }
   }

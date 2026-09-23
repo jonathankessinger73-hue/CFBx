@@ -244,14 +244,24 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run t
     in the report.
 
   Each of these is a constant or a single line in `src/prestige/score.js`.
-- **Known limitation of the spec's title-game rule:** it requires a neutral
-  site. Several conferences (American, Mountain West, Sun Belt, Conference USA)
-  host their title game at the higher seed's stadium, so those games aren't
-  detected and don't earn the bonus. The rebuild report lists every title game
-  it detected, so gaps are easy to spot.
+- **Title games at campus sites count too (extends the spec).** The spec only
+  counted neutral-site title games. The American, Mountain West, Sun Belt and
+  Conference USA host theirs at the higher seed's stadium, so those were missed.
+  A non-neutral game now also counts when all of these hold:
+  - it's in the final two regular-season weeks
+  - both teams are in the same conference
+  - it isn't Army-Navy
+  - it's that conference's **only** conference game that week
+
+  That last check separates a title week from rivalry week, when a conference
+  plays many games against itself. The rebuild report lists every detected
+  title game with its site (`neutral` or `on campus`). Look over irregular
+  seasons such as 2020 there.
 - **The rebuild won't reproduce today's IPO prices exactly.** The artifact's
   own comment says its `PRESTIGE_PRICE` table used a 4-year window (2022–2025).
   The spec, which this follows, says 12 years.
-- **Season rollover keeps holdings.** Applying new opening prices resets every
-  team's price, but players keep their shares. Net worths jump accordingly at
-  the start of a season.
+- **Holdings carry across seasons (product decision).** Applying new opening
+  prices resets every team's price, but it doesn't touch players' shares,
+  average cost, cash or trade history. Only the value of their holdings moves
+  to the new prices, so net worths shift at the start of each season. A test
+  covers this.
