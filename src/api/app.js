@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import express from "express";
 import { requireAuth, optionalAuth } from "./auth.js";
 import { TRADE_ERRORS } from "../db/store.js";
+import { checkDisplayName } from "../moderation/names.js";
 
 const MAX_SHARES_PER_TRADE = 1_000_000;
 
@@ -127,6 +128,8 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
       if (typeof raw !== "string") return res.status(400).json({ error: "invalid_display_name" });
       name = raw.trim().replace(/\s+/g, " ");
       if (!DISPLAY_NAME_RE.test(name)) return res.status(400).json({ error: "invalid_display_name" });
+      // Offensive or impersonating names. The response never says which word matched.
+      if (!checkDisplayName(name).ok) return res.status(400).json({ error: "display_name_not_allowed" });
     }
     try {
       await store.setDisplayName(req.userId, name);

@@ -1,25 +1,45 @@
 // Minimal CollegeFootballData.com API client, plus helpers that normalize the
 // v1 (snake_case) and v2 (camelCase) response shapes into one form.
 
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+
 const BASE_URL = process.env.CFBD_BASE_URL || "https://api.collegefootballdata.com";
 
-export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl = fetch } = {}) {
+/**
+ * @param {object} [opts]
+ * @param {string} [opts.cacheDir]  if set, responses are cached on disk keyed
+ *        by URL. Only for historical pulls (the prestige rebuild); live jobs
+ *        must not use it or they'd never see new results.
+ */
+export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl = fetch, cacheDir } = {}) {
   if (!apiKey) throw new Error("CFBD_API_KEY is not set");
-  async function get(path, params) {
-    const url = new URL(path, BASE_URL);
+  async function get(pathname, params) {
+    const url = new URL(pathname, BASE_URL);
     for (const [k, v] of Object.entries(params)) if (v !== undefined) url.searchParams.set(k, String(v));
+    const cacheFile =
+      cacheDir && path.join(cacheDir, crypto.createHash("sha1").update(url.toString()).digest("hex") + ".json");
+    if (cacheFile && fs.existsSync(cacheFile)) return JSON.parse(fs.readFileSync(cacheFile, "utf8"));
     const res = await fetchImpl(url, {
       headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
     });
     if (!res.ok) throw new Error(`CFBD ${url.pathname} failed: ${res.status} ${await res.text()}`);
-    return res.json();
+    const body = await res.json();
+    if (cacheFile) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+      fs.writeFileSync(cacheFile, JSON.stringify(body));
+    }
+    return body;
   }
   return {
     games: (year, seasonType = "regular") =>
-      // `classification` is the v2 name for v1's `division`; send both.
+      // `classification` is the v2 name for v1's `division`; send both. Returns
+      // every game involving an FBS team, including FBS vs FCS.
       get("/games", { year, seasonType, classification: "fbs", division: "fbs" }),
     lines: (year, seasonType = "regular") => get("/lines", { year, seasonType }),
     spRatings: (year) => get("/ratings/sp", { year }),
+    talent: (year) => get("/talent", { year }),
   };
 }
 
@@ -38,6 +58,16 @@ export function normalizeGame(g) {
     away: pick(g, "awayTeam", "away_team"),
     homePoints: pick(g, "homePoints", "home_points") ?? null,
     awayPoints: pick(g, "awayPoints", "away_points") ?? null,
+    // Extra fields used by the prestige rebuild.
+    seasonType: pick(g, "seasonType", "season_type") ?? null,
+    neutralSite: Boolean(pick(g, "neutralSite", "neutral_site")),
+    homeId: pick(g, "homeId", "home_id") ?? null,
+    awayId: pick(g, "awayId", "away_id") ?? null,
+    homeConference: pick(g, "homeConference", "home_conference") ?? null,
+    awayConference: pick(g, "awayConference", "away_conference") ?? null,
+    homeClassification: (pick(g, "homeClassification", "home_division") ?? null)?.toLowerCase?.() ?? null,
+    awayClassification: (pick(g, "awayClassification", "away_division") ?? null)?.toLowerCase?.() ?? null,
+    notes: pick(g, "notes") ?? null,
   };
 }
 
@@ -59,4 +89,17 @@ export function normalizeLineGame(g) {
     away: pick(g, "awayTeam", "away_team"),
     spread: consensusSpread(g),
   };
+}
+
+// /ratings/sp rows -> { team, rating }. rating is null when not numeric; the
+// national-averages row has no matching team, so callers drop it on lookup.
+export function normalizeSpRating(r) {
+  const rating = Number(pick(r, "rating"));
+  return { team: pick(r, "team"), rating: Number.isFinite(rating) ? rating : null };
+}
+
+// /talent rows -> { team, talent }. v1 calls the team `school`.
+export function normalizeTalent(r) {
+  const talent = Number(pick(r, "talent"));
+  return { team: pick(r, "team", "school"), talent: Number.isFinite(talent) ? talent : null };
 }

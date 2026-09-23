@@ -144,6 +144,10 @@ test("PATCH /me sets a display name, validated and unique ignoring case", { skip
   for (const bad of ["ab", "x".repeat(25), " -dash", "semi;colon", "trailing_", 42, undefined]) {
     assert.equal((await patch(a, bad).expect(400)).body.error, "invalid_display_name", String(bad));
   }
+  for (const blocked of ["CFBx Admin", "Fu" + "ckTheDawgs"]) {
+    assert.equal((await patch(a, blocked).expect(400)).body.error, "display_name_not_allowed", blocked);
+  }
+  await patch(a, "Gamecock Nation").expect(200); // football words aren't false positives
   const ok = await patch(a, "  Dawg   Fan  ").expect(200);
   assert.equal(ok.body.display_name, "Dawg Fan");
   assert.equal((await request(app).get("/me").set("Authorization", a.auth)).body.display_name, "Dawg Fan");

@@ -171,6 +171,7 @@ const ERROR_TEXT = {
   network_error: "Can't reach the server. Check your connection and try again.",
   invalid_display_name: "Use 3–24 letters, numbers, spaces, dots, dashes or underscores, starting and ending with a letter or number.",
   display_name_taken: "That name is taken. Try another.",
+  display_name_not_allowed: "That name isn't allowed. Please pick another.",
 };
 const errorText = (err) => ERROR_TEXT[err.code] || "Something went wrong. Please try again.";
 

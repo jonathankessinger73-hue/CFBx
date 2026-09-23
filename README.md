@@ -19,11 +19,14 @@ Clients ask questions or request trades, and they never send a price.
 | 5. Daily GitHub Actions job | Done. Defaults to a `staging` environment. |
 | 6. Leaderboard, multiple users | Done: opt-in display names and a Leaders tab. Trades from concurrent users are serialized in the database. |
 
-Not built yet:
-- The once-per-season **strength refresh** (`strengthFromRatings` in the engine is
-  ready; it has no script yet).
-- The **Program Prestige Score rebuild**. Opening prices come from the artifact's
-  validated `PRESTIGE_PRICE` table, as the spec's migration section says.
+Also built:
+- **Display-name filter**: offensive and impersonating names are rejected.
+- **Weekly strength refresh** from current-season SP+ (the spec said once per
+  season; changed to weekly on request).
+- **Program Prestige Score rebuild** for next season's opening prices.
+  This season's prices still come from the artifact's `PRESTIGE_PRICE` table.
+
+Everything in the spec is now built.
 
 ## Layout
 
@@ -38,7 +41,9 @@ src/api/                       Express API (app.js), Supabase token auth (auth.j
 web/                           the frontend (static HTML/CSS/JS, no build step)
 src/db/                        pg setup and queries
 src/cfbd/                      CollegeFootballData client and team-name matching
-src/jobs/                      daily sync (syncSeason.js) and its CLI (daily.js)
+src/jobs/                      daily sync, weekly strength refresh, prestige rebuild (CLIs + logic)
+src/prestige/                  Program Prestige Score: scoring rules (score.js), fetch/apply (rebuild.js)
+src/moderation/                display-name filter and its (ROT13-encoded) blocklist
 .github/workflows/             CI and the scheduled CFBD sync
 ```
 
@@ -98,6 +103,66 @@ workflow uses `staging` until the repo variable `CFBX_JOB_ENVIRONMENT` is set to
 `production`. For a manual run with the "dry run" box checked, open
 Actions → CFBD sync → Run workflow. Locally, run `npm run job:daily -- --dry-run`.
 
+## Scheduled and seasonal jobs
+
+| Job | When | Command | Workflow |
+|---|---|---|---|
+| Results + lines | daily, plus game nights | `npm run job:daily` | `daily-sync.yml` |
+| Strength refresh | weekly (Tue, Aug–Jan) | `npm run job:strength` | `weekly-strength.yml` |
+| Prestige rebuild | once a season, before the first game | `npm run job:prestige -- --season 2027` | `prestige-rebuild.yml` (manual) |
+
+All three share one concurrency group, so they never overlap. Every job has
+a dry-run or report-only mode. The workflows run against the `staging`
+environment until `CFBX_JOB_ENVIRONMENT` is set to `production`.
+
+**Strength refresh.** Pulls the current season's SP+ (`/ratings/sp`), rescales
+it with the spec's formula, `round(10 + (rating - min) / (max - min) * 85)`, and
+writes `teams.strength`. It also adds a row per team to `strength_history`,
+tagged with the latest completed week; re-running in the same week overwrites
+that week's rows. Strength only feeds the SP+ fallback spread and the
+"projected" labels. It never moves a price. Safety checks:
+- If fewer than 100 teams are rated (for example very early in the season),
+  nothing changes.
+- A team missing from that week's ratings keeps its previous strength.
+
+Early-season SP+ still leans on preseason priors, so week-to-week changes
+are largest in September.
+
+**Prestige rebuild.** Implements the spec's Program Prestige Score over a
+12-season window ending the season before (so 2015–2026 for 2027 opening
+prices). It pulls 24 `/games` calls plus `/talent` from CFBD and caches them
+in `.cache/cfbd`. It writes `reports/prestige-<season>.json`, which has:
+- every team's price, prestige, raw score and components
+- the change versus the current IPO price
+- every conference championship and playoff game it detected
+- the tier each independent was given
+- any FBS schools that couldn't be matched
+
+Review the report, then re-run with `--apply`. Apply sets `ipo_price` and
+`current_price` for all 138 teams and records the scores in
+`prestige_scores`. It refuses to run in either of these cases:
+- the target season already has a completed game (which would wipe live
+  price moves)
+- any team is left without a price
+
+FBS newcomers with no FBS seasons in the window use `MANUAL_PRICES` in
+`src/prestige/rebuild.js` (Sacramento State $13.00, North Dakota State $14.50).
+
+**Display names.** `checkDisplayName` runs on every `PATCH /me`:
+- Leetspeak, repeated letters, spaced-out letters and camelCase are handled.
+- An allowlist protects football words that contain blocked text: Gamecocks,
+  Hancock, Dickinson, Scunthorpe.
+- Names that impersonate the site or staff are reserved: "CFBx", "Admin",
+  "Official".
+- The error never says which word matched.
+
+The word lists are in `src/moderation/blocklist.js`, ROT13-encoded so slurs
+aren't in the source as plain text. Maintenance commands:
+- `npm run names -- check "<name>"` tests a name.
+- `npm run names -- list` prints the lists decoded.
+- `npm run names -- audit [--apply]` finds (and with `--apply`, clears) saved
+  names that break the current rules, for example after adding words.
+
 ## API
 
 | Method | Path | Auth | Notes |
@@ -106,7 +171,7 @@ Actions → CFBD sync → Run workflow. Locally, run `npm run job:daily -- --dry
 | GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected) |
 | GET | `/leaderboard` | optional | `players`, and `leaderboard` rows of `rank`, `display_name`, `net_worth`, `is_me`. Only players with a display name are listed. With a token, `me` is your own entry (or `null` if you haven't joined). User ids are never exposed. |
 | GET | `/me` | ✓ | Cash, holdings value, net worth. Creates the account with $10,000 on first call. |
-| PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_taken` (409). |
+| PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_not_allowed` (400, offensive or reserved), `display_name_taken` (409). |
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
 | POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. |
@@ -169,3 +234,24 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run t
 - Known gaps from the spec are kept on purpose. Sacramento State ($13.00) and North
   Dakota State ($14.50) have manually floored IPO prices. Prestige ignores
   seasons before 2014.
+- **Prestige rebuild: how ambiguous parts of the spec were read.**
+  - A conference title game winner gets the appearance *and* win bonuses
+    (8 + 16), mirroring how the playoff appear/win bonuses stack.
+  - Win value counts every FBS win, postseason included. Opponent win
+    percentage uses the opponent's full season, postseason included.
+  - A team with no talent data counts as the lowest talent (0 of 18).
+  - An independent with no conference opponents gets tier 1.0. It's listed
+    in the report.
+
+  Each of these is a constant or a single line in `src/prestige/score.js`.
+- **Known limitation of the spec's title-game rule:** it requires a neutral
+  site. Several conferences (American, Mountain West, Sun Belt, Conference USA)
+  host their title game at the higher seed's stadium, so those games aren't
+  detected and don't earn the bonus. The rebuild report lists every title game
+  it detected, so gaps are easy to spot.
+- **The rebuild won't reproduce today's IPO prices exactly.** The artifact's
+  own comment says its `PRESTIGE_PRICE` table used a 4-year window (2022–2025).
+  The spec, which this follows, says 12 years.
+- **Season rollover keeps holdings.** Applying new opening prices resets every
+  team's price, but players keep their shares. Net worths jump accordingly at
+  the start of a season.

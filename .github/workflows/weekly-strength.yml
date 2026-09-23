@@ -1,0 +1,49 @@
+name: Weekly strength refresh
+
+# Rescales teams.strength from CFBD's current-season SP+ every week. SP+ is
+# republished early in the week, so this runs Tuesday morning (UTC),
+# August through January. Strength only affects the SP+ fallback spread and
+# "projected" labels; it never moves a price.
+on:
+  schedule:
+    - cron: "0 12 * 8-12,1 2"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Log the new strengths without writing"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cfbd-sync # shared with the daily sync and prestige rebuild
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+      SEASON: ${{ vars.SEASON || '2026' }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$CFBD_API_KEY" ]; then
+            echo "::warning::DATABASE_URL / CFBD_API_KEY secrets are not set for this environment; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+        if: steps.config.outputs.ready == 'true'
+      - run: node src/jobs/strength.js ${{ inputs.dry_run && '--dry-run' || '' }}
+        if: steps.config.outputs.ready == 'true'

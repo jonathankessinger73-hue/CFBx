@@ -14,6 +14,9 @@
     "extract": "node scripts/extract-artifact.js",
     "seed": "node --env-file-if-exists=.env scripts/seed.js",
     "job:daily": "node --env-file-if-exists=.env src/jobs/daily.js",
+    "job:strength": "node --env-file-if-exists=.env src/jobs/strength.js",
+    "job:prestige": "node --env-file-if-exists=.env src/jobs/prestige.js",
+    "names": "node --env-file-if-exists=.env scripts/names.js",
     "test": "node --test \"test/**/*.test.js\"",
     "test:e2e": "playwright test"
   },
