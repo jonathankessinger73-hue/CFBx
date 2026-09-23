@@ -27,6 +27,8 @@ const state = {
   holdings: new Map(), // team_id -> holding row
   transactions: [],
   detail: null, // { id, data, error } for the team detail view
+  leaderboard: null, // { data, error } from GET /leaderboard
+  editingName: false,
   view: { conf: "all", q: "", priceMode: "week", ...loadPrefs() },
   tradePending: false,
 };
@@ -137,13 +139,14 @@ async function accessToken() {
   return data.session?.access_token || null;
 }
 
+// auth: false (public), true (required), or "optional" (sent when signed in).
 async function api(path, { method = "GET", body, auth = false } = {}) {
   const headers = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (auth) {
     const token = await accessToken();
-    if (!token) throw new ApiError(401, "signed_out");
-    headers.Authorization = `Bearer ${token}`;
+    if (!token && auth !== "optional") throw new ApiError(401, "signed_out");
+    if (token) headers.Authorization = `Bearer ${token}`;
   }
   let res;
   try {
@@ -166,6 +169,8 @@ const ERROR_TEXT = {
   invalid_token: "Your session expired. Sign in again.",
   missing_token: "Sign in to trade.",
   network_error: "Can't reach the server. Check your connection and try again.",
+  invalid_display_name: "Use 3–24 letters, numbers, spaces, dots, dashes or underscores, starting and ending with a letter or number.",
+  display_name_taken: "That name is taken. Try another.",
 };
 const errorText = (err) => ERROR_TEXT[err.code] || "Something went wrong. Please try again.";
 
@@ -210,6 +215,14 @@ async function loadAccount() {
   }
 }
 
+async function loadLeaderboard() {
+  try {
+    state.leaderboard = { data: await api("/leaderboard?limit=100", { auth: "optional" }), error: null };
+  } catch (err) {
+    state.leaderboard = { data: state.leaderboard?.data || null, error: err };
+  }
+}
+
 async function loadDetail(id) {
   state.detail = { id, data: null, error: null };
   try {
@@ -226,6 +239,7 @@ function parseRoute() {
   const [page, arg] = hash.split("/");
   if (page === "team" && arg) return { page: "detail", ticker: decodeURIComponent(arg).toUpperCase() };
   if (page === "portfolio") return { page: "portfolio" };
+  if (page === "leaderboard") return { page: "leaderboard" };
   if (page === "signin") return { page: "signin" };
   return { page: "market" };
 }
@@ -236,6 +250,11 @@ async function onRouteChange() {
     state.detail = { id: route.ticker, data: null, error: null };
     render();
     await loadDetail(route.ticker);
+  }
+  if (route.page === "leaderboard") {
+    state.editingName = false;
+    if (!state.leaderboard) render(); // show the loading state on first visit
+    await loadLeaderboard();
   }
   render();
   window.scrollTo(0, 0);
@@ -288,6 +307,7 @@ function render() {
   renderAccount();
   $("tab-market").classList.toggle("active", route.page === "market" || route.page === "detail");
   $("tab-portfolio").classList.toggle("active", route.page === "portfolio");
+  $("tab-leaderboard").classList.toggle("active", route.page === "leaderboard");
 
   if (state.teamsError && !state.teams.size) {
     $("main").innerHTML =
@@ -302,6 +322,7 @@ function render() {
   if (route.page === "market") renderMarket();
   else if (route.page === "detail") renderDetail(route.ticker);
   else if (route.page === "portfolio") renderPortfolio();
+  else if (route.page === "leaderboard") renderLeaderboard();
   else if (route.page === "signin") renderSignIn();
 }
 
@@ -601,6 +622,9 @@ function renderPortfolio() {
     $("main").innerHTML = head + `<div class="loading">Loading portfolio…</div>`;
     return;
   }
+  const standing = state.me.display_name
+    ? `<p class="stale-note" style="margin:-8px 0 16px">Playing as <strong>${esc(state.me.display_name)}</strong> on the <a href="#/leaderboard">leaderboard</a>.</p>`
+    : `<p class="stale-note" style="margin:-8px 0 16px">You're not on the leaderboard. <a href="#/leaderboard">Pick a display name</a> to join.</p>`;
 
   const nw = state.me.net_worth;
   const ret = round2(nw - STARTING_CASH);
@@ -645,7 +669,122 @@ function renderPortfolio() {
       `</div></div>`
     : "";
 
-  $("main").innerHTML = head + summary + body + trades;
+  $("main").innerHTML = head + standing + summary + body + trades;
+}
+
+/* ---------- Rendering: leaderboard ---------- */
+
+function nameForm(current) {
+  return (
+    `<form id="name-form" novalidate style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">` +
+    `<input class="field" id="name-input" aria-label="Display name" maxlength="24" autocomplete="nickname" ` +
+    `placeholder="Display name" value="${esc(current || "")}" style="flex:1;min-width:180px;margin:0">` +
+    `<button class="btn-primary" type="submit" id="name-save">${current ? "Save" : "Join leaderboard"}</button>` +
+    (current ? `<button class="btn-secondary" type="button" id="name-cancel">Cancel</button>` : "") +
+    `</form>` +
+    `<div class="form-msg" id="name-msg" role="status" aria-live="polite"></div>`
+  );
+}
+
+function bindNameForm() {
+  const form = $("name-form");
+  if (!form) return;
+  $("name-cancel")?.addEventListener("click", () => {
+    state.editingName = false;
+    renderLeaderboard();
+  });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("name-msg");
+    const name = $("name-input").value.trim().replace(/\s+/g, " ");
+    $("name-save").disabled = true;
+    try {
+      const r = await api("/me", { method: "PATCH", auth: true, body: { display_name: name } });
+      if (state.me) state.me.display_name = r.display_name;
+      state.editingName = false;
+      await loadLeaderboard();
+      toast(`You're on the leaderboard as ${r.display_name}.`);
+      render();
+    } catch (err) {
+      msg.className = "form-msg err";
+      msg.textContent = errorText(err);
+      $("name-save").disabled = false;
+    }
+  });
+}
+
+function renderLeaderboard() {
+  const lb = state.leaderboard;
+  const players = lb?.data?.players ?? 0;
+  const head =
+    `<div class="section-head"><div><h1>Leaderboard</h1>` +
+    `<p>Net worth at current prices. Everyone starts with ${fmtMoney(STARTING_CASH)}. ` +
+    `Only players who pick a display name are listed.</p></div></div>`;
+
+  if (!lb?.data) {
+    $("main").innerHTML =
+      head +
+      (lb?.error
+        ? `<div class="panel"><div class="empty-state">${esc(errorText(lb.error))}</div></div>`
+        : `<div class="loading">Loading leaderboard…</div>`);
+    return;
+  }
+
+  // Your standing, or the opt-in form.
+  let standing = "";
+  if (supabase && !state.session) {
+    standing =
+      `<div class="panel" style="margin-bottom:16px"><div class="position-note">` +
+      `<a href="#/signin">Sign in</a> and pick a display name to join the leaderboard.</div></div>`;
+  } else if (supabase && lb.data.me && !state.editingName) {
+    const me = lb.data.me;
+    standing =
+      `<div class="summary-row">` +
+      `<div class="summary-card"><div class="label">your rank</div><div class="val">#${me.rank} <span style="font-size:14px;color:var(--text-muted)">of ${players}</span></div></div>` +
+      `<div class="summary-card"><div class="label">playing as</div><div class="val" style="font-family:var(--font-body);font-size:19px;overflow-wrap:anywhere">${esc(me.display_name)}</div>` +
+      `<button class="btn-secondary" id="name-edit" style="margin-top:8px;padding:5px 11px;font-size:12px">Change name</button></div>` +
+      `<div class="summary-card"><div class="label">net worth</div><div class="val">${fmtMoney(me.net_worth)}</div></div>` +
+      `</div>`;
+  } else if (supabase) {
+    const current = lb.data.me?.display_name || "";
+    standing =
+      `<div class="panel" style="margin-bottom:16px"><h2>${current ? "change your display name" : "join the leaderboard"}</h2>` +
+      (current
+        ? ""
+        : `<p class="position-note" style="margin:0 0 12px">Pick a public display name. Your email is never shown. You can change the name later.</p>`) +
+      nameForm(current) +
+      `</div>`;
+  }
+
+  const rows = lb.data.leaderboard;
+  const table = rows.length
+    ? `<div class="panel table-scroll"><table class="holdings">` +
+      `<thead><tr><th>rank</th><th>player</th><th>net worth</th><th>return</th></tr></thead><tbody>` +
+      rows
+        .map((r) => {
+          const ret = round2(r.net_worth - STARTING_CASH);
+          const retPct = round2((ret / STARTING_CASH) * 100);
+          return (
+            `<tr${r.is_me ? ' class="me-row"' : ""}>` +
+            `<td>${r.rank <= 3 ? `<span class="medal medal-${r.rank}">${r.rank}</span>` : r.rank}</td>` +
+            `<td class="nm-cell">${esc(r.display_name)}${r.is_me ? ' <span class="you-badge">you</span>' : ""}</td>` +
+            `<td>${fmtMoney(r.net_worth)}</td>` +
+            `<td class="txt-${dirClass(ret)}">${fmtPct(retPct)}</td></tr>`
+          );
+        })
+        .join("") +
+      `</tbody></table></div>` +
+      (players > rows.length ? `<p class="stale-note" style="margin-top:10px">Showing the top ${rows.length} of ${players} players.</p>` : "")
+    : `<div class="panel"><div class="empty-state"><div class="big">No one's on the board yet</div>Pick a display name to be the first.</div></div>`;
+
+  $("main").innerHTML = head + standing + table;
+
+  $("name-edit")?.addEventListener("click", () => {
+    state.editingName = true;
+    renderLeaderboard();
+    $("name-input")?.focus();
+  });
+  bindNameForm();
 }
 
 /* ---------- Rendering: sign in ---------- */
@@ -707,6 +846,7 @@ async function boot() {
         // Defer: supabase-js recommends not awaiting its own calls inside this callback.
         setTimeout(async () => {
           await loadAccount();
+          if (parseRoute().page === "leaderboard") await loadLeaderboard();
           if (session && parseRoute().page === "signin") location.hash = "#/";
           else render();
         }, 0);
@@ -723,6 +863,7 @@ async function boot() {
     await Promise.all([loadTeams(), loadAccount()]);
     const route = parseRoute();
     if (route.page === "detail") await loadDetail(route.ticker);
+    if (route.page === "leaderboard") await loadLeaderboard();
     render();
   });
 }

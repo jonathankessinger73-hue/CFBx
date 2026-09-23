@@ -127,7 +127,7 @@ test("transactions are append-only", { skip }, async () => {
   await assert.rejects(pool.query("delete from transactions where user_id = $1", [id]), /append-only/);
 });
 
-test("anon and authenticated roles cannot call the write functions", { skip }, async () => {
+test("anon and authenticated roles cannot call write functions or read other players", { skip }, async () => {
   const client = await pool.connect();
   try {
     for (const role of ["anon", "authenticated"]) {
@@ -138,6 +138,12 @@ test("anon and authenticated roles cannot call the write functions", { skip }, a
         /permission denied/
       );
       await client.query("rollback");
+      for (const sql of ["select * from leaderboard", "select * from user_net_worth"]) {
+        await client.query("begin");
+        await client.query(`set local role ${role}`);
+        await assert.rejects(client.query(sql), /permission denied/, `${role}: ${sql}`);
+        await client.query("rollback");
+      }
     }
   } finally {
     client.release();

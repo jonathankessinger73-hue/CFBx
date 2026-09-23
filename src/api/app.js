@@ -3,10 +3,14 @@
 
 import { createRequire } from "node:module";
 import express from "express";
-import { requireAuth } from "./auth.js";
+import { requireAuth, optionalAuth } from "./auth.js";
 import { TRADE_ERRORS } from "../db/store.js";
 
 const MAX_SHARES_PER_TRADE = 1_000_000;
+
+// 3-24 chars; letters, digits, space, _ . -; starts and ends alphanumeric.
+// Mirrors the users_display_name_format constraint (003_leaderboard.sql).
+export const DISPLAY_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9 _.-]{1,22}[A-Za-z0-9]$/;
 
 function corsMiddleware(allowedOrigins) {
   return (req, res, next) => {
@@ -15,7 +19,7 @@ function corsMiddleware(allowedOrigins) {
       res.set("Access-Control-Allow-Origin", origin);
       res.set("Vary", "Origin");
       res.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-      res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
     }
     if (req.method === "OPTIONS") return res.sendStatus(204);
     next();
@@ -37,6 +41,7 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
   app.use(express.json({ limit: "16kb" }));
 
   const auth = requireAuth(verifyToken);
+  const maybeAuth = optionalAuth(verifyToken);
 
   app.get("/health", (req, res) => res.json({ ok: true }));
 
@@ -77,16 +82,28 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     });
   });
 
-  app.get("/leaderboard", async (req, res) => {
+  // Public. Only players who chose a display name are listed, and user ids
+  // are never exposed. With a valid token, `me` is the caller's own entry
+  // (null if they haven't opted in) so they can see their rank off-page.
+  app.get("/leaderboard", maybeAuth, async (req, res) => {
     const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 25));
-    const rows = await store.leaderboard(limit);
-    res.json({
-      leaderboard: rows.map((r, i) => ({
-        rank: i + 1,
-        display_name: r.display_name || "Anonymous",
+    const [{ rows, players }, mine] = await Promise.all([
+      store.leaderboard(limit),
+      req.userId ? store.leaderboardEntry(req.userId) : null,
+    ]);
+    const body = {
+      players,
+      leaderboard: rows.map((r) => ({
+        rank: Number(r.rank),
+        display_name: r.display_name,
         net_worth: r.net_worth,
+        is_me: r.user_id === req.userId,
       })),
-    });
+    };
+    if (req.userId) {
+      body.me = mine ? { rank: Number(mine.rank), display_name: mine.display_name, net_worth: mine.net_worth } : null;
+    }
+    res.json(body);
   });
 
   // ---- authenticated -----------------------------------------------------
@@ -100,6 +117,26 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
       holdings_value: acct.holdings_value,
       net_worth: acct.net_worth,
     });
+  });
+
+  // Body: { display_name: string | null }. null leaves the leaderboard.
+  app.patch("/me", auth, async (req, res) => {
+    const raw = (req.body || {}).display_name;
+    let name = null;
+    if (raw !== null) {
+      if (typeof raw !== "string") return res.status(400).json({ error: "invalid_display_name" });
+      name = raw.trim().replace(/\s+/g, " ");
+      if (!DISPLAY_NAME_RE.test(name)) return res.status(400).json({ error: "invalid_display_name" });
+    }
+    try {
+      await store.setDisplayName(req.userId, name);
+    } catch (err) {
+      if (err.message === "display_name_taken") return res.status(409).json({ error: err.message });
+      if (err.message === "invalid_display_name") return res.status(400).json({ error: err.message });
+      throw err;
+    }
+    const acct = await store.getAccount(req.userId);
+    res.json({ display_name: acct.display_name, cash: acct.cash, net_worth: acct.net_worth });
   });
 
   app.get("/me/holdings", auth, async (req, res) => {

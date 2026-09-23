@@ -134,11 +134,69 @@ test("POST /trade validates input and maps domain errors", { skip }, async () =>
   assert.equal(bad.body.error, "invalid_json");
 });
 
-test("GET /leaderboard ranks by net worth without exposing user ids", { skip }, async () => {
-  const res = await request(app).get("/leaderboard?limit=5").expect(200);
-  assert.ok(res.body.leaderboard.length <= 5);
-  for (const row of res.body.leaderboard) {
-    assert.deepEqual(Object.keys(row).sort(), ["display_name", "net_worth", "rank"]);
+test("PATCH /me sets a display name, validated and unique ignoring case", { skip }, async () => {
+  const a = await login();
+  const b = await login();
+  const patch = (who, display_name) =>
+    request(app).patch("/me").set("Authorization", who.auth).send({ display_name });
+
+  await request(app).patch("/me").send({ display_name: "Nobody" }).expect(401);
+  for (const bad of ["ab", "x".repeat(25), " -dash", "semi;colon", "trailing_", 42, undefined]) {
+    assert.equal((await patch(a, bad).expect(400)).body.error, "invalid_display_name", String(bad));
+  }
+  const ok = await patch(a, "  Dawg   Fan  ").expect(200);
+  assert.equal(ok.body.display_name, "Dawg Fan");
+  assert.equal((await request(app).get("/me").set("Authorization", a.auth)).body.display_name, "Dawg Fan");
+
+  assert.equal((await patch(b, "dawg fan").expect(409)).body.error, "display_name_taken");
+  await patch(a, "Dawg Fan").expect(200); // re-saving your own name is fine
+  await patch(a, null).expect(200); // leaving frees the name
+  await patch(b, "dawg fan").expect(200);
+  await patch(b, null).expect(200);
+});
+
+test("GET /leaderboard ranks opted-in players by net worth", { skip }, async () => {
+  const [rich, tiedA, tiedB, hidden] = [await login(), await login(), await login(), await login()];
+  const name = (who, n) => request(app).patch("/me").set("Authorization", who.auth).send({ display_name: n }).expect(200);
+  await name(rich, "Rich Rival");
+  await name(tiedA, "Alpha Tie");
+  await name(tiedB, "beta tie");
+
+  // rich buys 10 TEX, then TEX rises $5: net worth 10,050. hidden (no name) buys too.
+  const { rows } = await pool.query("select current_price from teams where id = 'TEX'");
+  const texPrice = rows[0].current_price;
+  await request(app).post("/trade").set("Authorization", rich.auth).send({ team_id: "TEX", side: "buy", shares: 10 }).expect(200);
+  await request(app).post("/trade").set("Authorization", hidden.auth).send({ team_id: "TEX", side: "buy", shares: 100 }).expect(200);
+  await pool.query("update teams set current_price = $1 where id = 'TEX'", [texPrice + 5]);
+  try {
+    const pub = await request(app).get("/leaderboard").expect(200);
+    assert.equal(pub.body.players, 3);
+    assert.deepEqual(
+      pub.body.leaderboard.map((r) => [r.rank, r.display_name, r.net_worth, r.is_me]),
+      [
+        [1, "Rich Rival", 10050, false],
+        [2, "Alpha Tie", 10000, false],
+        [2, "beta tie", 10000, false],
+      ]
+    );
+    assert.equal(pub.body.me, undefined);
+    for (const row of pub.body.leaderboard) {
+      assert.deepEqual(Object.keys(row).sort(), ["display_name", "is_me", "net_worth", "rank"]);
+    }
+
+    const mine = await request(app).get("/leaderboard?limit=1").set("Authorization", tiedB.auth).expect(200);
+    assert.equal(mine.body.leaderboard.length, 1);
+    assert.deepEqual(mine.body.me, { rank: 2, display_name: "beta tie", net_worth: 10000 });
+    const rows1 = await request(app).get("/leaderboard").set("Authorization", rich.auth);
+    assert.equal(rows1.body.leaderboard[0].is_me, true);
+
+    const hiddenView = await request(app).get("/leaderboard").set("Authorization", hidden.auth).expect(200);
+    assert.equal(hiddenView.body.me, null);
+    // A bad token on a public endpoint is just anonymous.
+    const anon = await request(app).get("/leaderboard").set("Authorization", "Bearer junk").expect(200);
+    assert.equal(anon.body.me, undefined);
+  } finally {
+    await pool.query("update teams set current_price = $1 where id = 'TEX'", [texPrice]);
   }
 });
 

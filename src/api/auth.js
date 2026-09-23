@@ -35,3 +35,19 @@ export function requireAuth(verifyToken) {
     }
   };
 }
+
+// Like requireAuth, but never rejects: sets req.userId when a valid token is
+// present and otherwise carries on as an anonymous request.
+export function optionalAuth(verifyToken) {
+  return async (req, res, next) => {
+    const match = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "");
+    if (!match) return next();
+    try {
+      const userId = await verifyToken(match[1]);
+      if (userId) req.userId = userId;
+    } catch {
+      /* treat a verifier failure as anonymous on public endpoints */
+    }
+    next();
+  };
+}

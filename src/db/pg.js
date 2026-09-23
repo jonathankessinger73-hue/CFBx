@@ -12,5 +12,10 @@ export default pg;
 
 export function createPool(connectionString = process.env.DATABASE_URL) {
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  return new pg.Pool({ connectionString, max: Number(process.env.PG_POOL_MAX || 5) });
+  const pool = new pg.Pool({ connectionString, max: Number(process.env.PG_POOL_MAX || 5) });
+  // An idle client can be dropped by the server (Supabase's pooler does this
+  // routinely). Without a listener, pg re-emits that as an unhandled 'error'
+  // and the process exits. The pool discards the broken client on its own.
+  pool.on("error", (err) => console.error("postgres idle client error:", err.message));
+  return pool;
 }

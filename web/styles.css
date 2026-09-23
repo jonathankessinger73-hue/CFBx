@@ -494,3 +494,23 @@
   }
   .detail-price .ch{ display: inline-block; padding: 3px 8px; border-radius: 6px; }
   .detail-price .cover-tag{ display: table; margin-left: auto; }
+
+  /* ---------- Leaderboard ---------- */
+  table.holdings tr.me-row td{ background: var(--accent-soft); }
+  .medal{
+    display:inline-flex; align-items:center; justify-content:center;
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 12px; font-weight: 700; color: #1a1406;
+  }
+  .medal-1{ background: #E8A33D; }
+  .medal-2{ background: #B8C0CC; }
+  .medal-3{ background: #C98B5A; }
+  .position-note a, .stale-note a{ color: var(--accent); }
+  .you-badge{
+    font-size: 10.5px; color: var(--accent); background: var(--accent-soft);
+    padding: 2px 7px; border-radius: 20px; white-space: nowrap; margin-left: 4px;
+  }
+  table.holdings tr.me-row .you-badge{ background: rgba(232,163,61,0.22); }
+  .txt-up{ color: var(--positive); }
+  .txt-down{ color: var(--negative); }
+  .txt-flat{ color: var(--text-muted); }

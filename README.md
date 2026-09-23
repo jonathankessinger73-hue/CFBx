@@ -17,7 +17,7 @@ Clients ask questions or request trades, and they never send a price.
 | 3. `/trade` + users/holdings/transactions | Done, tested (including concurrent trades) |
 | 4. Port the frontend to the API | Done (`web/`), with browser tests |
 | 5. Daily GitHub Actions job | Done. Defaults to a `staging` environment. |
-| 6. Leaderboard etc. | `/leaderboard` endpoint exists. Users need a way to set `display_name`. |
+| 6. Leaderboard, multiple users | Done: opt-in display names and a Leaders tab. Trades from concurrent users are serialized in the database. |
 
 Not built yet:
 - The once-per-season **strength refresh** (`strengthFromRatings` in the engine is
@@ -77,6 +77,10 @@ and portfolio. The styling is carried over from the artifact. What changed:
   SP+ fallback.
 - Routes are hash URLs (`#/team/UGA`, `#/portfolio`), so the back button
   and shared links work.
+- **Leaders tab.** Players join by picking a public display name; anyone
+  without one is never listed. It shows rank (ties share a rank), net worth
+  and return, highlights your own row, and shows your rank even when you're
+  outside the top 100. The Portfolio page links to it.
 - Data refreshes whenever the tab becomes visible again.
 
 By default the API server also serves the frontend on the same origin, so no
@@ -100,8 +104,9 @@ Actions → CFBD sync → Run workflow. Locally, run `npm run job:daily -- --dry
 |---|---|---|---|
 | GET | `/teams` | — | All teams with price, colors, mascot, last-game cover info |
 | GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected) |
-| GET | `/leaderboard` | — | Rank, display name, net worth. User ids are never exposed. |
+| GET | `/leaderboard` | optional | `players`, and `leaderboard` rows of `rank`, `display_name`, `net_worth`, `is_me`. Only players with a display name are listed. With a token, `me` is your own entry (or `null` if you haven't joined). User ids are never exposed. |
 | GET | `/me` | ✓ | Cash, holdings value, net worth. Creates the account with $10,000 on first call. |
+| PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_taken` (409). |
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
 | POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. |
@@ -147,6 +152,12 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run t
 - **Game application is idempotent.** `apply_game_result()` skips a game that is
   already completed. It rejects the update if a team's price changed after the
   job read it. The workflow also never runs two syncs at once.
+- **Leaderboard is opt-in.** The spec's `users` table has no public name, and
+  showing every account as "Anonymous" would expose everyone's standing by
+  default. So the board lists only players who choose a display name.
+  `003_leaderboard.sql` adds the name format check, a case-insensitive unique
+  index, and a `leaderboard` view that ranks by net worth at current prices.
+  Names aren't filtered for offensive words yet.
 - **Schema additions:** `teams.ipo_price` (for season % change and chart start),
   `schedule.cfbd_game_id`, `price_events.schedule_id` and `summary`, and
   `users.display_name`. RLS is on for every table. The anon key can read only

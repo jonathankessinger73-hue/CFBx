@@ -91,9 +91,67 @@ test.describe("with fake auth", () => {
     await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
   });
 
+  test("leaderboard: opt in with a display name, see your rank, names are unique", async ({ page, browser }) => {
+    await page.goto("/#/leaderboard");
+    await expect(page.getByRole("heading", { name: "Leaderboard" })).toBeVisible();
+    await expect(page.getByText("and pick a display name to join the leaderboard")).toBeVisible();
+
+    const signIn = async (p, email) => {
+      await p.goto("/#/signin");
+      await p.getByLabel("Email").fill(email);
+      await p.getByRole("button", { name: "Email me a link" }).click();
+      await expect(p.locator("#hdr-cash")).toBeVisible();
+    };
+    await signIn(page, "first@example.com");
+
+    await page.getByRole("link", { name: "Portfolio" }).click();
+    await expect(page.getByText("You're not on the leaderboard.")).toBeVisible();
+    await page.getByRole("link", { name: "Pick a display name" }).click();
+
+    await page.getByLabel("Display name").fill("x!");
+    await page.getByRole("button", { name: "Join leaderboard" }).click();
+    await expect(page.locator("#name-msg")).toContainText("Use 3\u201324 letters");
+
+    await page.getByLabel("Display name").fill("Buckeye Bull");
+    await page.getByRole("button", { name: "Join leaderboard" }).click();
+    await expect(page.locator("#toast")).toContainText("You're on the leaderboard as Buckeye Bull");
+    await expect(page.locator(".summary-card").first()).toContainText("#1");
+    const myRow = page.locator("tr.me-row");
+    await expect(myRow).toContainText("Buckeye Bull");
+    await expect(myRow).toContainText("you");
+
+    // A second player can't take the same name, in any case.
+    const ctx = await browser.newContext();
+    const other = await ctx.newPage();
+    await other.route("**/vendor/supabase.js", (route) =>
+      route.fulfill({ contentType: "application/javascript", body: fakeSupabase })
+    );
+    await signIn(other, "second@example.com");
+    await other.goto("/#/leaderboard");
+    await other.getByLabel("Display name").fill("buckeye bull");
+    await other.getByRole("button", { name: "Join leaderboard" }).click();
+    await expect(other.locator("#name-msg")).toHaveText("That name is taken. Try another.");
+    await other.getByLabel("Display name").fill("Second Fiddle");
+    await other.getByRole("button", { name: "Join leaderboard" }).click();
+    // Both still at $10,000 (no price has moved since signup): tied for #1.
+    await expect(other.locator(".summary-card").first()).toContainText("#1 of 2");
+    await expect(other.locator("table.holdings tbody tr")).toHaveCount(2);
+    await expect(other.locator("table.holdings tbody .medal-1")).toHaveCount(2);
+    await ctx.close();
+
+    // Renaming keeps your place.
+    await page.reload();
+    await page.getByRole("button", { name: "Change name" }).click();
+    await page.getByLabel("Display name").fill("Buckeye Bear");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.locator("tr.me-row")).toContainText("Buckeye Bear");
+    await page.getByRole("link", { name: "Portfolio" }).click();
+    await expect(page.getByText("Playing as")).toContainText("Buckeye Bear");
+  });
+
   test("fits a phone-width screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const path of ["/", "/#/team/OSU", "/#/portfolio"]) {
+    for (const path of ["/", "/#/team/OSU", "/#/portfolio", "/#/leaderboard"]) {
       await page.goto(path);
       await page.waitForSelector("main :is(.grid, .detail-head, .section-head)");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

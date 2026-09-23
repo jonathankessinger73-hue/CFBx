@@ -133,15 +133,40 @@ export function createStore(pool) {
       return rows;
     },
 
+    // Sets (or with null, clears) the public display name. Throws
+    // display_name_taken / invalid_display_name for the caller to map.
+    async setDisplayName(userId, displayName) {
+      await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
+      try {
+        await pool.query("update users set display_name = $2 where id = $1", [userId, displayName]);
+      } catch (err) {
+        if (err.code === "23505") throw new Error("display_name_taken");
+        if (err.code === "23514") throw new Error("invalid_display_name");
+        throw err;
+      }
+    },
+
+    // Named players only, best first. Ties share a rank; name breaks the tie
+    // for display order.
     async leaderboard(limit = 25) {
       const { rows } = await pool.query(
-        `select user_id, display_name, net_worth
-           from user_net_worth
-          order by net_worth desc, user_id
+        `select rank, user_id, display_name, net_worth
+           from leaderboard
+          order by rank, lower(display_name)
           limit $1`,
         [limit]
       );
-      return rows;
+      const { rows: total } = await pool.query("select count(*)::int as n from leaderboard");
+      return { rows, players: total[0].n };
+    },
+
+    // One player's row, or null if they haven't opted in.
+    async leaderboardEntry(userId) {
+      const { rows } = await pool.query(
+        "select rank, user_id, display_name, net_worth from leaderboard where user_id = $1",
+        [userId]
+      );
+      return rows[0] || null;
     },
   };
 }
