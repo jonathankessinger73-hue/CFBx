@@ -49,8 +49,12 @@ src/moderation/                display-name filter and its (ROT13-encoded) block
 
 ## Setup
 
+**First time?** Follow [docs/SETUP.md](docs/SETUP.md). It's a step-by-step walkthrough of Supabase, CFBD and GitHub Actions, written for beginners. The steps below are the short version.
+
 1. Create a Supabase project. Copy `.env.example` to `.env` and fill it in.
-   `DATABASE_URL` is the Postgres connection string from Project Settings → Database.
+   `DATABASE_URL` is the **Session pooler** connection string from the project's Connect dialog. Set
+   `DATABASE_CA_CERT_FILE` to Supabase's downloaded CA certificate, so the
+   connection is encrypted and verified (in CI, the `DATABASE_CA_CERT` secret holds the certificate text).
 2. `npm install`
 3. `npm run migrate`. This applies `db/migrations/*.sql` in order. You can also paste
    the files into the Supabase SQL editor.

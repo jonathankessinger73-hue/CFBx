@@ -22,11 +22,21 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   const resolve = createTeamResolver(teams);
   const market = new Map(teams.map((t) => [t.id, { ...t }]));
 
-  const { rows: openGames } = await pool.query(
-    `select id, week, home_team_id, away_team_id, line, cfbd_game_id
-       from schedule where season = $1 and not completed`,
+  const { rows: allGames } = await pool.query(
+    `select id, week, home_team_id, away_team_id, line, cfbd_game_id, completed
+       from schedule where season = $1`,
     [season]
   );
+  const openGames = allGames.filter((g) => !g.completed);
+  // Games already recorded: CFBD keeps returning them, and they're not news.
+  const doneIds = new Set(allGames.filter((g) => g.completed && g.cfbd_game_id).map((g) => g.cfbd_game_id));
+  const doneTeams = new Set(
+    allGames
+      .filter((g) => g.completed)
+      .flatMap((g) => [`${g.week}:${g.home_team_id}:${g.away_team_id}`, `${g.week}:${g.away_team_id}:${g.home_team_id}`])
+  );
+  const alreadyRecorded = (cfbdGame) =>
+    doneIds.has(cfbdGame.id) || doneTeams.has(`${cfbdGame.week}:${resolve(cfbdGame.home)}:${resolve(cfbdGame.away)}`);
 
   // Match a CFBD game to one of our open schedule rows: by CFBD id if we've
   // matched it before, else by week + teams (either orientation, since CFBD
@@ -76,7 +86,9 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     if (g.homePoints === null || g.awayPoints === null) continue;
     const m = match(g);
     if (!m) {
-      if (resolve(g.home) && resolve(g.away)) summary.unmatched.push(`${g.week}: ${g.away} @ ${g.home}`);
+      if (resolve(g.home) && resolve(g.away) && !alreadyRecorded(g)) {
+        summary.unmatched.push(`${g.week}: ${g.away} @ ${g.home}`);
+      }
       continue;
     }
     const { row, flipped } = m;

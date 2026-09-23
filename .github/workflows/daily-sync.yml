@@ -30,6 +30,7 @@ jobs:
     environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
       CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
       SEASON: ${{ vars.SEASON || '2026' }}
     steps:

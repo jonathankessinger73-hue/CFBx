@@ -90,6 +90,8 @@ test("sync posts missing lines and applies completed games exactly once", { skip
   const ugaAfter = await price("UGA");
   const again = await syncSeason({ pool, cfbd, season: 2026, log: () => {} });
   assert.equal(again.gamesApplied, 0);
+  // Games that were already applied aren't reported as unmatched.
+  assert.deepEqual(again.unmatched, []);
   assert.equal(again.linesPosted, 0);
   assert.equal(await price("UGA"), ugaAfter);
 });
