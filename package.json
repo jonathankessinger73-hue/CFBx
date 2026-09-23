@@ -1,0 +1,27 @@
+{
+  "name": "cfbx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CFBx backend: play-money exchange for college football programs",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node src/api/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/api/server.js",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "extract": "node scripts/extract-artifact.js",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js",
+    "job:daily": "node --env-file-if-exists=.env src/jobs/daily.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.0",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.0"
+  }
+}

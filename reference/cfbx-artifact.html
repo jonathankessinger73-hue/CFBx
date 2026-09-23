@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CFBx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0E141B;
+    --bg-panel: #161D27;
+    --bg-panel-alt: #1C2531;
+    --bg-card-hover: #202A37;
+    --border: #2A3441;
+    --text: #ECEFE7;
+    --text-muted: #8993A3;
+    --text-faint: #5C6472;
+    --accent: #E8A33D;
+    --accent-soft: rgba(232,163,61,0.14);
+    --positive: #4CAF6D;
+    --positive-soft: rgba(76,175,109,0.14);
+    --negative: #E2574C;
+    --negative-soft: rgba(226,87,76,0.14);
+    --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+  html,body{
+    height:100%;
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+  a{color:inherit;}
+
+  /* ---------- Ticker tape ---------- */
+  .tape-wrap{
+    background: #0A0F14;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 8px 0;
+  }
+  .tape{
+    display: inline-flex;
+    animation: scroll-left 34s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tape{ animation: none; }
+    .tape-wrap{ overflow-x: auto; }
+  }
+  @keyframes scroll-left{
+    from{ transform: translateX(0); }
+    to{ transform: translateX(-50%); }
+  }
+  .tape-item{
+    display:inline-flex;
+    align-items:baseline;
+    gap:6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 0 20px;
+    border-right: 1px solid var(--border);
+  }
+  .tape-item .tk{ color: var(--text); font-weight:600; }
+  .tape-item .px{ color: var(--text-muted); }
+  .tape-item .ch.up{ color: var(--positive); }
+  .tape-item .ch.down{ color: var(--negative); }
+
+  /* ---------- Header ---------- */
+  header.app-header{
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap: 10px;
+  }
+  .brand .mark{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: 0.3px;
+  }
+  .brand .mark span{ color: var(--accent); }
+  .brand .tag{
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  nav.tabs{
+    display:flex;
+    gap: 4px;
+    background: var(--bg-panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  nav.tabs button{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  nav.tabs button.active{
+    background: var(--bg-card-hover);
+    color: var(--text);
+  }
+  .acct{
+    display:flex;
+    gap: 22px;
+    align-items:center;
+  }
+  .acct .stat{ text-align:right; }
+  .acct .stat .label{
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: lowercase;
+  }
+  .acct .stat .value{
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  main{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+
+  .section-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .section-head h1{
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .section-head p{
+    margin:0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+  .btn-primary{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--accent);
+    color: #221806;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-primary:hover{ filter: brightness(1.06); }
+  .btn-secondary{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-secondary:hover{ color: var(--text); border-color: var(--text-faint); }
+
+  /* ---------- Market grid ---------- */
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+  }
+  .card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--tag-color, var(--accent));
+    border-radius: 10px;
+    padding: 16px 16px 14px;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.12s ease;
+  }
+  .card:hover{ background: var(--bg-card-hover); transform: translateY(-1px); }
+  .card-top{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .card-top .tk{
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .card-top .nm{
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    max-width: 140px;
+  }
+  .card-top .held-badge{
+    font-size: 10.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .card-mid{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-bottom: 10px;
+  }
+  .card-mid .px{
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .card-mid .ch{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .ch.up{ color: var(--positive); background: var(--positive-soft); }
+  .ch.down{ color: var(--negative); background: var(--negative-soft); }
+  .ch.flat{ color: var(--text-muted); background: var(--bg-panel-alt); }
+  .spark{ display:block; width:100%; height:36px; }
+  .cover-tag{
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+  .cover-tag.covered{ color: var(--positive); background: var(--positive-soft); }
+  .cover-tag.missed{ color: var(--accent); background: var(--accent-soft); }
+
+  /* ---------- Detail view ---------- */
+  .detail-back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding: 0 0 16px;
+  }
+  .detail-back:hover{ color: var(--text); }
+  .detail-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap: 20px;
+    margin-bottom: 22px;
+  }
+  .detail-head .tk-name .tk{
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+  .detail-head .tk-name h1{
+    font-family: var(--font-display);
+    font-size: 26px;
+    margin: 3px 0 0;
+  }
+  .detail-price{ text-align: right; }
+  .detail-price .px{
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 600;
+  }
+  .detail-price .ch{
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .detail-body{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 780px){ .detail-body{ grid-template-columns: 1fr; } }
+  .panel{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 18px 16px;
+  }
+  .panel h2{
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: lowercase;
+    color: var(--text-muted);
+    margin: 0 0 14px;
+    letter-spacing: 0.3px;
+  }
+  .chart-wrap{ overflow-x:auto; }
+  .chart-wrap svg{ display:block; }
+  .axis-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-faint); }
+
+  .log-list{ display:flex; flex-direction:column; gap:10px; max-height: 260px; overflow-y:auto; }
+  .log-item{
+    font-size: 13px;
+    color: var(--text-muted);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-item:last-child{ border-bottom:none; padding-bottom:0; }
+  .log-item .lw{ color: var(--text-faint); font-family: var(--font-mono); font-size: 11px; }
+  .log-item .ld{ font-family: var(--font-mono); font-weight: 600; }
+
+  .trade-form{ display:flex; flex-direction:column; gap:12px; }
+  .trade-row{ display:flex; gap:10px; }
+  .trade-row input[type="number"]{
+    flex:1;
+    background: var(--bg-panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+  .trade-row input[type="number"]:focus{ outline: 1px solid var(--accent); border-color: var(--accent); }
+  .trade-summary{
+    display:flex;
+    justify-content:space-between;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .trade-summary strong{ color: var(--text); font-family: var(--font-mono); }
+  .trade-buttons{ display:flex; gap:10px; }
+  .trade-buttons button{ flex:1; }
+  .btn-buy{
+    background: var(--positive); color: #0c1f14; border:none; font-weight:700;
+    padding: 11px; border-radius: 8px; cursor:pointer; font-size: 14px;
+  }
+  .btn-sell{
+    background: var(--negative-soft); color: var(--negative); border: 1px solid var(--negative);
+    font-weight:700; padding: 11px; border-radius: 8px; cursor:pointer; font-size: 14px;
+  }
+  .btn-buy:disabled, .btn-sell:disabled{ opacity: 0.4; cursor: not-allowed; }
+  .position-note{
+    font-size: 12.5px; color: var(--text-muted); padding-top:2px;
+  }
+
+  /* ---------- Portfolio ---------- */
+  table.holdings{ width:100%; border-collapse: collapse; }
+  table.holdings th{
+    text-align: left;
+    font-size: 11px;
+    text-transform: lowercase;
+    color: var(--text-faint);
+    font-weight: 600;
+    padding: 0 10px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.holdings td{
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.holdings td.nm-cell{ font-family: var(--font-body); }
+  table.holdings td.nm-cell .tk-mini{ color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; }
+  table.holdings tr:last-child td{ border-bottom:none; }
+  .empty-state{
+    padding: 40px 20px;
+    text-align:center;
+    color: var(--text-muted);
+  }
+  .empty-state .big{
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .summary-row{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 640px){ .summary-row{ grid-template-columns: 1fr; } }
+  .summary-card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .summary-card .label{ font-size: 12px; color: var(--text-muted); margin-bottom:6px; }
+  .summary-card .val{ font-family: var(--font-mono); font-size: 22px; font-weight: 600; }
+
+  footer.simfoot{
+    text-align:center;
+    color: var(--text-faint);
+    font-size: 12px;
+    padding: 30px 20px 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="tape-wrap"><div class="tape" id="tape"></div></div>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="mark">CFB<span>x</span></div>
+    <div class="tag">Prices move on gameday, not sentiment</div>
+  </div>
+  <nav class="tabs">
+    <button id="tab-market" class="active">Market</button>
+    <button id="tab-portfolio">Portfolio</button>
+  </nav>
+  <div class="acct">
+    <div class="stat">
+      <div class="label">cash</div>
+      <div class="value" id="hdr-cash">$0.00</div>
+    </div>
+    <div class="stat">
+      <div class="label">net worth</div>
+      <div class="value" id="hdr-networth">$0.00</div>
+    </div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer class="simfoot">Play-money simulation · no purchase, no cash prizes, no affiliation with any school or league</footer>
+
+<script>
+(function(){
+
+  var STORAGE_KEY = "boxscore_exchange_v13";
+  var STARTING_CASH = 10000;
+
+  var SEED_TEAMS = [
+    { id:"BC", name:"Boston College", conf:"ACC", strength:45 },
+    { id:"CAL", name:"California", conf:"ACC", strength:51 },
+    { id:"CLEM", name:"Clemson", conf:"ACC", strength:67 },
+    { id:"DUKE", name:"Duke", conf:"ACC", strength:63 },
+    { id:"FSU", name:"Florida State", conf:"ACC", strength:64 },
+    { id:"GT", name:"Georgia Tech", conf:"ACC", strength:67 },
+    { id:"LOU", name:"Louisville", conf:"ACC", strength:70 },
+    { id:"MIA", name:"Miami", conf:"ACC", strength:81 },
+    { id:"NCST", name:"NC State", conf:"ACC", strength:61 },
+    { id:"UNC", name:"North Carolina", conf:"ACC", strength:47 },
+    { id:"PITT", name:"Pittsburgh", conf:"ACC", strength:65 },
+    { id:"SMU", name:"SMU", conf:"ACC", strength:72 },
+    { id:"STAN", name:"Stanford", conf:"ACC", strength:41 },
+    { id:"SYR", name:"Syracuse", conf:"ACC", strength:39 },
+    { id:"UVA", name:"Virginia", conf:"ACC", strength:69 },
+    { id:"VT", name:"Virginia Tech", conf:"ACC", strength:43 },
+    { id:"WAKE", name:"Wake Forest", conf:"ACC", strength:62 },
+    { id:"ARMY", name:"Army", conf:"American Athletic", strength:56 },
+    { id:"CLT", name:"Charlotte", conf:"American Athletic", strength:22 },
+    { id:"ECU", name:"East Carolina", conf:"American Athletic", strength:65 },
+    { id:"FAU", name:"Florida Atlantic", conf:"American Athletic", strength:44 },
+    { id:"MEM", name:"Memphis", conf:"American Athletic", strength:64 },
+    { id:"NAVY", name:"Navy", conf:"American Athletic", strength:63 },
+    { id:"UNT", name:"North Texas", conf:"American Athletic", strength:72 },
+    { id:"RICE", name:"Rice", conf:"American Athletic", strength:37 },
+    { id:"USF", name:"South Florida", conf:"American Athletic", strength:69 },
+    { id:"TEM", name:"Temple", conf:"American Athletic", strength:49 },
+    { id:"TUL", name:"Tulane", conf:"American Athletic", strength:63 },
+    { id:"TLSA", name:"Tulsa", conf:"American Athletic", strength:43 },
+    { id:"UAB", name:"UAB", conf:"American Athletic", strength:36 },
+    { id:"UTSA", name:"UTSA", conf:"American Athletic", strength:60 },
+    { id:"ARIZ", name:"Arizona", conf:"Big 12", strength:70 },
+    { id:"ASU", name:"Arizona State", conf:"Big 12", strength:60 },
+    { id:"BYU", name:"BYU", conf:"Big 12", strength:75 },
+    { id:"BAY", name:"Baylor", conf:"Big 12", strength:57 },
+    { id:"CIN", name:"Cincinnati", conf:"Big 12", strength:61 },
+    { id:"COL", name:"Colorado", conf:"Big 12", strength:45 },
+    { id:"HOU", name:"Houston", conf:"Big 12", strength:64 },
+    { id:"ISU", name:"Iowa State", conf:"Big 12", strength:67 },
+    { id:"KU", name:"Kansas", conf:"Big 12", strength:60 },
+    { id:"KSU", name:"Kansas State", conf:"Big 12", strength:64 },
+    { id:"OKST", name:"Oklahoma State", conf:"Big 12", strength:36 },
+    { id:"TCU", name:"TCU", conf:"Big 12", strength:65 },
+    { id:"TTU", name:"Texas Tech", conf:"Big 12", strength:89 },
+    { id:"UCF", name:"UCF", conf:"Big 12", strength:54 },
+    { id:"UTAH", name:"Utah", conf:"Big 12", strength:82 },
+    { id:"WVU", name:"West Virginia", conf:"Big 12", strength:47 },
+    { id:"ILL", name:"Illinois", conf:"Big Ten", strength:71 },
+    { id:"IND", name:"Indiana", conf:"Big Ten", strength:95 },
+    { id:"IOWA", name:"Iowa", conf:"Big Ten", strength:79 },
+    { id:"MD", name:"Maryland", conf:"Big Ten", strength:56 },
+    { id:"MICH", name:"Michigan", conf:"Big Ten", strength:70 },
+    { id:"MSU", name:"Michigan State", conf:"Big Ten", strength:51 },
+    { id:"MINN", name:"Minnesota", conf:"Big Ten", strength:57 },
+    { id:"NEB", name:"Nebraska", conf:"Big Ten", strength:63 },
+    { id:"NW", name:"Northwestern", conf:"Big Ten", strength:62 },
+    { id:"OSU", name:"Ohio State", conf:"Big Ten", strength:92 },
+    { id:"ORE", name:"Oregon", conf:"Big Ten", strength:87 },
+    { id:"PSU", name:"Penn State", conf:"Big Ten", strength:77 },
+    { id:"PUR", name:"Purdue", conf:"Big Ten", strength:48 },
+    { id:"RUTG", name:"Rutgers", conf:"Big Ten", strength:56 },
+    { id:"UCLA", name:"UCLA", conf:"Big Ten", strength:44 },
+    { id:"USC", name:"USC", conf:"Big Ten", strength:76 },
+    { id:"WASH", name:"Washington", conf:"Big Ten", strength:78 },
+    { id:"WIS", name:"Wisconsin", conf:"Big Ten", strength:50 },
+    { id:"DEL", name:"Delaware", conf:"Conference USA", strength:42 },
+    { id:"FIU", name:"Florida International", conf:"Conference USA", strength:42 },
+    { id:"JVST", name:"Jacksonville State", conf:"Conference USA", strength:47 },
+    { id:"KENN", name:"Kennesaw State", conf:"Conference USA", strength:48 },
+    { id:"LIB", name:"Liberty", conf:"Conference USA", strength:44 },
+    { id:"MTSU", name:"Middle Tennessee", conf:"Conference USA", strength:35 },
+    { id:"MOST", name:"Missouri State", conf:"Conference USA", strength:42 },
+    { id:"NMSU", name:"New Mexico State", conf:"Conference USA", strength:36 },
+    { id:"SHSU", name:"Sam Houston", conf:"Conference USA", strength:21 },
+    { id:"WKU", name:"Western Kentucky", conf:"Conference USA", strength:57 },
+    { id:"ND", name:"Notre Dame", conf:"FBS Independents", strength:85 },
+    { id:"CONN", name:"UConn", conf:"FBS Independents", strength:61 },
+    { id:"AKR", name:"Akron", conf:"Mid-American", strength:38 },
+    { id:"BALL", name:"Ball State", conf:"Mid-American", strength:27 },
+    { id:"BGSU", name:"Bowling Green", conf:"Mid-American", strength:40 },
+    { id:"BUFF", name:"Buffalo", conf:"Mid-American", strength:46 },
+    { id:"CMU", name:"Central Michigan", conf:"Mid-American", strength:44 },
+    { id:"EMU", name:"Eastern Michigan", conf:"Mid-American", strength:37 },
+    { id:"KENT", name:"Kent State", conf:"Mid-American", strength:31 },
+    { id:"UMASS", name:"Massachusetts", conf:"Mid-American", strength:10 },
+    { id:"MIAOH", name:"Miami (OH)", conf:"Mid-American", strength:51 },
+    { id:"OHIO", name:"Ohio", conf:"Mid-American", strength:50 },
+    { id:"SACST", name:"Sacramento State", conf:"Mid-American", strength:28 },
+    { id:"NDSU", name:"North Dakota State", conf:"Mountain West", strength:38 },
+    { id:"TOL", name:"Toledo", conf:"Mid-American", strength:62 },
+    { id:"WMU", name:"Western Michigan", conf:"Mid-American", strength:53 },
+    { id:"AF", name:"Air Force", conf:"Mountain West", strength:51 },
+    { id:"HAW", name:"Hawai'i", conf:"Mountain West", strength:57 },
+    { id:"NEV", name:"Nevada", conf:"Mountain West", strength:39 },
+    { id:"UNM", name:"New Mexico", conf:"Mountain West", strength:56 },
+    { id:"NIU", name:"Northern Illinois", conf:"Mountain West", strength:35 },
+    { id:"SJSU", name:"San Jos\u00e9 State", conf:"Mountain West", strength:37 },
+    { id:"UNLV", name:"UNLV", conf:"Mountain West", strength:60 },
+    { id:"UTEP", name:"UTEP", conf:"Mountain West", strength:34 },
+    { id:"WYO", name:"Wyoming", conf:"Mountain West", strength:41 },
+    { id:"BSU", name:"Boise State", conf:"Pac-12", strength:59 },
+    { id:"CSU", name:"Colorado State", conf:"Pac-12", strength:36 },
+    { id:"FRES", name:"Fresno State", conf:"Pac-12", strength:57 },
+    { id:"ORST", name:"Oregon State", conf:"Pac-12", strength:36 },
+    { id:"SDSU", name:"San Diego State", conf:"Pac-12", strength:63 },
+    { id:"TXST", name:"Texas State", conf:"Pac-12", strength:58 },
+    { id:"USU", name:"Utah State", conf:"Pac-12", strength:51 },
+    { id:"WSU", name:"Washington State", conf:"Pac-12", strength:60 },
+    { id:"ALA", name:"Alabama", conf:"SEC", strength:73 },
+    { id:"ARK", name:"Arkansas", conf:"SEC", strength:61 },
+    { id:"AUB", name:"Auburn", conf:"SEC", strength:69 },
+    { id:"FLA", name:"Florida", conf:"SEC", strength:59 },
+    { id:"UGA", name:"Georgia", conf:"SEC", strength:85 },
+    { id:"UK", name:"Kentucky", conf:"SEC", strength:57 },
+    { id:"LSU", name:"LSU", conf:"SEC", strength:68 },
+    { id:"MSST", name:"Mississippi State", conf:"SEC", strength:60 },
+    { id:"MIZ", name:"Missouri", conf:"SEC", strength:73 },
+    { id:"OU", name:"Oklahoma", conf:"SEC", strength:78 },
+    { id:"OLE", name:"Ole Miss", conf:"SEC", strength:85 },
+    { id:"SC", name:"South Carolina", conf:"SEC", strength:62 },
+    { id:"TENN", name:"Tennessee", conf:"SEC", strength:74 },
+    { id:"TEX", name:"Texas", conf:"SEC", strength:75 },
+    { id:"TAMU", name:"Texas A&M", conf:"SEC", strength:81 },
+    { id:"VAN", name:"Vanderbilt", conf:"SEC", strength:80 },
+    { id:"APP", name:"App State", conf:"Sun Belt", strength:41 },
+    { id:"ARST", name:"Arkansas State", conf:"Sun Belt", strength:44 },
+    { id:"CCU", name:"Coastal Carolina", conf:"Sun Belt", strength:36 },
+    { id:"GASO", name:"Georgia Southern", conf:"Sun Belt", strength:44 },
+    { id:"GAST", name:"Georgia State", conf:"Sun Belt", strength:25 },
+    { id:"JMU", name:"James Madison", conf:"Sun Belt", strength:70 },
+    { id:"LA", name:"Louisiana", conf:"Sun Belt", strength:43 },
+    { id:"LT", name:"Louisiana Tech", conf:"Sun Belt", strength:53 },
+    { id:"MRSH", name:"Marshall", conf:"Sun Belt", strength:50 },
+    { id:"ODU", name:"Old Dominion", conf:"Sun Belt", strength:62 },
+    { id:"USA", name:"South Alabama", conf:"Sun Belt", strength:39 },
+    { id:"USM", name:"Southern Miss", conf:"Sun Belt", strength:46 },
+    { id:"TROY", name:"Troy", conf:"Sun Belt", strength:49 },
+    { id:"ULM", name:"UL Monroe", conf:"Sun Belt", strength:28 },
+  ];
+
+  var TEAM_COLORS = {
+    AF:["#003087","#8A8D8F"],
+    AKR:["#041E42","#A89968"],
+    ALA:["#9E1B32","#EEEEEE"],
+    APP:["#000000","#FFCC00"],
+    ARIZ:["#AB0520","#0C234B"],
+    ARK:["#9D2235","#FFFFFF"],
+    ARMY:["#000000","#D4BF91"],
+    ARST:["#CC092F","#000000"],
+    ASU:["#8C1D40","#FFC627"],
+    AUB:["#0C2340","#E87722"],
+    BALL:["#BA0C2F","#FFFFFF"],
+    BAY:["#003015","#FFB81C"],
+    BC:["#98002E","#BC9B6A"],
+    BGSU:["#4F2C1D","#FE5000"],
+    BSU:["#0033A0","#D64309"],
+    BUFF:["#005BBB","#FFFFFF"],
+    BYU:["#002E5D","#FFFFFF"],
+    CAL:["#003262","#FDB515"],
+    CCU:["#006F71","#A27752"],
+    CIN:["#E00122","#000000"],
+    CLEM:["#F56600","#522D80"],
+    CLT:["#046A38","#B3A369"],
+    CMU:["#6A0032","#FFC82E"],
+    COL:["#CFB87C","#000000"],
+    CONN:["#000E2F","#FFFFFF"],
+    CSU:["#1E4D2B","#C8C372"],
+    DEL:["#00539F","#FFD200"],
+    DUKE:["#001A57","#FFFFFF"],
+    ECU:["#592A8A","#FDC82F"],
+    EMU:["#00674F","#FFFFFF"],
+    FAU:["#003366","#CC0000"],
+    FIU:["#081E3F","#B6862C"],
+    FLA:["#0021A5","#FA4616"],
+    FRES:["#DB0032","#002E6D"],
+    FSU:["#782F40","#CEB888"],
+    GASO:["#002664","#FFFFFF"],
+    GAST:["#0039A6","#C8102E"],
+    GT:["#B3A369","#003057"],
+    HAW:["#024731","#FFFFFF"],
+    HOU:["#C8102E","#FFFFFF"],
+    ILL:["#E84A27","#13294B"],
+    IND:["#990000","#EEEDEB"],
+    IOWA:["#000000","#FFCD00"],
+    ISU:["#C8102E","#F1BE48"],
+    JMU:["#450084","#CBB677"],
+    JVST:["#A6192E","#FFFFFF"],
+    KENN:["#000000","#FFC629"],
+    KENT:["#002664","#EAAB00"],
+    KSU:["#512888","#FFFFFF"],
+    KU:["#0051BA","#E8000D"],
+    LA:["#CE181E","#FFFFFF"],
+    LIB:["#002D62","#C41230"],
+    LOU:["#AD0000","#000000"],
+    LSU:["#461D7C","#FDD023"],
+    LT:["#002D72","#C60C30"],
+    MD:["#E21833","#FFD520"],
+    MEM:["#003087","#898D8D"],
+    MIA:["#F47321","#005030"],
+    MIAOH:["#C41230","#FFFFFF"],
+    MICH:["#00274C","#FFCB05"],
+    MINN:["#7A0019","#FFCC33"],
+    MIZ:["#000000","#F1B82D"],
+    MOST:["#6F263D","#FFFFFF"],
+    MRSH:["#00B140","#000000"],
+    MSST:["#660000","#FFFFFF"],
+    MSU:["#18453B","#FFFFFF"],
+    MTSU:["#0066CC","#000000"],
+    NAVY:["#00205B","#C5B783"],
+    NCST:["#CC0000","#000000"],
+    ND:["#0C2340","#C99700"],
+    NEB:["#E41C38","#FFFFFF"],
+    NEV:["#003366","#C0C0C0"],
+    NIU:["#BA0C2F","#000000"],
+    NMSU:["#8B2332","#FFFFFF"],
+    NW:["#4E2A84","#FFFFFF"],
+    ODU:["#003057","#7C878E"],
+    OHIO:["#00694E","#FFFFFF"],
+    OKST:["#FF7300","#000000"],
+    OLE:["#14213D","#CE1126"],
+    ORE:["#154733","#FEE123"],
+    ORST:["#DC4405","#000000"],
+    OSU:["#BB0000","#666666"],
+    OU:["#841617","#FDF9D8"],
+    PITT:["#003594","#FFB81C"],
+    PSU:["#041E42","#FFFFFF"],
+    PUR:["#CEB888","#000000"],
+    RICE:["#00205B","#C1C6C8"],
+    RUTG:["#CC0033","#FFFFFF"],
+    SACST:["#043927","#C4B581"],
+    NDSU:["#009A44","#FFC629"],
+    SC:["#73000A","#000000"],
+    SDSU:["#A6192E","#000000"],
+    SHSU:["#FF6600","#FFFFFF"],
+    SJSU:["#0055A2","#FFB81C"],
+    SMU:["#C8102E","#354CA1"],
+    STAN:["#8C1515","#FFFFFF"],
+    SYR:["#F76900","#000E54"],
+    TAMU:["#500000","#FFFFFF"],
+    TCU:["#4D1979","#A3A9AC"],
+    TEM:["#9D2235","#000000"],
+    TENN:["#FF8200","#FFFFFF"],
+    TEX:["#BF5700","#FFFFFF"],
+    TLSA:["#002D72","#B4A369"],
+    TOL:["#003E7E","#FFCD00"],
+    TROY:["#8A2432","#FFFFFF"],
+    TTU:["#CC0000","#000000"],
+    TUL:["#006747","#418FDE"],
+    TXST:["#501214","#FFFFFF"],
+    UAB:["#1C5632","#000000"],
+    UCF:["#000000","#BA9B37"],
+    UCLA:["#2D68C4","#F2A900"],
+    UGA:["#BA0C2F","#000000"],
+    UK:["#0033A0","#FFFFFF"],
+    ULM:["#4B1F60","#F2A900"],
+    UMASS:["#881C1C","#FFFFFF"],
+    UNC:["#7BAFD4","#FFFFFF"],
+    UNLV:["#B10202","#A7A9AC"],
+    UNM:["#BA0C2F","#000000"],
+    UNT:["#00853E","#FFFFFF"],
+    USA:["#00205B","#C41E3A"],
+    USC:["#990000","#FFC72C"],
+    USF:["#006747","#CFC493"],
+    USM:["#FFAA00","#000000"],
+    USU:["#0F2439","#FFFFFF"],
+    UTAH:["#CC0000","#000000"],
+    UTEP:["#041E42","#FF8200"],
+    UTSA:["#0C2340","#F15A22"],
+    UVA:["#232D4B","#F84C1E"],
+    VAN:["#000000","#C5B358"],
+    VT:["#630031","#CF4420"],
+    WAKE:["#9E7E38","#000000"],
+    WASH:["#4B2E83","#B7A57A"],
+    WIS:["#C5050C","#FFFFFF"],
+    WKU:["#C8102E","#000000"],
+    WMU:["#532E1F","#FFC72C"],
+    WSU:["#981E32","#5E6A71"],
+    WVU:["#002855","#EAAA00"],
+    WYO:["#492F24","#FFC425"],
+  };
+  // Prestige/IPO price: built from 4 years (2022-2025) of conference-tier-weighted
+  // win totals, conference championships, bowl games, and CFP results, plus current
+  // recruiting talent as a present-investment signal. This is DELIBERATELY separate
+  // from `strength` (below), which stays purely 2025 SP+-based and drives game
+  // simulation/projection - so a team's starting valuation reflects who they've
+  // BEEN, while week-to-week price moves reflect how they're actually playing now.
+  var PRESTIGE_PRICE = {
+    AF: 19.65,
+    AKR: 14.3,
+    ALA: 58.0,
+    APP: 21.0,
+    ARIZ: 21.0,
+    ARK: 22.5,
+    ARMY: 20.8,
+    ARST: 18.3,
+    ASU: 25.0,
+    AUB: 26.85,
+    BALL: 16.25,
+    BAY: 24.25,
+    BC: 20.85,
+    BGSU: 16.45,
+    BSU: 25.05,
+    BUFF: 17.9,
+    BYU: 26.6,
+    CAL: 21.05,
+    CCU: 19.6,
+    CIN: 22.85,
+    CLEM: 43.5,
+    CLT: 14.75,
+    CMU: 17.1,
+    COL: 19.85,
+    CONN: 16.9,
+    CSU: 16.4,
+    DEL: 16.05,
+    DUKE: 24.8,
+    ECU: 18.05,
+    EMU: 16.75,
+    FAU: 16.85,
+    FIU: 16.05,
+    FLA: 27.85,
+    FRES: 20.9,
+    FSU: 25.75,
+    GASO: 19.05,
+    GAST: 16.75,
+    GT: 22.45,
+    HAW: 18.15,
+    HOU: 22.25,
+    ILL: 24.0,
+    IND: 32.35,
+    IOWA: 31.0,
+    ISU: 25.2,
+    JMU: 23.35,
+    JVST: 18.75,
+    KENN: 16.6,
+    KENT: 14.65,
+    KSU: 26.2,
+    KU: 18.25,
+    LA: 20.8,
+    LIB: 20.25,
+    LOU: 26.6,
+    LSU: 36.4,
+    LT: 18.15,
+    MD: 21.4,
+    MEM: 22.85,
+    MIA: 32.3,
+    MIAOH: 20.75,
+    MICH: 41.9,
+    MINN: 27.1,
+    MIZ: 28.8,
+    MOST: 14.7,
+    MRSH: 20.3,
+    MSST: 25.5,
+    MSU: 24.4,
+    MTSU: 16.85,
+    NAVY: 20.7,
+    NCST: 26.0,
+    ND: 37.2,
+    NEB: 22.4,
+    NEV: 16.7,
+    NIU: 19.25,
+    NMSU: 15.65,
+    NW: 23.55,
+    ODU: 17.25,
+    OHIO: 21.4,
+    OKST: 25.2,
+    OLE: 34.0,
+    ORE: 38.1,
+    ORST: 19.25,
+    OSU: 52.0,
+    OU: 35.5,
+    PITT: 25.55,
+    PSU: 34.55,
+    PUR: 20.4,
+    RICE: 15.95,
+    RUTG: 20.15,
+    SC: 25.5,
+    SDSU: 20.55,
+    SHSU: 17.95,
+    SJSU: 17.95,
+    SMU: 23.55,
+    STAN: 21.15,
+    SYR: 21.65,
+    TAMU: 30.7,
+    TCU: 29.15,
+    TEM: 16.7,
+    TENN: 29.6,
+    TEX: 35.3,
+    TLSA: 16.75,
+    TOL: 21.9,
+    TROY: 20.0,
+    TTU: 25.9,
+    TUL: 21.8,
+    TXST: 16.75,
+    UAB: 17.7,
+    UCF: 21.7,
+    UCLA: 22.7,
+    UGA: 54.35,
+    UK: 26.3,
+    ULM: 14.65,
+    UMASS: 13.0,
+    UNC: 23.3,
+    UNLV: 18.35,
+    UNM: 16.35,
+    UNT: 19.1,
+    USA: 17.3,
+    USC: 28.7,
+    USF: 18.3,
+    USM: 16.8,
+    USU: 18.9,
+    UTAH: 29.0,
+    UTEP: 14.4,
+    UTSA: 20.3,
+    UVA: 22.3,
+    VAN: 21.95,
+    VT: 22.55,
+    WAKE: 23.6,
+    WASH: 32.55,
+    WIS: 28.35,
+    WKU: 21.1,
+    WMU: 20.25,
+    WSU: 22.4,
+    WVU: 22.55,
+    WYO: 18.4,
+    SACST: 13.0,
+    NDSU: 14.5,
+  };
+
+  var MASCOTS = {
+    AF:"Falcons",
+    AKR:"Zips",
+    ALA:"Crimson Tide",
+    APP:"Mountaineers",
+    ARIZ:"Wildcats",
+    ARK:"Razorbacks",
+    ARMY:"Black Knights",
+    ARST:"Red Wolves",
+    ASU:"Sun Devils",
+    AUB:"Tigers",
+    BALL:"Cardinals",
+    BAY:"Bears",
+    BC:"Eagles",
+    BGSU:"Falcons",
+    BSU:"Broncos",
+    BUFF:"Bulls",
+    BYU:"Cougars",
+    CAL:"Golden Bears",
+    CCU:"Chanticleers",
+    CIN:"Bearcats",
+    CLEM:"Tigers",
+    CLT:"49ers",
+    CMU:"Chippewas",
+    COL:"Buffaloes",
+    CONN:"Huskies",
+    CSU:"Rams",
+    DEL:"Blue Hens",
+    DUKE:"Blue Devils",
+    ECU:"Pirates",
+    EMU:"Eagles",
+    FAU:"Owls",
+    FIU:"Panthers",
+    FLA:"Gators",
+    FRES:"Bulldogs",
+    FSU:"Seminoles",
+    GASO:"Eagles",
+    GAST:"Panthers",
+    GT:"Yellow Jackets",
+    HAW:"Rainbow Warriors",
+    HOU:"Cougars",
+    ILL:"Fighting Illini",
+    IND:"Hoosiers",
+    IOWA:"Hawkeyes",
+    ISU:"Cyclones",
+    JMU:"Dukes",
+    JVST:"Gamecocks",
+    KENN:"Owls",
+    KENT:"Golden Flashes",
+    KSU:"Wildcats",
+    KU:"Jayhawks",
+    LA:"Ragin' Cajuns",
+    LIB:"Flames",
+    LOU:"Cardinals",
+    LSU:"Tigers",
+    LT:"Bulldogs",
+    MD:"Terrapins",
+    MEM:"Tigers",
+    MIA:"Hurricanes",
+    MIAOH:"RedHawks",
+    MICH:"Wolverines",
+    MINN:"Golden Gophers",
+    MIZ:"Tigers",
+    MOST:"Bears",
+    MRSH:"Thundering Herd",
+    MSST:"Bulldogs",
+    MSU:"Spartans",
+    MTSU:"Blue Raiders",
+    NAVY:"Midshipmen",
+    NCST:"Wolfpack",
+    ND:"Fighting Irish",
+    NDSU:"Bison",
+    NEB:"Cornhuskers",
+    NEV:"Wolf Pack",
+    NIU:"Huskies",
+    NMSU:"Aggies",
+    NW:"Wildcats",
+    ODU:"Monarchs",
+    OHIO:"Bobcats",
+    OKST:"Cowboys",
+    OLE:"Rebels",
+    ORE:"Ducks",
+    ORST:"Beavers",
+    OSU:"Buckeyes",
+    OU:"Sooners",
+    PITT:"Panthers",
+    PSU:"Nittany Lions",
+    PUR:"Boilermakers",
+    RICE:"Owls",
+    RUTG:"Scarlet Knights",
+    SACST:"Hornets",
+    SC:"Gamecocks",
+    SDSU:"Aztecs",
+    SHSU:"Bearkats",
+    SJSU:"Spartans",
+    SMU:"Mustangs",
+    STAN:"Cardinal",
+    SYR:"Orange",
+    TAMU:"Aggies",
+    TCU:"Horned Frogs",
+    TEM:"Owls",
+    TENN:"Volunteers",
+    TEX:"Longhorns",
+    TLSA:"Golden Hurricane",
+    TOL:"Rockets",
+    TROY:"Trojans",
+    TTU:"Red Raiders",
+    TUL:"Green Wave",
+    TXST:"Bobcats",
+    UAB:"Blazers",
+    UCF:"Knights",
+    UCLA:"Bruins",
+    UGA:"Bulldogs",
+    UK:"Wildcats",
+    ULM:"Warhawks",
+    UMASS:"Minutemen",
+    UNC:"Tar Heels",
+    UNLV:"Rebels",
+    UNM:"Lobos",
+    UNT:"Mean Green",
+    USA:"Jaguars",
+    USC:"Trojans",
+    USF:"Bulls",
+    USM:"Golden Eagles",
+    USU:"Aggies",
+    UTAH:"Utes",
+    UTEP:"Miners",
+    UTSA:"Roadrunners",
+    UVA:"Cavaliers",
+    VAN:"Commodores",
+    VT:"Hokies",
+    WAKE:"Demon Deacons",
+    WASH:"Huskies",
+    WIS:"Badgers",
+    WKU:"Hilltoppers",
+    WMU:"Broncos",
+    WSU:"Cougars",
+    WVU:"Mountaineers",
+    WYO:"Cowboys",
+  };
+  SEED_TEAMS.forEach(function(t){
+    var c = TEAM_COLORS[t.id] || ["#3A4657","#8993A3"];
+    t.primary = c[0]; t.secondary = c[1];
+    t.price = round2Init(PRESTIGE_PRICE[t.id] !== undefined ? PRESTIGE_PRICE[t.id] : (8 + t.strength * 0.5));
+  });
+  function round2Init(n){ return Math.round(n*100)/100; }
+
+  var REAL_RESULTS_2026 = [
+    {week:1,home:"TCU",away:"UNC",homeScore:10,awayScore:15,line:7.5},
+    {week:1,home:"USC",away:"SJSU",homeScore:42,awayScore:26,line:37.33},
+    {week:1,home:"UVA",away:"NCST",homeScore:34,awayScore:8,line:4.0},
+    {week:1,home:"NDSU",away:"JVST",homeScore:33,awayScore:7,line:6.67},
+    {week:1,home:"EMU",away:"SACST",homeScore:28,awayScore:17,line:9.0},
+    {week:1,home:"STAN",away:"HAW",homeScore:37,awayScore:27,line:4.67},
+    {week:1,home:"FSU",away:"NMSU",homeScore:34,awayScore:17,line:31.0},
+    {week:1,home:"UNLV",away:"MEM",homeScore:21,awayScore:27,line:4.5},
+    {week:1,home:"RUTG",away:"UMASS",homeScore:21,awayScore:37,line:29.33},
+    {week:1,home:"WAKE",away:"AKR",homeScore:38,awayScore:16,line:27.5},
+    {week:1,home:"GT",away:"COL",homeScore:13,awayScore:14,line:6.5},
+    {week:1,home:"ILL",away:"UAB",homeScore:42,awayScore:23,line:25.83},
+    {week:1,home:"EMU",away:"SJSU",homeScore:21,awayScore:27,line:1.5},
+    {week:1,home:"MSU",away:"TOL",homeScore:30,awayScore:20,line:10.0},
+    {week:1,home:"OU",away:"UTEP",homeScore:51,awayScore:0,line:40.67},
+    {week:1,home:"USC",away:"FRES",homeScore:39,awayScore:0,line:21.83},
+    {week:1,home:"STAN",away:"MIA",homeScore:6,awayScore:45,line:-24.5},
+    {week:1,home:"ALA",away:"ECU",homeScore:48,awayScore:10,line:28.0},
+    {week:1,home:"HOU",away:"ORST",homeScore:33,awayScore:20,line:20.83},
+    {week:1,home:"IND",away:"UNT",homeScore:52,awayScore:16,line:39.83},
+    {week:1,home:"NEB",away:"OHIO",homeScore:49,awayScore:21,line:23.67},
+    {week:1,home:"WVU",away:"CCU",homeScore:31,awayScore:24,line:21.0},
+    {week:1,home:"JMU",away:"LIB",homeScore:20,awayScore:13,line:6.0},
+    {week:1,home:"OSU",away:"BALL",homeScore:56,awayScore:3,line:50.33},
+    {week:1,home:"PITT",away:"MIAOH",homeScore:59,awayScore:14,line:16.33},
+    {week:1,home:"SC",away:"KENT",homeScore:57,awayScore:0,line:35.83},
+    {week:1,home:"AUB",away:"BAY",homeScore:17,awayScore:16,line:6.5},
+    {week:1,home:"TEX",away:"TXST",homeScore:59,awayScore:7,line:29.5},
+    {week:1,home:"CIN",away:"BC",homeScore:34,awayScore:15,line:7.0},
+    {week:1,home:"DUKE",away:"TUL",homeScore:17,awayScore:3,line:9.0},
+    {week:1,home:"PSU",away:"MRSH",homeScore:45,awayScore:0,line:23.33},
+    {week:1,home:"ORE",away:"BSU",homeScore:34,awayScore:27,line:24.67},
+    {week:1,home:"TLSA",away:"OKST",homeScore:24,awayScore:10,line:-13.33},
+    {week:1,home:"IOWA",away:"NIU",homeScore:40,awayScore:0,line:31.67},
+    {week:1,home:"CSU",away:"WYO",homeScore:35,awayScore:13,line:2.67},
+    {week:1,home:"USF",away:"FIU",homeScore:19,awayScore:9,line:14.5},
+    {week:1,home:"TROY",away:"SHSU",homeScore:24,awayScore:21,line:16.17},
+    {week:1,home:"MEM",away:"ARST",homeScore:42,awayScore:24,line:10.5},
+    {week:1,home:"TAMU",away:"MOST",homeScore:50,awayScore:0,line:39.17},
+    {week:1,home:"LSU",away:"CLEM",homeScore:51,awayScore:10,line:10.0},
+    {week:1,home:"MICH",away:"WMU",homeScore:13,awayScore:12,line:27.5},
+    {week:1,home:"MSST",away:"ULM",homeScore:62,awayScore:13,line:28.5},
+    {week:1,home:"FLA",away:"FAU",homeScore:66,awayScore:21,line:26.17},
+    {week:1,home:"UNM",away:"CMU",homeScore:38,awayScore:7,line:11.0},
+    {week:1,home:"HAW",away:"UNLV",homeScore:6,awayScore:21,line:-2.83},
+    {week:1,home:"NEV",away:"WKU",homeScore:49,awayScore:14,line:-0.67},
+    {week:1,home:"CAL",away:"UCLA",homeScore:24,awayScore:45,line:-2.5},
+    {week:1,home:"WASH",away:"WSU",homeScore:24,awayScore:10,line:23.33},
+    {week:1,home:"ND",away:"WIS",homeScore:41,awayScore:13,line:20.83},
+    {week:1,home:"OLE",away:"LOU",homeScore:41,awayScore:38,line:6.5},
+    {week:1,home:"FSU",away:"SMU",homeScore:24,awayScore:27,line:-3.0},
+    {week:2,home:"BC",away:"RUTG",homeScore:28,awayScore:21,line:3.0},
+    {week:2,home:"KU",away:"MIZ",homeScore:21,awayScore:38,line:-4.0},
+    {week:2,home:"TAMU",away:"ASU",homeScore:48,awayScore:20,line:15.0},
+    {week:2,home:"ECU",away:"APP",homeScore:24,awayScore:27,line:6.5},
+    {week:2,home:"VT",away:"ODU",homeScore:44,awayScore:21,line:17.67},
+    {week:2,home:"PUR",away:"WAKE",homeScore:36,awayScore:38,line:-2.67},
+    {week:2,home:"ARMY",away:"USF",homeScore:24,awayScore:28,line:3.0},
+    {week:2,home:"KSU",away:"WSU",homeScore:34,awayScore:7,line:17.67},
+    {week:2,home:"TEM",away:"PSU",homeScore:9,awayScore:27,line:-24.33},
+    {week:2,home:"OKST",away:"ORE",homeScore:39,awayScore:31,line:-24.0},
+    {week:2,home:"MICH",away:"OU",homeScore:17,awayScore:10,line:-5.17},
+    {week:2,home:"UGA",away:"WKU",homeScore:70,awayScore:20,line:40.33},
+    {week:2,home:"TXST",away:"UTSA",homeScore:26,awayScore:31,line:1.83},
+    {week:2,home:"MINN",away:"MSST",homeScore:13,awayScore:38,line:0.33},
+    {week:2,home:"PITT",away:"UCF",homeScore:12,awayScore:7,line:7.17},
+    {week:2,home:"ILL",away:"DUKE",homeScore:27,awayScore:31,line:6.33},
+    {week:2,home:"ND",away:"RICE",homeScore:52,awayScore:0,line:44.67},
+    {week:2,home:"UK",away:"ALA",homeScore:17,awayScore:45,line:-8.67},
+    {week:2,home:"WASH",away:"USU",homeScore:16,awayScore:14,line:28.5},
+    {week:2,home:"CONN",away:"MD",homeScore:14,awayScore:38,line:-11.5},
+    {week:2,home:"MSU",away:"EMU",homeScore:35,awayScore:7,line:17.5},
+    {week:2,home:"UAB",away:"ULM",homeScore:26,awayScore:20,line:9.33},
+    {week:2,home:"SYR",away:"CAL",homeScore:18,awayScore:21,line:3.83},
+    {week:2,home:"BYU",away:"ARIZ",homeScore:28,awayScore:17,line:6.83},
+    {week:2,home:"UNT",away:"UNLV",homeScore:44,awayScore:6,line:-2.83},
+    {week:2,home:"VAN",away:"DEL",homeScore:35,awayScore:26,line:20.67},
+    {week:2,home:"OHIO",away:"JVST",homeScore:29,awayScore:27,line:1.67},
+    {week:2,home:"FIU",away:"BUFF",homeScore:33,awayScore:20,line:8.67},
+    {week:2,home:"BSU",away:"MEM",homeScore:38,awayScore:20,line:9.33},
+    {week:2,home:"KENN",away:"GAST",homeScore:17,awayScore:31,line:7.33},
+    {week:2,home:"NEB",away:"BGSU",homeScore:56,awayScore:7,line:30.5},
+    {week:2,home:"TUL",away:"USA",homeScore:28,awayScore:24,line:9.5},
+    {week:2,home:"SHSU",away:"TLSA",homeScore:17,awayScore:23,line:-12.17},
+    {week:2,home:"GT",away:"TENN",homeScore:24,awayScore:45,line:-12.5},
+    {week:2,home:"MRSH",away:"MTSU",homeScore:28,awayScore:26,line:12.33},
+    {week:2,home:"UCLA",away:"SDSU",homeScore:28,awayScore:10,line:13.5},
+    {week:2,home:"LSU",away:"LT",homeScore:45,awayScore:14,line:34.67},
+    {week:2,home:"ORST",away:"TTU",homeScore:24,awayScore:35,line:-25.5},
+    {week:2,home:"FAU",away:"NAVY",homeScore:38,awayScore:30,line:-4.33},
+    {week:2,home:"CLEM",away:"GASO",homeScore:22,awayScore:7,line:19.83},
+    {week:2,home:"TEX",away:"OSU",homeScore:24,awayScore:23,line:2.33},
+    {week:2,home:"IOWA",away:"ISU",homeScore:16,awayScore:13,line:14.0},
+    {week:2,home:"OLE",away:"CLT",homeScore:41,awayScore:9,line:44.5},
+    {week:2,home:"AUB",away:"USM",homeScore:43,awayScore:8,line:32.67},
+    {week:2,home:"AF",away:"NDSU",homeScore:32,awayScore:38,line:-1.67},
+    {week:2,home:"UTAH",away:"ARK",homeScore:43,awayScore:10,line:12.83},
+    {week:2,home:"FRES",away:"SACST",homeScore:49,awayScore:3,line:17.83},
+    {week:2,home:"USC",away:"LA",homeScore:49,awayScore:30,line:30.67},
+    {week:2,home:"HAW",away:"NMSU",homeScore:29,awayScore:19,line:7.5},
+    {week:3,home:"PITT",away:"SYR",homeScore:27,awayScore:13,line:10.67},
+    {week:3,home:"WAKE",away:"MIA",homeScore:20,awayScore:33,line:-20.33},
+    {week:3,home:"TTU",away:"HOU",homeScore:28,awayScore:26,line:7.83},
+    {week:3,home:"DEL",away:"CCU",homeScore:22,awayScore:14,line:4.83},
+    {week:3,home:"TXST",away:"UNT",homeScore:49,awayScore:35,line:3.0},
+    {week:3,home:"PSU",away:"BUFF",homeScore:55,awayScore:13,line:39.67},
+    {week:3,home:"OSU",away:"KENT",homeScore:59,awayScore:3,line:52.33},
+    {week:3,home:"ARK",away:"UGA",homeScore:17,awayScore:45,line:-24.5},
+    {week:3,home:"ISU",away:"BGSU",homeScore:55,awayScore:7,line:23.0},
+    {week:3,home:"CLEM",away:"UNC",homeScore:28,awayScore:20,line:3.0},
+    {week:3,home:"MINN",away:"AKR",homeScore:41,awayScore:7,line:22.5},
+    {week:3,home:"KSU",away:"TUL",homeScore:31,awayScore:20,line:20.5},
+    {week:3,home:"KU",away:"ASU",homeScore:17,awayScore:24,line:-5.33},
+    {week:3,home:"WIS",away:"EMU",homeScore:54,awayScore:10,line:23.5},
+    {week:3,home:"VAN",away:"NCST",homeScore:35,awayScore:31,line:3.0},
+    {week:3,home:"CMU",away:"WYO",homeScore:24,awayScore:10,line:-1.67},
+    {week:3,home:"TOL",away:"TEM",homeScore:49,awayScore:48,line:4.67},
+    {week:3,home:"RUTG",away:"USC",homeScore:35,awayScore:42,line:-21.0},
+    {week:3,home:"MICH",away:"UTEP",homeScore:52,awayScore:17,line:34.5},
+    {week:3,home:"TAMU",away:"UK",homeScore:21,awayScore:31,line:16.5},
+    {week:3,home:"ALA",away:"FSU",homeScore:50,awayScore:36,line:18.5},
+    {week:3,home:"LOU",away:"SMU",homeScore:41,awayScore:31,line:3.0},
+    {week:3,home:"CIN",away:"MIAOH",homeScore:35,awayScore:31,line:14.5},
+    {week:3,home:"UTAH",away:"USU",homeScore:33,awayScore:0,line:26.33},
+    {week:3,home:"LIB",away:"BALL",homeScore:51,awayScore:15,line:14.5},
+    {week:3,home:"BAY",away:"LT",homeScore:36,awayScore:19,line:20.0},
+    {week:3,home:"DUKE",away:"STAN",homeScore:35,awayScore:7,line:9.67},
+    {week:3,home:"IND",away:"WKU",homeScore:38,awayScore:0,line:44.67},
+    {week:3,home:"SC",away:"MSST",homeScore:34,awayScore:41,line:3.0},
+    {week:3,home:"FAU",away:"FIU",homeScore:16,awayScore:10,line:5.0},
+    {week:3,home:"ODU",away:"ECU",homeScore:17,awayScore:20,line:2.5},
+    {week:3,home:"APP",away:"CLT",homeScore:26,awayScore:21,line:16.0},
+    {week:3,home:"MOST",away:"MRSH",homeScore:24,awayScore:30,line:-4.0},
+    {week:3,home:"RICE",away:"WMU",homeScore:21,awayScore:28,line:-8.5},
+    {week:3,home:"USA",away:"OHIO",homeScore:41,awayScore:36,line:7.0},
+    {week:3,home:"JVST",away:"GASO",homeScore:31,awayScore:27,line:3.5},
+    {week:3,home:"MIZ",away:"TROY",homeScore:27,awayScore:17,line:27.0},
+    {week:3,home:"MTSU",away:"NEV",homeScore:27,awayScore:20,line:-3.67},
+    {week:3,home:"UCF",away:"GAST",homeScore:44,awayScore:30,line:17.5},
+    {week:3,home:"AUB",away:"FLA",homeScore:39,awayScore:44,line:-2.5},
+    {week:3,home:"USM",away:"CONN",homeScore:20,awayScore:48,line:-3.5},
+    {week:3,home:"ND",away:"MSU",homeScore:27,awayScore:10,line:28.67},
+    {week:3,home:"OLE",away:"LSU",homeScore:32,awayScore:24,line:-2.83},
+    {week:3,home:"UVA",away:"WVU",homeScore:27,awayScore:38,line:10.67},
+    {week:3,home:"MD",away:"VT",homeScore:26,awayScore:35,line:-2.5},
+    {week:3,home:"CSU",away:"BYU",homeScore:23,awayScore:41,line:-17.5},
+    {week:3,home:"OU",away:"UNM",homeScore:14,awayScore:6,line:21.33},
+    {week:3,home:"NW",away:"COL",homeScore:41,awayScore:7,line:3.5},
+    {week:3,home:"TENN",away:"KENN",homeScore:42,awayScore:9,line:35.5},
+    {week:3,home:"LA",away:"UAB",homeScore:21,awayScore:14,line:7.0},
+    {week:3,home:"TEX",away:"UTSA",homeScore:30,awayScore:6,line:29.67},
+    {week:3,home:"TCU",away:"ARST",homeScore:31,awayScore:7,line:18.83},
+    {week:3,home:"SDSU",away:"JMU",homeScore:13,awayScore:26,line:2.83},
+    {week:3,home:"ARIZ",away:"NIU",homeScore:42,awayScore:17,line:34.5},
+    {week:3,home:"SACST",away:"NDSU",homeScore:10,awayScore:31,line:-25.83},
+    {week:3,home:"SJSU",away:"FRES",homeScore:10,awayScore:26,line:-4.17},
+    {week:3,home:"UCLA",away:"PUR",homeScore:52,awayScore:38,line:13.67},
+  ];
+
+  // Games already scheduled with a real posted spread, not yet played.
+  // Full remaining 2026 schedule - real matchups every week, real posted
+  // spread where a sportsbook has one out yet, null otherwise (falls back
+  // to the SP+-based estimate for that one game until a line is posted).
+  var REAL_SCHEDULE_2026 = [
+    {week:4,home:"CCU",away:"LIB",line:-2.5},
+    {week:4,home:"TEM",away:"ARMY",line:-3.0},
+    {week:4,home:"UAB",away:"NAVY",line:-7.0},
+    {week:4,home:"IND",away:"NW",line:20.75},
+    {week:4,home:"CAL",away:"CLEM",line:0.25},
+    {week:4,home:"KENT",away:"BALL",line:3.25},
+    {week:4,home:"UTSA",away:"CSU",line:13.5},
+    {week:4,home:"OSU",away:"ILL",line:27.25},
+    {week:4,home:"TOL",away:"SDSU",line:3.0},
+    {week:4,home:"BC",away:"VT",line:-14.0},
+    {week:4,home:"BAY",away:"COL",line:10.0},
+    {week:4,home:"AKR",away:"UNLV",line:-13.5},
+    {week:4,home:"TTU",away:"SHSU",line:34.75},
+    {week:4,home:"TENN",away:"TEX",line:-5.5},
+    {week:4,home:"LOU",away:"WAKE",line:12.5},
+    {week:4,home:"UK",away:"USA",line:20.5},
+    {week:4,home:"MD",away:"UCLA",line:-1.5},
+    {week:4,home:"GAST",away:"NIU",line:10.0},
+    {week:4,home:"PUR",away:"ND",line:-27.75},
+    {week:4,home:"WYO",away:"HAW",line:-3.0},
+    {week:4,home:"MIAOH",away:"CONN",line:3.5},
+    {week:4,home:"ISU",away:"UTAH",line:-7.75},
+    {week:4,home:"UCF",away:"TCU",line:-3.0},
+    {week:4,home:"FLA",away:"OLE",line:3.0},
+    {week:4,home:"UGA",away:"OU",line:14.0},
+    {week:4,home:"NMSU",away:"UNM",line:-11.25},
+    {week:4,home:"WMU",away:"BSU",line:-7.0},
+    {week:4,home:"MICH",away:"IOWA",line:5.5},
+    {week:4,home:"GASO",away:"HOU",line:-18.75},
+    {week:4,home:"AUB",away:"VAN",line:9.5},
+    {week:4,home:"PSU",away:"WIS",line:10.0},
+    {week:4,home:"BGSU",away:"USF",line:-17.5},
+    {week:4,home:"MSU",away:"NEB",line:-5.5},
+    {week:4,home:"ODU",away:"JMU",line:-6.0},
+    {week:4,home:"UVA",away:"DEL",line:19.5},
+    {week:4,home:"CLT",away:"LA",line:-10.0},
+    {week:4,home:"MIA",away:"CMU",line:41.25},
+    {week:4,home:"TUL",away:"USM",line:18.5},
+    {week:4,home:"CIN",away:"KSU",line:-6.25},
+    {week:4,home:"WVU",away:"OKST",line:1.75},
+    {week:4,home:"ARST",away:"KENN",line:6.0},
+    {week:4,home:"ALA",away:"SC",line:12.5},
+    {week:4,home:"JVST",away:"MTSU",line:7.0},
+    {week:4,home:"NCST",away:"APP",line:14.0},
+    {week:4,home:"USU",away:"TROY",line:3.0},
+    {week:4,home:"USC",away:"ORE",line:-3.0},
+    {week:4,home:"WSU",away:"ARIZ",line:-10.0},
+    {week:4,home:"LSU",away:"TAMU",line:8.5},
+    {week:4,home:"MSST",away:"MIZ",line:6.5},
+    {week:4,home:"ULM",away:"FAU",line:-13.5},
+    {week:4,home:"ARK",away:"TLSA",line:7.0},
+    {week:4,home:"SMU",away:"MOST",line:34.75},
+    {week:4,home:"SACST",away:"UMASS",line:-4.5},
+    {week:4,home:"UTEP",away:"ORST",line:-10.5},
+    {week:4,home:"FRES",away:"RICE",line:13.5},
+    {week:4,home:"NEV",away:"AF",line:-5.5},
+    {week:4,home:"STAN",away:"GT",line:-3.5},
+    {week:4,home:"WASH",away:"MINN",line:10.0},
+    {week:5,home:"NMSU",away:"WKU",line:null},
+    {week:5,home:"TLSA",away:"UNT",line:null},
+    {week:5,home:"DEL",away:"LIB",line:null},
+    {week:5,home:"VT",away:"PITT",line:null},
+    {week:5,home:"NW",away:"PSU",line:null},
+    {week:5,home:"MSST",away:"ALA",line:null},
+    {week:5,home:"UNC",away:"ND",line:-23.5},
+    {week:5,home:"UGA",away:"VAN",line:null},
+    {week:5,home:"COL",away:"TTU",line:null},
+    {week:5,home:"CLEM",away:"MIA",line:-7.0},
+    {week:5,home:"SMU",away:"BC",line:null},
+    {week:5,home:"HOU",away:"UCF",line:null},
+    {week:5,home:"KU",away:"MTSU",line:null},
+    {week:5,home:"WAKE",away:"STAN",line:null},
+    {week:5,home:"CONN",away:"SYR",line:null},
+    {week:5,home:"AF",away:"NAVY",line:null},
+    {week:5,home:"ISU",away:"WVU",line:null},
+    {week:5,home:"MINN",away:"MICH",line:null},
+    {week:5,home:"WIS",away:"MSU",line:null},
+    {week:5,home:"BUFF",away:"WMU",line:null},
+    {week:5,home:"BALL",away:"TOL",line:null},
+    {week:5,home:"MIAOH",away:"BGSU",line:null},
+    {week:5,home:"CLT",away:"MEM",line:null},
+    {week:5,home:"MIZ",away:"FLA",line:null},
+    {week:5,home:"UMASS",away:"EMU",line:null},
+    {week:5,home:"CMU",away:"AKR",line:null},
+    {week:5,home:"TENN",away:"AUB",line:null},
+    {week:5,home:"FSU",away:"UVA",line:null},
+    {week:5,home:"IOWA",away:"OSU",line:null},
+    {week:5,home:"KENT",away:"OHIO",line:null},
+    {week:5,home:"NCST",away:"LOU",line:null},
+    {week:5,home:"GAST",away:"ODU",line:null},
+    {week:5,home:"UNLV",away:"CAL",line:null},
+    {week:5,home:"NDSU",away:"WYO",line:null},
+    {week:5,home:"JMU",away:"MRSH",line:null},
+    {week:5,home:"NEB",away:"MD",line:null},
+    {week:5,home:"UNM",away:"UTEP",line:null},
+    {week:5,home:"ILL",away:"PUR",line:null},
+    {week:5,home:"SC",away:"UK",line:null},
+    {week:5,home:"CSU",away:"ORST",line:null},
+    {week:5,home:"RICE",away:"UTSA",line:null},
+    {week:5,home:"TAMU",away:"ARK",line:null},
+    {week:5,home:"TCU",away:"BYU",line:null},
+    {week:5,home:"USA",away:"ULM",line:null},
+    {week:5,home:"CCU",away:"GASO",line:null},
+    {week:5,home:"USF",away:"TEM",line:null},
+    {week:5,home:"USC",away:"WASH",line:null},
+    {week:5,home:"LT",away:"ARMY",line:null},
+    {week:5,home:"BSU",away:"USU",line:null},
+    {week:5,home:"LA",away:"ARST",line:null},
+    {week:5,home:"RUTG",away:"IND",line:null},
+    {week:5,home:"WSU",away:"FRES",line:null},
+    {week:5,home:"ASU",away:"BAY",line:null},
+    {week:5,home:"SDSU",away:"TXST",line:null},
+    {week:5,home:"ARIZ",away:"CIN",line:null},
+    {week:5,home:"HAW",away:"SJSU",line:null},
+    {week:6,home:"TROY",away:"USM",line:null},
+    {week:6,home:"KENN",away:"JVST",line:null},
+    {week:6,home:"FIU",away:"NMSU",line:null},
+    {week:6,home:"WKU",away:"MOST",line:null},
+    {week:6,home:"LIB",away:"SHSU",line:null},
+    {week:6,home:"ARST",away:"USA",line:null},
+    {week:6,home:"UTSA",away:"USF",line:null},
+    {week:6,home:"LOU",away:"FSU",line:null},
+    {week:6,home:"SJSU",away:"WYO",line:null},
+    {week:6,home:"USU",away:"WSU",line:null},
+    {week:6,home:"WASH",away:"IOWA",line:null},
+    {week:6,home:"BYU",away:"ISU",line:null},
+    {week:6,home:"NCST",away:"WAKE",line:null},
+    {week:6,home:"APP",away:"ODU",line:null},
+    {week:6,home:"WMU",away:"KENT",line:null},
+    {week:6,home:"MEM",away:"UAB",line:null},
+    {week:6,home:"ECU",away:"RICE",line:null},
+    {week:6,home:"PUR",away:"MINN",line:null},
+    {week:6,home:"ORE",away:"UCLA",line:null},
+    {week:6,home:"ALA",away:"UGA",line:-3.0},
+    {week:6,home:"ARK",away:"TENN",line:null},
+    {week:6,home:"FLA",away:"SC",line:null},
+    {week:6,home:"UK",away:"LSU",line:null},
+    {week:6,home:"MIZ",away:"TAMU",line:null},
+    {week:6,home:"VAN",away:"OLE",line:null},
+    {week:6,home:"OKST",away:"UCF",line:null},
+    {week:6,home:"UTAH",away:"KU",line:null},
+    {week:6,home:"PITT",away:"UNC",line:null},
+    {week:6,home:"OSU",away:"MD",line:null},
+    {week:6,home:"NEB",away:"IND",line:null},
+    {week:6,home:"LT",away:"LA",line:null},
+    {week:6,home:"OHIO",away:"CMU",line:null},
+    {week:6,home:"WVU",away:"ARIZ",line:null},
+    {week:6,home:"GT",away:"DUKE",line:null},
+    {week:6,home:"MRSH",away:"CCU",line:null},
+    {week:6,home:"UNT",away:"CLT",line:null},
+    {week:6,home:"BGSU",away:"SACST",line:null},
+    {week:6,home:"UTEP",away:"NEV",line:null},
+    {week:6,home:"PSU",away:"USC",line:1.5},
+    {week:6,home:"UMASS",away:"MIAOH",line:null},
+    {week:6,home:"KSU",away:"HOU",line:null},
+    {week:6,home:"NW",away:"BALL",line:null},
+    {week:6,home:"MSU",away:"ILL",line:null},
+    {week:6,home:"GASO",away:"JMU",line:null},
+    {week:6,home:"TOL",away:"BUFF",line:null},
+    {week:6,home:"TEM",away:"CONN",line:null},
+    {week:6,home:"CAL",away:"VT",line:null},
+    {week:6,home:"UVA",away:"SYR",line:null},
+    {week:6,home:"ASU",away:"HAW",line:null},
+    {week:6,home:"ARMY",away:"TUL",line:null},
+    {week:6,home:"AKR",away:"EMU",line:null},
+    {week:6,home:"OU",away:"TEX",line:-6.0},
+    {week:6,home:"ND",away:"STAN",line:null},
+    {week:6,home:"NAVY",away:"TLSA",line:null},
+    {week:6,home:"ORST",away:"SDSU",line:null},
+    {week:6,home:"UNLV",away:"NDSU",line:null},
+    {week:6,home:"NIU",away:"AF",line:null},
+    {week:6,home:"FRES",away:"BSU",line:null},
+    {week:7,home:"MTSU",away:"DEL",line:null},
+    {week:7,home:"JVST",away:"FIU",line:null},
+    {week:7,home:"MOST",away:"KENN",line:null},
+    {week:7,home:"SHSU",away:"WKU",line:null},
+    {week:7,home:"UAB",away:"ECU",line:null},
+    {week:7,home:"ODU",away:"GASO",line:null},
+    {week:7,home:"TXST",away:"CSU",line:null},
+    {week:7,home:"TUL",away:"MEM",line:null},
+    {week:7,home:"PUR",away:"WASH",line:null},
+    {week:7,home:"CCU",away:"APP",line:null},
+    {week:7,home:"BUFF",away:"UMASS",line:null},
+    {week:7,home:"CMU",away:"WMU",line:null},
+    {week:7,home:"HAW",away:"UNM",line:null},
+    {week:7,home:"BGSU",away:"BALL",line:null},
+    {week:7,home:"MIAOH",away:"AKR",line:null},
+    {week:7,home:"EMU",away:"TOL",line:null},
+    {week:7,home:"MD",away:"RUTG",line:null},
+    {week:7,home:"LA",away:"TROY",line:null},
+    {week:7,home:"VAN",away:"ARK",line:null},
+    {week:7,home:"TTU",away:"ASU",line:null},
+    {week:7,home:"CAL",away:"WAKE",line:null},
+    {week:7,home:"LSU",away:"MSST",line:null},
+    {week:7,home:"USM",away:"ARST",line:null},
+    {week:7,home:"BYU",away:"ND",line:-10.0},
+    {week:7,home:"WVU",away:"CIN",line:null},
+    {week:7,home:"TEX",away:"FLA",line:null},
+    {week:7,home:"OU",away:"UK",line:null},
+    {week:7,home:"TENN",away:"ALA",line:-1.5},
+    {week:7,home:"UGA",away:"AUB",line:16.5},
+    {week:7,home:"COL",away:"UTAH",line:null},
+    {week:7,home:"ORE",away:"NEB",line:21.5},
+    {week:7,home:"UCLA",away:"WIS",line:null},
+    {week:7,home:"MIA",away:"FSU",line:16.5},
+    {week:7,home:"VT",away:"GT",line:null},
+    {week:7,home:"BC",away:"PITT",line:null},
+    {week:7,home:"SMU",away:"UVA",line:null},
+    {week:7,home:"IND",away:"OSU",line:1.5},
+    {week:7,home:"MICH",away:"PSU",line:6.5},
+    {week:7,home:"OLE",away:"MIZ",line:null},
+    {week:7,home:"KSU",away:"KU",line:7.5},
+    {week:7,home:"HOU",away:"OKST",line:null},
+    {week:7,home:"RICE",away:"TLSA",line:null},
+    {week:7,home:"USF",away:"KENT",line:null},
+    {week:7,home:"TEM",away:"CLT",line:null},
+    {week:7,home:"JMU",away:"GAST",line:null},
+    {week:7,home:"UTSA",away:"NAVY",line:null},
+    {week:7,home:"BAY",away:"TCU",line:null},
+    {week:7,home:"SYR",away:"LOU",line:null},
+    {week:7,home:"DUKE",away:"UNC",line:4.5},
+    {week:7,home:"ULM",away:"LT",line:null},
+    {week:7,home:"MSU",away:"NW",line:null},
+    {week:7,home:"SACST",away:"OHIO",line:null},
+    {week:7,home:"ARMY",away:"FAU",line:null},
+    {week:7,home:"WYO",away:"NIU",line:null},
+    {week:7,home:"AF",away:"UNLV",line:null},
+    {week:7,home:"ORST",away:"WSU",line:null},
+    {week:7,home:"NDSU",away:"NEV",line:null},
+    {week:7,home:"UTEP",away:"SJSU",line:null},
+    {week:7,home:"SDSU",away:"FRES",line:null},
+    {week:8,home:"DEL",away:"MOST",line:null},
+    {week:8,home:"FIU",away:"MTSU",line:null},
+    {week:8,home:"MRSH",away:"USA",line:null},
+    {week:8,home:"SHSU",away:"NMSU",line:null},
+    {week:8,home:"KENN",away:"LIB",line:null},
+    {week:8,home:"APP",away:"JMU",line:null},
+    {week:8,home:"MEM",away:"ECU",line:null},
+    {week:8,home:"UVA",away:"DUKE",line:6.5},
+    {week:8,home:"CONN",away:"UMASS",line:null},
+    {week:8,home:"TLSA",away:"ARMY",line:null},
+    {week:8,home:"WYO",away:"AF",line:null},
+    {week:8,home:"STAN",away:"NCST",line:null},
+    {week:8,home:"MSST",away:"OU",line:null},
+    {week:8,home:"OKST",away:"COL",line:null},
+    {week:8,home:"SC",away:"TENN",line:null},
+    {week:8,home:"LT",away:"ODU",line:null},
+    {week:8,home:"ALA",away:"TAMU",line:2.5},
+    {week:8,home:"UK",away:"VAN",line:null},
+    {week:8,home:"CLEM",away:"VT",line:null},
+    {week:8,home:"TOL",away:"WMU",line:null},
+    {week:8,home:"UNC",away:"SYR",line:null},
+    {week:8,home:"TUL",away:"UTSA",line:null},
+    {week:8,home:"SMU",away:"CAL",line:null},
+    {week:8,home:"UCLA",away:"MSU",line:null},
+    {week:8,home:"ILL",away:"ORE",line:null},
+    {week:8,home:"NIU",away:"HAW",line:null},
+    {week:8,home:"BALL",away:"SACST",line:null},
+    {week:8,home:"KENT",away:"AKR",line:null},
+    {week:8,home:"BUFF",away:"BGSU",line:null},
+    {week:8,home:"TEX",away:"OLE",line:8.5},
+    {week:8,home:"KU",away:"BAY",line:null},
+    {week:8,home:"UCF",away:"BYU",line:null},
+    {week:8,home:"UTAH",away:"HOU",line:6.5},
+    {week:8,home:"ARIZ",away:"ISU",line:null},
+    {week:8,home:"ASU",away:"KSU",line:null},
+    {week:8,home:"CMU",away:"MIAOH",line:null},
+    {week:8,home:"CIN",away:"TTU",line:null},
+    {week:8,home:"TCU",away:"WVU",line:null},
+    {week:8,home:"GT",away:"BC",line:null},
+    {week:8,home:"MIA",away:"PITT",line:null},
+    {week:8,home:"TROY",away:"ULM",line:null},
+    {week:8,home:"USM",away:"LA",line:null},
+    {week:8,home:"OHIO",away:"EMU",line:null},
+    {week:8,home:"FAU",away:"RICE",line:null},
+    {week:8,home:"WIS",away:"USC",line:null},
+    {week:8,home:"NW",away:"RUTG",line:null},
+    {week:8,home:"MINN",away:"IOWA",line:null},
+    {week:8,home:"MICH",away:"IND",line:-6.0},
+    {week:8,home:"AUB",away:"LSU",line:null},
+    {week:8,home:"NAVY",away:"UNT",line:null},
+    {week:8,home:"NEV",away:"SJSU",line:null},
+    {week:8,home:"WSU",away:"BSU",line:null},
+    {week:8,home:"CSU",away:"SDSU",line:null},
+    {week:8,home:"ARST",away:"GAST",line:null},
+    {week:8,home:"TXST",away:"USU",line:null},
+    {week:8,home:"UNM",away:"NDSU",line:null},
+    {week:9,home:"WKU",away:"DEL",line:null},
+    {week:9,home:"MOST",away:"SHSU",line:null},
+    {week:9,home:"MTSU",away:"KENN",line:null},
+    {week:9,home:"NMSU",away:"JVST",line:null},
+    {week:9,home:"UNT",away:"FAU",line:null},
+    {week:9,home:"JMU",away:"TROY",line:null},
+    {week:9,home:"CLT",away:"TUL",line:null},
+    {week:9,home:"UCF",away:"BAY",line:null},
+    {week:9,home:"SACST",away:"KENT",line:null},
+    {week:9,home:"FSU",away:"CLEM",line:-1.5},
+    {week:9,home:"ISU",away:"OKST",line:null},
+    {week:9,home:"GASO",away:"APP",line:null},
+    {week:9,home:"UCLA",away:"NEV",line:null},
+    {week:9,home:"WAKE",away:"UVA",line:null},
+    {week:9,home:"TCU",away:"KU",line:null},
+    {week:9,home:"PSU",away:"PUR",line:null},
+    {week:9,home:"SJSU",away:"UNM",line:null},
+    {week:9,home:"MD",away:"ILL",line:null},
+    {week:9,home:"BYU",away:"ASU",line:null},
+    {week:9,home:"PITT",away:"GT",line:null},
+    {week:9,home:"ORE",away:"NW",line:null},
+    {week:9,home:"USC",away:"OSU",line:-7.5},
+    {week:9,home:"FRES",away:"ORST",line:null},
+    {week:9,home:"MEM",away:"ARMY",line:null},
+    {week:9,home:"NCST",away:"CAL",line:null},
+    {week:9,home:"USA",away:"LT",line:null},
+    {week:9,home:"SYR",away:"SMU",line:null},
+    {week:9,home:"CIN",away:"UTAH",line:null},
+    {week:9,home:"COL",away:"KSU",line:null},
+    {week:9,home:"TTU",away:"ARIZ",line:null},
+    {week:9,home:"OU",away:"SC",line:null},
+    {week:9,home:"OLE",away:"AUB",line:null},
+    {week:9,home:"ARK",away:"MIZ",line:null},
+    {week:9,home:"DUKE",away:"BC",line:null},
+    {week:9,home:"UNC",away:"MIA",line:null},
+    {week:9,home:"IND",away:"MINN",line:null},
+    {week:9,home:"IOWA",away:"WIS",line:null},
+    {week:9,home:"NEB",away:"WASH",line:null},
+    {week:9,home:"GAST",away:"CCU",line:null},
+    {week:9,home:"ODU",away:"MRSH",line:null},
+    {week:9,home:"RUTG",away:"MICH",line:null},
+    {week:9,home:"LOU",away:"STAN",line:null},
+    {week:9,home:"USF",away:"UAB",line:null},
+    {week:9,home:"TEX",away:"MSST",line:null},
+    {week:9,home:"ECU",away:"TEM",line:null},
+    {week:9,home:"ULM",away:"USM",line:null},
+    {week:9,home:"WMU",away:"BGSU",line:null},
+    {week:9,home:"NAVY",away:"ND",line:null},
+    {week:9,home:"AF",away:"CONN",line:null},
+    {week:9,home:"UGA",away:"FLA",line:12.5},
+    {week:9,home:"LIB",away:"FIU",line:null},
+    {week:9,home:"USU",away:"CSU",line:null},
+    {week:9,home:"NDSU",away:"UTEP",line:null},
+    {week:9,home:"SDSU",away:"WSU",line:null},
+    {week:9,home:"BSU",away:"TXST",line:null},
+    {week:9,home:"UNLV",away:"NIU",line:null},
+    {week:10,home:"MIAOH",away:"BUFF",line:null},
+    {week:10,home:"AKR",away:"OHIO",line:null},
+    {week:10,home:"UMASS",away:"BALL",line:null},
+    {week:10,home:"SACST",away:"TOL",line:null},
+    {week:10,home:"EMU",away:"CMU",line:null},
+    {week:10,home:"FAU",away:"UTSA",line:null},
+    {week:10,home:"USM",away:"JMU",line:null},
+    {week:10,home:"SMU",away:"VT",line:null},
+    {week:10,home:"ECU",away:"USF",line:null},
+    {week:10,home:"ILL",away:"NEB",line:null},
+    {week:10,home:"NEV",away:"UNM",line:null},
+    {week:10,home:"ARIZ",away:"TCU",line:null},
+    {week:10,home:"NW",away:"IOWA",line:null},
+    {week:10,home:"UTEP",away:"HAW",line:null},
+    {week:10,home:"FLA",away:"OU",line:null},
+    {week:10,home:"OLE",away:"UGA",line:-4.5},
+    {week:10,home:"NCST",away:"DUKE",line:null},
+    {week:10,home:"TTU",away:"WVU",line:null},
+    {week:10,home:"SYR",away:"CLEM",line:null},
+    {week:10,home:"GT",away:"LOU",line:null},
+    {week:10,home:"UNT",away:"RICE",line:null},
+    {week:10,home:"SJSU",away:"NIU",line:null},
+    {week:10,home:"MSST",away:"VAN",line:null},
+    {week:10,home:"PUR",away:"MD",line:null},
+    {week:10,home:"TENN",away:"UK",line:null},
+    {week:10,home:"BC",away:"FSU",line:null},
+    {week:10,home:"OSU",away:"ORE",line:6.0},
+    {week:10,home:"UAB",away:"CLT",line:null},
+    {week:10,home:"APP",away:"GAST",line:null},
+    {week:10,home:"TROY",away:"LT",line:null},
+    {week:10,home:"WIS",away:"RUTG",line:null},
+    {week:10,home:"KU",away:"UCF",line:null},
+    {week:10,home:"UTAH",away:"BYU",line:3.0},
+    {week:10,home:"HOU",away:"CIN",line:null},
+    {week:10,home:"SC",away:"TAMU",line:null},
+    {week:10,home:"MIZ",away:"TEX",line:null},
+    {week:10,home:"LSU",away:"ALA",line:3.5},
+    {week:10,home:"AUB",away:"ARK",line:null},
+    {week:10,home:"WASH",away:"PSU",line:null},
+    {week:10,home:"BAY",away:"ISU",line:null},
+    {week:10,home:"KSU",away:"OKST",line:null},
+    {week:10,home:"ASU",away:"COL",line:null},
+    {week:10,home:"GASO",away:"MRSH",line:null},
+    {week:10,home:"MINN",away:"UCLA",line:null},
+    {week:10,home:"CCU",away:"ODU",line:null},
+    {week:10,home:"MICH",away:"MSU",line:16.5},
+    {week:10,home:"TUL",away:"TLSA",line:null},
+    {week:10,home:"LA",away:"USA",line:null},
+    {week:10,home:"CONN",away:"UNC",line:null},
+    {week:10,home:"ARST",away:"ULM",line:null},
+    {week:10,home:"KENN",away:"DEL",line:null},
+    {week:10,home:"NAVY",away:"TEM",line:null},
+    {week:10,home:"MTSU",away:"WKU",line:null},
+    {week:10,home:"FIU",away:"MOST",line:null},
+    {week:10,home:"NMSU",away:"LIB",line:null},
+    {week:10,home:"CSU",away:"BSU",line:null},
+    {week:10,home:"JVST",away:"SHSU",line:null},
+    {week:10,home:"ND",away:"MIA",line:6.5},
+    {week:10,home:"ARMY",away:"AF",line:null},
+    {week:10,home:"USU",away:"FRES",line:null},
+    {week:10,home:"UNLV",away:"WYO",line:null},
+    {week:10,home:"ORST",away:"TXST",line:null},
+    {week:11,home:"BGSU",away:"KENT",line:null},
+    {week:11,home:"MIAOH",away:"OHIO",line:null},
+    {week:11,home:"AKR",away:"WMU",line:null},
+    {week:11,home:"CMU",away:"SACST",line:null},
+    {week:11,home:"BALL",away:"BUFF",line:null},
+    {week:11,home:"TOL",away:"UMASS",line:null},
+    {week:11,home:"USF",away:"MEM",line:null},
+    {week:11,home:"ULM",away:"LA",line:null},
+    {week:11,home:"PITT",away:"FSU",line:null},
+    {week:11,home:"UCLA",away:"ILL",line:null},
+    {week:11,home:"COL",away:"HOU",line:null},
+    {week:11,home:"VAN",away:"ALA",line:null},
+    {week:11,home:"IOWA",away:"PUR",line:null},
+    {week:11,home:"PSU",away:"MINN",line:null},
+    {week:11,home:"LSU",away:"TEX",line:-2.5},
+    {week:11,home:"ORE",away:"MICH",line:13.5},
+    {week:11,home:"MSU",away:"WASH",line:null},
+    {week:11,home:"VT",away:"STAN",line:null},
+    {week:11,home:"CCU",away:"ARST",line:null},
+    {week:11,home:"UTEP",away:"WYO",line:null},
+    {week:11,home:"MRSH",away:"APP",line:null},
+    {week:11,home:"BYU",away:"BAY",line:null},
+    {week:11,home:"UCF",away:"ASU",line:null},
+    {week:11,home:"RUTG",away:"NEB",line:null},
+    {week:11,home:"ARK",away:"SC",line:null},
+    {week:11,home:"IND",away:"USC",line:10.0},
+    {week:11,home:"TEM",away:"UAB",line:null},
+    {week:11,home:"TAMU",away:"TENN",line:8.5},
+    {week:11,home:"OU",away:"OLE",line:4.0},
+    {week:11,home:"MSST",away:"AUB",line:null},
+    {week:11,home:"UK",away:"FLA",line:null},
+    {week:11,home:"UGA",away:"MIZ",line:null},
+    {week:11,home:"ARIZ",away:"UTAH",line:null},
+    {week:11,home:"OKST",away:"TTU",line:-15.5},
+    {week:11,home:"TCU",away:"KSU",line:null},
+    {week:11,home:"WVU",away:"KU",line:null},
+    {week:11,home:"NIU",away:"NEV",line:null},
+    {week:11,home:"GAST",away:"GASO",line:null},
+    {week:11,home:"USA",away:"TROY",line:null},
+    {week:11,home:"UVA",away:"CAL",line:null},
+    {week:11,home:"LT",away:"USM",line:null},
+    {week:11,home:"ISU",away:"CIN",line:null},
+    {week:11,home:"UNC",away:"LOU",line:null},
+    {week:11,home:"UTSA",away:"UNT",line:null},
+    {week:11,home:"CLEM",away:"GT",line:null},
+    {week:11,home:"RICE",away:"TUL",line:null},
+    {week:11,home:"NCST",away:"SYR",line:null},
+    {week:11,home:"SMU",away:"WAKE",line:null},
+    {week:11,home:"MD",away:"WIS",line:null},
+    {week:11,home:"OSU",away:"NW",line:null},
+    {week:11,home:"CLT",away:"ECU",line:null},
+    {week:11,home:"TLSA",away:"FAU",line:null},
+    {week:11,home:"MIA",away:"DUKE",line:21.0},
+    {week:11,home:"CONN",away:"JMU",line:null},
+    {week:11,home:"SHSU",away:"KENN",line:null},
+    {week:11,home:"DEL",away:"FIU",line:null},
+    {week:11,home:"MOST",away:"NMSU",line:null},
+    {week:11,home:"LIB",away:"MTSU",line:null},
+    {week:11,home:"ND",away:"BC",line:null},
+    {week:11,home:"WKU",away:"JVST",line:null},
+    {week:11,home:"TXST",away:"FRES",line:null},
+    {week:11,home:"BSU",away:"ORST",line:null},
+    {week:11,home:"AF",away:"SJSU",line:null},
+    {week:11,home:"UNM",away:"UNLV",line:null},
+    {week:11,home:"SDSU",away:"USU",line:null},
+    {week:11,home:"WSU",away:"CSU",line:null},
+    {week:11,home:"HAW",away:"NDSU",line:null},
+    {week:12,home:"KENT",away:"MIAOH",line:null},
+    {week:12,home:"OHIO",away:"BALL",line:null},
+    {week:12,home:"WMU",away:"EMU",line:null},
+    {week:12,home:"UMASS",away:"AKR",line:null},
+    {week:12,home:"BUFF",away:"CMU",line:null},
+    {week:12,home:"TEM",away:"RICE",line:null},
+    {week:12,home:"UCF",away:"ISU",line:null},
+    {week:12,home:"TOL",away:"BGSU",line:null},
+    {week:12,home:"DUKE",away:"CLEM",line:null},
+    {week:12,home:"MSU",away:"ORE",line:null},
+    {week:12,home:"AF",away:"UTEP",line:null},
+    {week:12,home:"KSU",away:"ARIZ",line:null},
+    {week:12,home:"ILL",away:"IOWA",line:null},
+    {week:12,home:"TENN",away:"LSU",line:-1.5},
+    {week:12,home:"LA",away:"CCU",line:null},
+    {week:12,home:"SC",away:"UGA",line:null},
+    {week:12,home:"OU",away:"TAMU",line:2.5},
+    {week:12,home:"PUR",away:"WIS",line:null},
+    {week:12,home:"BAY",away:"TTU",line:null},
+    {week:12,home:"ASU",away:"OKST",line:null},
+    {week:12,home:"FAU",away:"USF",line:null},
+    {week:12,home:"WVU",away:"HOU",line:null},
+    {week:12,home:"LOU",away:"PITT",line:null},
+    {week:12,home:"BC",away:"SYR",line:null},
+    {week:12,home:"KU",away:"BYU",line:null},
+    {week:12,home:"FSU",away:"NCST",line:null},
+    {week:12,home:"PSU",away:"RUTG",line:null},
+    {week:12,home:"USC",away:"MD",line:null},
+    {week:12,home:"WASH",away:"IND",line:null},
+    {week:12,home:"TLSA",away:"CLT",line:null},
+    {week:12,home:"TUL",away:"UNT",line:null},
+    {week:12,home:"UAB",away:"UTSA",line:null},
+    {week:12,home:"NEV",away:"HAW",line:null},
+    {week:12,home:"MRSH",away:"GAST",line:null},
+    {week:12,home:"USM",away:"USA",line:null},
+    {week:12,home:"UVA",away:"UNC",line:null},
+    {week:12,home:"TROY",away:"GASO",line:null},
+    {week:12,home:"TCU",away:"UTAH",line:null},
+    {week:12,home:"CAL",away:"STAN",line:null},
+    {week:12,home:"MICH",away:"UCLA",line:null},
+    {week:12,home:"MIZ",away:"UK",line:null},
+    {week:12,home:"FLA",away:"VAN",line:null},
+    {week:12,home:"GT",away:"WAKE",line:null},
+    {week:12,home:"APP",away:"ULM",line:null},
+    {week:12,home:"MINN",away:"NW",line:null},
+    {week:12,home:"TEX",away:"ARK",line:null},
+    {week:12,home:"MIA",away:"VT",line:16.5},
+    {week:12,home:"LT",away:"ARST",line:null},
+    {week:12,home:"CIN",away:"COL",line:null},
+    {week:12,home:"NEB",away:"OSU",line:null},
+    {week:12,home:"ARMY",away:"ECU",line:null},
+    {week:12,home:"NAVY",away:"MEM",line:null},
+    {week:12,home:"LIB",away:"WKU",line:null},
+    {week:12,home:"JVST",away:"MOST",line:null},
+    {week:12,home:"SHSU",away:"MTSU",line:null},
+    {week:12,home:"NMSU",away:"DEL",line:null},
+    {week:12,home:"KENN",away:"FIU",line:null},
+    {week:12,home:"CONN",away:"ODU",line:null},
+    {week:12,home:"NDSU",away:"NIU",line:null},
+    {week:12,home:"TXST",away:"WSU",line:null},
+    {week:12,home:"SJSU",away:"UNLV",line:null},
+    {week:12,home:"ND",away:"SMU",line:17.5},
+    {week:12,home:"FRES",away:"CSU",line:null},
+    {week:12,home:"WYO",away:"UNM",line:null},
+    {week:12,home:"BSU",away:"SDSU",line:null},
+    {week:12,home:"ORST",away:"USU",line:null},
+    {week:13,home:"WMU",away:"MIAOH",line:null},
+    {week:13,home:"EMU",away:"KENT",line:null},
+    {week:13,home:"TTU",away:"TCU",line:16.5},
+    {week:13,home:"MEM",away:"TEM",line:null},
+    {week:13,home:"USF",away:"TUL",line:null},
+    {week:13,home:"ECU",away:"FAU",line:null},
+    {week:13,home:"AKR",away:"BUFF",line:null},
+    {week:13,home:"OHIO",away:"TOL",line:null},
+    {week:13,home:"IOWA",away:"NEB",line:null},
+    {week:13,home:"OLE",away:"MSST",line:14.5},
+    {week:13,home:"USA",away:"APP",line:null},
+    {week:13,home:"SJSU",away:"NDSU",line:null},
+    {week:13,home:"FSU",away:"FLA",line:-4.5},
+    {week:13,home:"TAMU",away:"TEX",line:-2.5},
+    {week:13,home:"WIS",away:"MINN",line:null},
+    {week:13,home:"UTAH",away:"WVU",line:null},
+    {week:13,home:"UCLA",away:"USC",line:-10.5},
+    {week:13,home:"CLT",away:"NAVY",line:null},
+    {week:13,home:"IND",away:"PUR",line:null},
+    {week:13,home:"CAL",away:"PITT",line:null},
+    {week:13,home:"SYR",away:"ND",line:null},
+    {week:13,home:"WAKE",away:"DUKE",line:null},
+    {week:13,home:"MIA",away:"BC",line:null},
+    {week:13,home:"HOU",away:"BAY",line:null},
+    {week:13,home:"ARIZ",away:"ASU",line:4.5},
+    {week:13,home:"NW",away:"ILL",line:-3.5},
+    {week:13,home:"GASO",away:"LT",line:null},
+    {week:13,home:"RICE",away:"ARMY",line:null},
+    {week:13,home:"NIU",away:"UTEP",line:null},
+    {week:13,home:"UNT",away:"UAB",line:null},
+    {week:13,home:"UTSA",away:"TLSA",line:null},
+    {week:13,home:"VT",away:"UVA",line:1.5},
+    {week:13,home:"UGA",away:"GT",line:null},
+    {week:13,home:"UNC",away:"NCST",line:-1.5},
+    {week:13,home:"ISU",away:"KSU",line:null},
+    {week:13,home:"OKST",away:"KU",line:null},
+    {week:13,home:"VAN",away:"TENN",line:-3.0},
+    {week:13,home:"ARK",away:"LSU",line:null},
+    {week:13,home:"ALA",away:"AUB",line:10.0},
+    {week:13,home:"MD",away:"PSU",line:null},
+    {week:13,home:"MIZ",away:"OU",line:null},
+    {week:13,home:"STAN",away:"SMU",line:null},
+    {week:13,home:"ORE",away:"WASH",line:15.5},
+    {week:13,home:"GAST",away:"LA",line:null},
+    {week:13,home:"ULM",away:"MRSH",line:null},
+    {week:13,home:"RUTG",away:"MSU",line:null},
+    {week:13,home:"WYO",away:"CONN",line:null},
+    {week:13,home:"JMU",away:"CCU",line:null},
+    {week:13,home:"BYU",away:"CIN",line:null},
+    {week:13,home:"CLEM",away:"SC",line:3.0},
+    {week:13,home:"ODU",away:"USM",line:null},
+    {week:13,home:"UK",away:"LOU",line:null},
+    {week:13,home:"COL",away:"UCF",line:null},
+    {week:13,home:"BGSU",away:"UMASS",line:null},
+    {week:13,home:"OSU",away:"MICH",line:13.5},
+    {week:13,home:"BALL",away:"CMU",line:null},
+    {week:13,home:"WKU",away:"KENN",line:null},
+    {week:13,home:"FIU",away:"SHSU",line:null},
+    {week:13,home:"MTSU",away:"NMSU",line:null},
+    {week:13,home:"MOST",away:"LIB",line:null},
+    {week:13,home:"ARST",away:"TROY",line:null},
+    {week:13,home:"DEL",away:"JVST",line:null},
+    {week:13,home:"UNM",away:"AF",line:null},
+    {week:13,home:"UNLV",away:"NEV",line:null},
+    {week:13,home:"HAW",away:"SACST",line:null},
+    {week:15,home:"ARMY",away:"NAVY",line:-2.5},
+  ];
+
+
+  function helmetSVG(primary, secondary, size){
+    size = size || 56;
+    var h = Math.round(size*0.72);
+    return '' +
+    '<svg width="' + size + '" height="' + h + '" viewBox="0 0 120 90" aria-hidden="true">' +
+      '<path d="M15,55 C15,20 45,10 70,10 C95,10 105,30 103,45 C101,58 90,63 79,60 L77,49 C76,43 69,39 59,39 L34,39 C24,39 19,45 17,55 Z" fill="' + primary + '"/>' +
+      '<path d="M69,10 C81,10 88,16 92,24" stroke="' + secondary + '" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="86" cy="43" r="5" fill="' + secondary + '"/>' +
+      '<path d="M19,49 Q11,56 17,66" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M26,46 Q17,55 24,68" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M33,44 Q24,53 31,66" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
+  }
+
+  var state = null;
+  var searchDebounceTimer = null;
+
+  function freshState(){
+    var teams = {};
+    SEED_TEAMS.forEach(function(t){
+      teams[t.id] = {
+        id: t.id, name: t.name, conf: t.conf, strength: t.strength,
+        mascot: MASCOTS[t.id] || "",
+        primary: t.primary, secondary: t.secondary,
+        price: t.price, lastChangePct: 0,
+        history: [t.price],
+        log: []
+      };
+    });
+
+    state = {
+      cash: STARTING_CASH,
+      week: 0,
+      holdings: {},
+      newsFeed: [],
+      teams: teams,
+      view: { tab: "market", ticker: null, conf: "all", q: "", priceMode: "week" }
+    };
+
+    var sorted = REAL_RESULTS_2026.slice().sort(function(a,b){ return a.week - b.week; });
+    sorted.forEach(function(res){
+      if(res.week > state.week) state.week = res.week;
+      applyRealResult(res);
+    });
+
+    return state;
+  }
+
+  function applyRealResult(res){
+    var home = state.teams[res.home], away = state.teams[res.away];
+    if(!home || !away) return;
+    var realLine = (typeof res.line === "number") ? res.line : null;
+    var impact = computePriceImpact(res.home, res.homeScore, res.away, res.awayScore, realLine);
+
+    var homeWon = res.homeScore > res.awayScore;
+    var winnerId = homeWon ? res.home : res.away, loserId = homeWon ? res.away : res.home;
+    var winner = state.teams[winnerId], loser = state.teams[loserId];
+    var winnerScore = homeWon ? res.homeScore : res.awayScore;
+    var loserScore = homeWon ? res.awayScore : res.homeScore;
+    var winnerPct = winnerId===res.home ? impact.pctA : impact.pctB;
+    var loserPct = loserId===res.home ? impact.pctA : impact.pctB;
+    var winnerPhrase = winnerId===res.home ? impact.phraseA : impact.phraseB;
+    var loserPhrase = loserId===res.home ? impact.phraseA : impact.phraseB;
+
+    var winText = winner.name + " def. " + loser.name + " " + winnerScore + "-" + loserScore + " (" + winnerPhrase + ")";
+    var loseText = loser.name + " fell to " + winner.name + " " + loserScore + "-" + winnerScore + " (" + loserPhrase + ")";
+    addLog(winnerId, res.week, winText, winnerPct);
+    addLog(loserId, res.week, loseText, loserPct);
+    state.newsFeed.unshift({ week: res.week, ticker: winnerId, text: winText + " \u2014 " + fmtPct(winnerPct) });
+    if(winner.strength < loser.strength){
+      state.newsFeed.unshift({ week: res.week, ticker: winnerId, text: "Upset alert: " + winText });
+    } else if(winnerPct < 0){
+      state.newsFeed.unshift({ week: res.week, ticker: winnerId, text: winner.name + " survive vs " + loser.name + ", but shares slide anyway" });
+    }
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.teams) return parsed;
+      }
+    }catch(e){}
+    return freshState();
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function round2(n){ return Math.round(n*100)/100; }
+  function fmtMoney(n){ return "$" + n.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function fmtPct(n){ return (n>=0?"+":"") + n.toFixed(2) + "%"; }
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  /* ---------- Simulation ---------- */
+  var SPREAD_FACTOR = 0.75; // approx. expected point spread per point of strength difference
+
+  function applyPriceChange(ticker, pct){
+    var t = state.teams[ticker];
+    var newPrice = Math.max(3, round2(t.price * (1 + pct/100)));
+    t.lastChangePct = round2(((newPrice - t.price) / t.price) * 100);
+    t.price = newPrice;
+    t.history.push(newPrice);
+    if(t.history.length > 30) t.history.shift();
+  }
+
+  function addLog(ticker, week, text, delta){
+    var t = state.teams[ticker];
+    t.log.unshift({ week: week, text: text, delta: delta });
+    if(t.log.length > 20) t.log.pop();
+  }
+
+  // Price movement is signed purely by whether a team beat or missed its
+  // OWN expected spread - not by whether it technically won the game.
+  // A heavy favorite that barely wins can still see its price drop (it
+  // "missed the line"); a slight underdog that wins big jumps hard even
+  // though it was still "supposed to" possibly lose.
+  function spreadPhrase(expectedMargin, actualMargin){
+    var favored = expectedMargin >= 0;
+    var lineText = favored
+      ? ("favored by " + Math.abs(expectedMargin).toFixed(1))
+      : ("underdog by " + Math.abs(expectedMargin).toFixed(1));
+    var resultText = actualMargin >= 0
+      ? ("won by " + actualMargin)
+      : ("lost by " + Math.abs(actualMargin));
+    var covered = actualMargin >= expectedMargin;
+    return lineText + ", " + resultText + " \u2014 " + (covered ? "covered" : "missed the line");
+  }
+
+  function computePriceImpact(idA, scoreA, idB, scoreB, realLineForA){
+    var a = state.teams[idA], b = state.teams[idB];
+    var isReal = typeof realLineForA === "number";
+    var expectedMarginA = isReal ? realLineForA : (a.strength - b.strength) * SPREAD_FACTOR;
+    var actualMarginA = scoreA - scoreB;
+    var edge = actualMarginA - expectedMarginA; // + = A beat its spread, - = A missed it
+    var magnitude = Math.abs(edge);
+    var baseMove = Math.min(28, 0.15 + magnitude * 0.32);
+    var pctA = round2((edge >= 0 ? 1 : -1) * baseMove + (Math.random()-0.5)*0.6);
+    var pctB = round2((edge >= 0 ? -1 : 1) * baseMove + (Math.random()-0.5)*0.6);
+    applyPriceChange(idA, pctA);
+    applyPriceChange(idB, pctB);
+
+    a.lastCovered = edge >= 0;
+    a.lastExpected = round2(expectedMarginA);
+    a.lastActual = actualMarginA;
+    a.lastLineIsReal = isReal;
+    b.lastCovered = edge <= 0;
+    b.lastExpected = round2(-expectedMarginA);
+    b.lastActual = -actualMarginA;
+    b.lastLineIsReal = isReal;
+
+    return {
+      pctA: pctA, pctB: pctB, edge: edge, isReal: isReal,
+      phraseA: spreadPhrase(expectedMarginA, actualMarginA),
+      phraseB: spreadPhrase(-expectedMarginA, -actualMarginA)
+    };
+  }
+
+  // aId/bId are treated as home/away when a real matchup is passed in (realLine
+  // set from the real posted spread, home-perspective). For the no-schedule-data
+  // fallback, aId/bId are just two shuffled teams with no home/away meaning and
+  // realLine is left undefined, so the SP+ proxy is used instead.
+  function playMatch(aId, bId, week, realLine){
+    var a = state.teams[aId], b = state.teams[bId];
+    var isReal = typeof realLine === "number";
+    var expectedMarginA = isReal ? realLine : (a.strength - b.strength) * SPREAD_FACTOR;
+    var actualMarginA = Math.round(expectedMarginA + (Math.random()-0.5)*32);
+    if(actualMarginA === 0) actualMarginA = Math.random() < 0.5 ? 1 : -1;
+
+    var baseScore = 20 + Math.floor(Math.random()*8);
+    var aScore, bScore;
+    if(actualMarginA >= 0){ aScore = baseScore + actualMarginA; bScore = baseScore; }
+    else { bScore = baseScore + Math.abs(actualMarginA); aScore = baseScore; }
+
+    var impact = computePriceImpact(aId, aScore, bId, bScore, isReal ? realLine : undefined);
+
+    var aWins = aScore > bScore;
+    var winnerId = aWins ? aId : bId, loserId = aWins ? bId : aId;
+    var winner = state.teams[winnerId], loser = state.teams[loserId];
+    var winnerFinal = aWins ? aScore : bScore, loserFinal = aWins ? bScore : aScore;
+    var winnerPct = winnerId===aId ? impact.pctA : impact.pctB;
+    var loserPct = loserId===aId ? impact.pctA : impact.pctB;
+    var winnerPhrase = winnerId===aId ? impact.phraseA : impact.phraseB;
+    var loserPhrase = loserId===aId ? impact.phraseA : impact.phraseB;
+    var tag = isReal ? " [real line]" : " [projected]";
+
+    var winText = winner.name + " def. " + loser.name + " " + winnerFinal + "-" + loserFinal + " (" + winnerPhrase + ")" + tag;
+    var loseText = loser.name + " fall to " + winner.name + " " + loserFinal + "-" + winnerFinal + " (" + loserPhrase + ")" + tag;
+
+    addLog(winnerId, week, winText, winnerPct);
+    addLog(loserId, week, loseText, loserPct);
+
+    state.newsFeed.unshift({ week: week, ticker: winnerId, text: winText + " \u2014 " + fmtPct(winnerPct) });
+    if(winner.strength < loser.strength){
+      state.newsFeed.unshift({ week: week, ticker: winnerId, text: "Upset alert: " + winText });
+    } else if(winnerPct < 0){
+      state.newsFeed.unshift({ week: week, ticker: winnerId, text: winner.name + " survive vs " + loser.name + ", but shares slide anyway" });
+    }
+  }
+
+  function simulateWeek(){
+    var nextWeek = state.week + 1;
+    state.week = nextWeek;
+    var weekGames = REAL_SCHEDULE_2026.filter(function(g){ return g.week === nextWeek; });
+
+    if(weekGames.length){
+      weekGames.forEach(function(g){
+        if(state.teams[g.home] && state.teams[g.away]){
+          playMatch(g.home, g.away, nextWeek, typeof g.line === "number" ? g.line : undefined);
+        }
+      });
+    } else {
+      // No real schedule data for this far out - fall back to a fully
+      // algorithmic slate so the app never just stalls.
+      var ids = shuffle(Object.keys(state.teams));
+      for(var i=0;i<ids.length;i+=2){
+        if(ids[i+1]) playMatch(ids[i], ids[i+1], nextWeek);
+      }
+    }
+    if(state.newsFeed.length > 40) state.newsFeed.length = 40;
+    saveState();
+    render();
+  }
+
+
+  /* ---------- Trading ---------- */
+  function buy(ticker, qty){
+    qty = Math.floor(qty);
+    if(!qty || qty < 1) return;
+    var t = state.teams[ticker];
+    var cost = round2(t.price * qty);
+    if(cost > state.cash) return;
+    state.cash = round2(state.cash - cost);
+    var h = state.holdings[ticker] || { shares:0, avgCost:0 };
+    var totalCost = h.avgCost*h.shares + cost;
+    h.shares += qty;
+    h.avgCost = round2(totalCost / h.shares);
+    state.holdings[ticker] = h;
+    saveState();
+    render();
+  }
+
+  function sell(ticker, qty){
+    qty = Math.floor(qty);
+    var h = state.holdings[ticker];
+    if(!h || !qty || qty < 1 || qty > h.shares) return;
+    var t = state.teams[ticker];
+    var proceeds = round2(t.price * qty);
+    state.cash = round2(state.cash + proceeds);
+    h.shares -= qty;
+    if(h.shares <= 0) delete state.holdings[ticker];
+    saveState();
+    render();
+  }
+
+  /* ---------- Rendering helpers ---------- */
+  function netWorth(){
+    var v = state.cash;
+    Object.keys(state.holdings).forEach(function(tk){
+      v += state.teams[tk].price * state.holdings[tk].shares;
+    });
+    return round2(v);
+  }
+
+  function sparklinePath(history, w, h, pad){
+    pad = pad || 3;
+    var hist = history.length > 1 ? history : [history[0], history[0]];
+    var min = Math.min.apply(null, hist), max = Math.max.apply(null, hist);
+    var range = (max - min) || 1;
+    var step = (w - 2*pad) / (hist.length - 1);
+    return hist.map(function(v,i){
+      var x = pad + i*step;
+      var y = h - pad - ((v - min)/range) * (h - 2*pad);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+  }
+
+  function seasonPct(t){
+    var base = t.history[0];
+    if(!base) return 0;
+    return round2(((t.price - base) / base) * 100);
+  }
+
+  function renderTape(){
+    var teamList = Object.values(state.teams);
+    var items = teamList.map(function(t){
+      var dir = t.lastChangePct > 0 ? "up" : t.lastChangePct < 0 ? "down" : "flat";
+      var arrow = t.lastChangePct > 0 ? "\u25B2" : t.lastChangePct < 0 ? "\u25BC" : "\u2013";
+      return '<span class="tape-item"><span class="tk">' + t.id + '</span>' +
+        '<span class="px">' + t.price.toFixed(2) + '</span>' +
+        '<span class="ch ' + dir + '">' + arrow + ' ' + Math.abs(t.lastChangePct).toFixed(2) + '%</span></span>';
+    }).join("");
+    var tape = document.getElementById("tape");
+    tape.innerHTML = items + items;
+    tape.style.animationDuration = Math.max(34, teamList.length * 2.6) + "s";
+  }
+
+  function renderHeaderStats(){
+    document.getElementById("hdr-cash").textContent = fmtMoney(state.cash);
+    document.getElementById("hdr-networth").textContent = fmtMoney(netWorth());
+  }
+
+  /* ---------- Views ---------- */
+  function renderMarket(){
+    var all = Object.values(state.teams);
+    var confs = [];
+    all.forEach(function(t){ if(confs.indexOf(t.conf) === -1) confs.push(t.conf); });
+    confs.sort();
+
+    var q = (state.view.q || "").toLowerCase();
+    var confFilter = state.view.conf || "all";
+    var teams = all.filter(function(t){
+      var matchesConf = confFilter === "all" || t.conf === confFilter;
+      var matchesQ = !q || t.name.toLowerCase().indexOf(q) !== -1 || t.id.toLowerCase().indexOf(q) !== -1 || (t.mascot||"").toLowerCase().indexOf(q) !== -1;
+      return matchesConf && matchesQ;
+    }).sort(function(a,b){ return b.price - a.price; });
+
+    var confOptions = '<option value="all">All conferences</option>' + confs.map(function(c){
+      return '<option value="' + c + '"' + (c===confFilter?' selected':'') + '>' + c + '</option>';
+    }).join("");
+
+    var mode = state.view.priceMode || "week";
+    var cards = teams.map(function(t){
+      var pct = mode === "season" ? seasonPct(t) : t.lastChangePct;
+      var dir = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+      var held = state.holdings[t.id];
+      var badge = held ? '<span class="held-badge">' + held.shares + ' sh</span>' : "";
+      var path = sparklinePath(t.history, 220, 36);
+      var strokeColor = t.history[t.history.length-1] >= t.history[0] ? "var(--positive)" : "var(--negative)";
+      var coverTag = (mode === "week" && typeof t.lastCovered === "boolean")
+        ? '<span class="cover-tag ' + (t.lastCovered ? "covered" : "missed") + '">' + (t.lastCovered ? "COVERED" : "MISSED LINE") + '</span>'
+        : "";
+      return '' +
+      '<div class="card" style="--tag-color:' + t.primary + '" data-ticker="' + t.id + '">' +
+        '<div class="card-top">' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+            helmetSVG(t.primary, t.secondary, 44) +
+            '<div><div class="tk">' + t.id + '</div><div class="nm">' + t.name + (t.mascot ? ' ' + t.mascot : '') + '</div></div>' +
+          '</div>' +
+          badge +
+        '</div>' +
+        '<div class="card-mid">' +
+          '<div class="px">$' + t.price.toFixed(2) + '</div>' +
+          '<div style="text-align:right"><div class="ch ' + dir + '">' + fmtPct(pct) + '</div>' + coverTag + '</div>' +
+        '</div>' +
+        '<svg class="spark" viewBox="0 0 220 36" preserveAspectRatio="none">' +
+          '<polyline points="' + path + '" fill="none" stroke="' + strokeColor + '" stroke-width="2"/>' +
+        '</svg>' +
+      '</div>';
+    }).join("");
+
+    var emptyState = !teams.length ? '<div class="panel"><div class="empty-state">No programs match that search.</div></div>' : "";
+
+    var html = '' +
+    '<div class="section-head">' +
+      '<div><h1>Market \u2014 Week ' + state.week + '</h1><p>' + all.length + ' programs, ranked by current price. Tap a card to trade.</p></div>' +
+      '<button class="btn-primary" id="btn-sim-week">Play Week ' + (state.week+1) + '</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">' +
+      '<input type="text" id="mkt-search" placeholder="Search team, mascot, or ticker\u2026" value="' + (state.view.q||"") + '" style="flex:1;min-width:180px;background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px">' +
+      '<select id="mkt-conf" style="background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;padding:9px 10px">' + confOptions + '</select>' +
+      '<nav class="tabs" id="mkt-pricemode">' +
+        '<button data-mode="week" class="' + (mode==="week"?"active":"") + '">This Week</button>' +
+        '<button data-mode="season" class="' + (mode==="season"?"active":"") + '">Season</button>' +
+      '</nav>' +
+    '</div>' +
+    '<div class="grid">' + cards + '</div>' + emptyState;
+
+    document.getElementById("main").innerHTML = html;
+    document.getElementById("btn-sim-week").addEventListener("click", simulateWeek);
+    document.getElementById("mkt-search").addEventListener("input", function(e){
+      var pos = e.target.selectionStart;
+      var val = e.target.value;
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(function(){
+        state.view.q = val;
+        render();
+        var newInput = document.getElementById("mkt-search");
+        if(newInput){
+          newInput.focus();
+          newInput.setSelectionRange(pos, pos);
+        }
+      }, 180);
+    });
+    document.getElementById("mkt-conf").addEventListener("change", function(e){
+      state.view.conf = e.target.value; render();
+    });
+    document.querySelectorAll("#mkt-pricemode button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.view.priceMode = btn.getAttribute("data-mode"); render();
+      });
+    });
+    document.querySelectorAll(".card").forEach(function(card){
+      card.addEventListener("click", function(){
+        state.view.tab = "detail";
+        state.view.ticker = card.getAttribute("data-ticker");
+        render();
+      });
+    });
+  }
+
+  function renderDetail(ticker){
+    var t = state.teams[ticker];
+    var held = state.holdings[ticker];
+    var mode = state.view.priceMode || "week";
+    var headlinePct = mode === "season" ? seasonPct(t) : t.lastChangePct;
+    var dir = headlinePct > 0 ? "up" : headlinePct < 0 ? "down" : "flat";
+
+    var w = 560, h = 220, pad = 30;
+    var hist = t.history;
+    var min = Math.min.apply(null, hist), max = Math.max.apply(null, hist);
+    var range = (max-min) || 1;
+    var path = hist.map(function(v,i){
+      var x = pad + i*((w-2*pad)/(Math.max(hist.length-1,1)));
+      var y = h - pad - ((v-min)/range)*(h-2*pad);
+      return x.toFixed(1)+","+y.toFixed(1);
+    }).join(" ");
+    var lineColor = hist[hist.length-1] >= hist[0] ? "var(--positive)" : "var(--negative)";
+
+    var chart = '' +
+    '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" style="max-width:560px">' +
+      '<line x1="' + pad + '" y1="' + (h-pad) + '" x2="' + (w-pad) + '" y2="' + (h-pad) + '" stroke="var(--border)"/>' +
+      '<text class="axis-label" x="' + pad + '" y="18">$' + max.toFixed(2) + '</text>' +
+      '<text class="axis-label" x="' + pad + '" y="' + (h-pad+16) + '">$' + min.toFixed(2) + '</text>' +
+      '<polyline points="' + path + '" fill="none" stroke="' + lineColor + '" stroke-width="2.4"/>' +
+    '</svg>';
+
+    var logItems = t.log.length ? t.log.map(function(l){
+      var dcls = l.delta >= 0 ? "up" : "down";
+      return '<div class="log-item"><span class="lw">Week ' + l.week + '</span> &middot; ' + l.text +
+        ' <span class="ld ch ' + dcls + '">' + fmtPct(l.delta) + '</span></div>';
+    }).join("") : '<div class="log-item">No games played yet this season.</div>';
+
+    var maxAffordable = Math.floor(state.cash / t.price);
+    var heldShares = held ? held.shares : 0;
+
+    var positionNote = held
+      ? held.shares + ' shares @ avg $' + held.avgCost.toFixed(2) + ' &middot; current value $' + (held.shares*t.price).toFixed(2)
+      : 'No position yet.';
+
+    var html = '' +
+    '<button class="detail-back" id="btn-back">&larr; Back to market</button>' +
+    '<div class="detail-head">' +
+      '<div style="display:flex;align-items:center;gap:16px">' +
+        helmetSVG(t.primary, t.secondary, 84) +
+        '<div class="tk-name"><div class="tk">' + t.id + ' &middot; STRENGTH ' + t.strength + '</div><h1>' + t.name + '</h1>' + (t.mascot ? '<div class="nm">' + t.mascot + '</div>' : '') + '</div>' +
+      '</div>' +
+      '<div class="detail-price">' +
+        '<nav class="tabs" id="detail-pricemode" style="margin-bottom:8px;display:inline-flex">' +
+          '<button data-mode="week" class="' + (mode==="week"?"active":"") + '" style="padding:5px 11px;font-size:12px">Week</button>' +
+          '<button data-mode="season" class="' + (mode==="season"?"active":"") + '" style="padding:5px 11px;font-size:12px">Season</button>' +
+        '</nav>' +
+        '<div class="px">$' + t.price.toFixed(2) + '</div><div class="ch ' + dir + '">' + fmtPct(headlinePct) + (mode==="season" ? ' since Wk 1' : ' this week') + '</div>' +
+        (mode === "week" && typeof t.lastCovered === "boolean"
+          ? '<div class="cover-tag ' + (t.lastCovered ? "covered" : "missed") + '">' + (t.lastCovered ? "COVERED" : "MISSED LINE") + '</div>' +
+            '<div class="position-note" style="margin-top:4px">Expected ' + (t.lastExpected>=0?"+":"") + t.lastExpected.toFixed(1) + ' \u00b7 Actual ' + (t.lastActual>=0?"+":"") + t.lastActual + (t.lastLineIsReal ? ' (real line)' : ' (projected)') + '</div>'
+          : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="detail-body">' +
+      '<div class="panel"><h2>price history</h2><div class="chart-wrap">' + chart + '</div></div>' +
+      '<div class="panel">' +
+        '<h2>trade</h2>' +
+        '<div class="trade-form">' +
+          '<div class="trade-row"><input type="number" id="trade-qty" min="1" step="1" placeholder="Shares" value="1"></div>' +
+          '<div class="trade-summary"><span>Est. cost</span><strong id="trade-cost">$' + t.price.toFixed(2) + '</strong></div>' +
+          '<div class="trade-buttons">' +
+            '<button class="btn-buy" id="btn-buy">Buy</button>' +
+            '<button class="btn-sell" id="btn-sell"' + (heldShares<1?' disabled':'') + '>Sell</button>' +
+          '</div>' +
+          '<div class="position-note">' + positionNote + '</div>' +
+          '<div class="position-note">Buying power: $' + state.cash.toFixed(2) + ' (~' + maxAffordable + ' sh)</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel" style="margin-top:16px"><h2>game log</h2><div class="log-list">' + logItems + '</div></div>';
+
+    document.getElementById("main").innerHTML = html;
+
+    document.getElementById("btn-back").addEventListener("click", function(){
+      state.view.tab = "market"; render();
+    });
+    document.querySelectorAll("#detail-pricemode button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.view.priceMode = btn.getAttribute("data-mode"); render();
+      });
+    });
+
+    var qtyInput = document.getElementById("trade-qty");
+    function refreshCost(){
+      var q = parseInt(qtyInput.value, 10) || 0;
+      document.getElementById("trade-cost").textContent = "$" + (q*t.price).toFixed(2);
+      document.getElementById("btn-buy").disabled = (q < 1) || (q*t.price > state.cash);
+      var sellBtn = document.getElementById("btn-sell");
+      sellBtn.disabled = (q < 1) || (q > heldShares);
+    }
+    qtyInput.addEventListener("input", refreshCost);
+    refreshCost();
+
+    document.getElementById("btn-buy").addEventListener("click", function(){
+      buy(ticker, parseInt(qtyInput.value,10) || 0);
+    });
+    document.getElementById("btn-sell").addEventListener("click", function(){
+      sell(ticker, parseInt(qtyInput.value,10) || 0);
+    });
+  }
+
+  function renderPortfolio(){
+    var rows = Object.keys(state.holdings);
+    var nw = netWorth();
+    var totalReturn = round2(nw - STARTING_CASH);
+    var totalReturnPct = round2((totalReturn/STARTING_CASH)*100);
+
+    var summary = '' +
+    '<div class="summary-row">' +
+      '<div class="summary-card"><div class="label">net worth</div><div class="val">' + fmtMoney(nw) + '</div></div>' +
+      '<div class="summary-card"><div class="label">cash available</div><div class="val">' + fmtMoney(state.cash) + '</div></div>' +
+      '<div class="summary-card"><div class="label">total return</div><div class="val ch ' + (totalReturn>=0?'up':'down') + '" style="background:none;padding:0">' + (totalReturn>=0?'+':'') + fmtMoney(totalReturn) + ' (' + fmtPct(totalReturnPct) + ')</div></div>' +
+    '</div>';
+
+    var body;
+    if(!rows.length){
+      body = '<div class="panel"><div class="empty-state"><div class="big">No positions yet</div>Head to the market and buy your first shares.</div></div>';
+    } else {
+      var trs = rows.map(function(tk){
+        var h = state.holdings[tk];
+        var t = state.teams[tk];
+        var val = round2(h.shares * t.price);
+        var gl = round2(val - h.shares*h.avgCost);
+        var glPct = round2((gl/(h.shares*h.avgCost))*100);
+        var dir = gl >= 0 ? "up" : "down";
+        return '<tr>' +
+          '<td class="nm-cell">' + t.name + '<br><span class="tk-mini">' + tk + '</span></td>' +
+          '<td>' + h.shares + '</td>' +
+          '<td>$' + h.avgCost.toFixed(2) + '</td>' +
+          '<td>$' + t.price.toFixed(2) + '</td>' +
+          '<td>$' + val.toFixed(2) + '</td>' +
+          '<td class="ch ' + dir + '" style="background:none;padding:0">' + (gl>=0?'+':'') + '$' + Math.abs(gl).toFixed(2) + ' (' + fmtPct(glPct) + ')</td>' +
+        '</tr>';
+      }).join("");
+      body = '<div class="panel"><table class="holdings">' +
+        '<thead><tr><th>program</th><th>shares</th><th>avg cost</th><th>price</th><th>value</th><th>gain / loss</th></tr></thead>' +
+        '<tbody>' + trs + '</tbody></table></div>';
+    }
+
+    document.getElementById("main").innerHTML =
+      '<div class="section-head"><div><h1>Portfolio</h1><p>Started with ' + fmtMoney(STARTING_CASH) + ' in play money.</p></div></div>' +
+      summary + body;
+  }
+
+  function render(){
+    renderTape();
+    renderHeaderStats();
+    document.getElementById("tab-market").classList.toggle("active", state.view.tab === "market" || state.view.tab === "detail");
+    document.getElementById("tab-portfolio").classList.toggle("active", state.view.tab === "portfolio");
+
+    if(state.view.tab === "market") renderMarket();
+    else if(state.view.tab === "detail") renderDetail(state.view.ticker);
+    else if(state.view.tab === "portfolio") renderPortfolio();
+  }
+
+  document.getElementById("tab-market").addEventListener("click", function(){
+    state.view.tab = "market"; render();
+  });
+  document.getElementById("tab-portfolio").addEventListener("click", function(){
+    state.view.tab = "portfolio"; render();
+  });
+
+  state = loadState();
+  render();
+
+})();
+</script>
+</body>
+</html>
