@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { supabaseTokenVerifier } from "./auth.js";
 import { createPool, createStore } from "../db/store.js";
@@ -10,6 +12,18 @@ const app = createApp({
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
+  web:
+    process.env.SERVE_WEB === "false"
+      ? undefined
+      : {
+          dir: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web"),
+          // Public values only: this is sent to every browser.
+          config: {
+            apiUrl: process.env.PUBLIC_API_URL || "",
+            supabaseUrl: process.env.SUPABASE_URL,
+            supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+          },
+        },
 });
 
 const port = Number(process.env.PORT || 3000);

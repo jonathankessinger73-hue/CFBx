@@ -1,6 +1,7 @@
 // HTTP API. The server is the only authority on price, cash and holdings:
 // clients ask questions or request trades, they never assert a price.
 
+import { createRequire } from "node:module";
 import express from "express";
 import { requireAuth } from "./auth.js";
 import { TRADE_ERRORS } from "../db/store.js";
@@ -26,8 +27,10 @@ function corsMiddleware(allowedOrigins) {
  * @param {ReturnType<import("../db/store.js").createStore>} opts.store
  * @param {(token: string) => Promise<string|null>} opts.verifyToken
  * @param {string[]} [opts.allowedOrigins]
+ * @param {{dir: string, config: object}} [opts.web]  serve the frontend from
+ *        `dir`, with `config` (public values only) exposed as /config.js
  */
-export function createApp({ store, verifyToken, allowedOrigins = [] }) {
+export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
   const app = express();
   app.disable("x-powered-by");
   app.use(corsMiddleware(allowedOrigins));
@@ -40,7 +43,13 @@ export function createApp({ store, verifyToken, allowedOrigins = [] }) {
   // ---- public ------------------------------------------------------------
 
   app.get("/teams", async (req, res) => {
-    res.json({ teams: await store.listTeams() });
+    const { season, week } = await store.getMarketClock();
+    const [teams, histories] = await Promise.all([store.listTeams(), store.listPriceHistories(season)]);
+    res.json({
+      season,
+      week,
+      teams: teams.map((t) => ({ ...t, history: histories.get(t.id) || [t.ipo_price] })),
+    });
   });
 
   app.get("/teams/:id", async (req, res) => {
@@ -132,6 +141,19 @@ export function createApp({ store, verifyToken, allowedOrigins = [] }) {
       throw err;
     }
   });
+
+  // ---- frontend ------------------------------------------------------------
+
+  if (web) {
+    const configJs = `window.CFBX_CONFIG = ${JSON.stringify(web.config)};\n`;
+    app.get("/config.js", (req, res) => {
+      res.type("application/javascript").set("Cache-Control", "no-cache").send(configJs);
+    });
+    // Serve the Supabase browser bundle ourselves rather than from a CDN.
+    const supabaseUmd = createRequire(import.meta.url).resolve("@supabase/supabase-js/dist/umd/supabase.js");
+    app.get("/vendor/supabase.js", (req, res) => res.sendFile(supabaseUmd));
+    app.use(express.static(web.dir, { index: "index.html" }));
+  }
 
   app.use((req, res) => res.status(404).json({ error: "not_found" }));
 

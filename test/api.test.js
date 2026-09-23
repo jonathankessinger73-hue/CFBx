@@ -31,6 +31,10 @@ before(async () => {
     store: createStore(pool),
     verifyToken: async (t) => tokens.get(t) || null,
     allowedOrigins: ["https://cfbx.example"],
+    web: {
+      dir: new URL("../web", import.meta.url).pathname,
+      config: { apiUrl: "", supabaseUrl: "https://proj.supabase.co", supabaseAnonKey: "anon" },
+    },
   });
 });
 
@@ -48,7 +52,11 @@ async function login() {
 test("GET /teams is public and lists all teams", { skip }, async () => {
   const res = await request(app).get("/teams").expect(200);
   assert.equal(res.body.teams.length, 138);
+  assert.equal(res.body.season, 2026);
+  assert.equal(res.body.week, 3);
   const uga = res.body.teams.find((t) => t.id === "UGA");
+  const detail = await request(app).get("/teams/UGA").expect(200);
+  assert.deepEqual(uga.history, detail.body.price_history);
   assert.equal(uga.mascot, "Bulldogs");
   assert.equal(typeof uga.current_price, "number");
   assert.equal(typeof uga.last_covered, "boolean");
@@ -139,4 +147,18 @@ test("CORS only echoes allowed origins", { skip }, async () => {
   assert.equal(ok.headers["access-control-allow-origin"], "https://cfbx.example");
   const no = await request(app).get("/teams").set("Origin", "https://evil.example");
   assert.equal(no.headers["access-control-allow-origin"], undefined);
+});
+
+test("serves the web app, its public config and the Supabase bundle", { skip }, async () => {
+  const page = await request(app).get("/").expect(200);
+  assert.match(page.text, /<main id="main">/);
+  const cfg = await request(app).get("/config.js").expect(200);
+  assert.match(cfg.headers["content-type"], /javascript/);
+  assert.equal(
+    cfg.text.trim(),
+    'window.CFBX_CONFIG = {"apiUrl":"","supabaseUrl":"https://proj.supabase.co","supabaseAnonKey":"anon"};'
+  );
+  const bundle = await request(app).get("/vendor/supabase.js").expect(200);
+  assert.match(bundle.text, /createClient/);
+  await request(app).get("/app.js").expect(200);
 });

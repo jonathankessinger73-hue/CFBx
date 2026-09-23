@@ -1,4 +1,4 @@
-# CFBx backend
+# CFBx
 
 Play-money exchange for college football programs. Prices move on real
 results versus real Vegas spreads. This repo turns the single-file
@@ -13,9 +13,9 @@ Clients ask questions or request trades, and they never send a price.
 | Spec build step | State |
 |---|---|
 | 1. Schema + seed, read-only `/teams` | Done |
-| 2. Auth (Supabase email login) | API verifies Supabase tokens. Sign-in UI arrives with the frontend. |
+| 2. Auth (Supabase email login) | Done: magic-link email sign-in in the web app. The API verifies the tokens. |
 | 3. `/trade` + users/holdings/transactions | Done, tested (including concurrent trades) |
-| 4. Port the frontend to the API | Not started |
+| 4. Port the frontend to the API | Done (`web/`), with browser tests |
 | 5. Daily GitHub Actions job | Done. Defaults to a `staging` environment. |
 | 6. Leaderboard etc. | `/leaderboard` endpoint exists. Users need a way to set `display_name`. |
 
@@ -35,6 +35,7 @@ src/engine/pricing.js          price formulas ported from the artifact (pure fun
 src/engine/replay.js           applies completed games to a market
 src/seed/                      builds and writes the initial database contents
 src/api/                       Express API (app.js), Supabase token auth (auth.js)
+web/                           the frontend (static HTML/CSS/JS, no build step)
 src/db/                        pg setup and queries
 src/cfbd/                      CollegeFootballData client and team-name matching
 src/jobs/                      daily sync (syncSeason.js) and its CLI (daily.js)
@@ -51,7 +52,41 @@ src/jobs/                      daily sync (syncSeason.js) and its CLI (daily.js)
 4. `npm run seed` loads the 138 teams at IPO prices and replays the completed 2026
    games to build price history. It also loads the rest of the schedule.
    The script refuses to run if teams already exist.
-5. `npm run dev` starts the API on `:3000`.
+5. In Supabase, go to Authentication → URL Configuration. Set the Site URL to
+   where the app is served (for local work, `http://localhost:3000`), and add the
+   same address under Redirect URLs. Sign-in links send people back there.
+6. `npm run dev` starts the API and web app on `http://localhost:3000`.
+
+## Frontend
+
+`web/` is the prototype's UI ported to the API: market grid, team detail
+and portfolio. The styling is carried over from the artifact. What changed:
+
+- Every price, cash balance and holding comes from the API. Buy and Sell send a
+  request, and the server fills it at its own current price. The confirmation
+  message shows the price the order actually filled at.
+- The prototype's "Play Week" simulation is gone. Prices now move only when the
+  daily job records real results.
+- **Sign-in** uses Supabase magic links: enter an email, click the link. The
+  first sign-in creates the account with $10,000.
+- Signed-out visitors can browse everything. Trading and the portfolio ask
+  them to sign in.
+- Team pages add an **Up next** panel. A game with a posted sportsbook line is
+  tagged `REAL LINE`. A game without one shows the SP+ estimate tagged
+  `PROJECTED`, as the spec requires. The game log tags results priced off the
+  SP+ fallback.
+- Routes are hash URLs (`#/team/UGA`, `#/portfolio`), so the back button
+  and shared links work.
+- Data refreshes whenever the tab becomes visible again.
+
+By default the API server also serves the frontend on the same origin, so no
+CORS setup is needed. It publishes `SUPABASE_URL` and `SUPABASE_ANON_KEY` to the
+browser through `/config.js`. It also serves the Supabase Auth browser bundle from
+`node_modules`, so the page loads no third-party scripts beyond Google Fonts.
+To host `web/` somewhere else (for example Vercel), set `SERVE_WEB=false` and
+`ALLOWED_ORIGINS` on the API. Then put a `config.js` next to `index.html`
+that sets `window.CFBX_CONFIG = { apiUrl, supabaseUrl, supabaseAnonKey }`, and
+copy the Supabase bundle to `vendor/supabase.js`.
 
 For the scheduled job, create GitHub environments `staging` and later
 `production`. Give each one the secrets `DATABASE_URL` and `CFBD_API_KEY`. The
@@ -85,6 +120,13 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm test
 With `TEST_DATABASE_URL` set, each test file creates a throwaway database and
 applies the real migrations. It adds a small stand-in for Supabase's `auth`
 schema and roles. CI runs the tests against Postgres 16 this way.
+
+Browser tests (Playwright) run the real app against a seeded throwaway database.
+They use a fake Supabase Auth bundle, so no Supabase project is needed:
+
+```
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:e2e
+```
 
 ## Decisions and deviations from the spec
 

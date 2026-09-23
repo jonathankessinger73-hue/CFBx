@@ -14,7 +14,8 @@
     "extract": "node scripts/extract-artifact.js",
     "seed": "node --env-file-if-exists=.env scripts/seed.js",
     "job:daily": "node --env-file-if-exists=.env src/jobs/daily.js",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",
@@ -22,6 +23,7 @@
     "pg": "^8.23.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "supertest": "^7.3.0"
   }
 }

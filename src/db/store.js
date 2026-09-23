@@ -26,6 +26,33 @@ export function createStore(pool) {
       return rows;
     },
 
+    // Price series per team for sparklines: IPO price, then the price after
+    // each game of the given season, in order.
+    async listPriceHistories(season) {
+      const { rows } = await pool.query(
+        `select t.id, t.ipo_price,
+                coalesce(array_agg(e.price_after order by e.week, e.id)
+                           filter (where e.id is not null), '{}') as prices
+           from teams t
+           left join price_events e on e.team_id = t.id and e.season = $1
+          group by t.id`,
+        [season]
+      );
+      return new Map(rows.map((r) => [r.id, [r.ipo_price, ...r.prices.map(Number)]]));
+    },
+
+    // Current season and the latest week with a completed game (0 if none).
+    async getMarketClock() {
+      const { rows } = await pool.query(
+        `with s as (select coalesce(max(season), extract(year from now())::int) as season from schedule)
+         select s.season,
+                coalesce((select max(week) from schedule
+                           where season = s.season and completed), 0) as week
+           from s`
+      );
+      return rows[0];
+    },
+
     async getTeam(id) {
       const { rows } = await pool.query(`select ${TEAM_COLUMNS} from teams where id = $1`, [id]);
       return rows[0] || null;

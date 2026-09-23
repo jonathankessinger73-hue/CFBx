@@ -25,10 +25,12 @@ create or replace function auth.uid() returns uuid language sql stable as
 `;
 
 // Creates a fresh database, migrates it, and returns a pg.Pool on it.
-export async function freshDatabase() {
+// Pass a fixed `name` to reuse one slot (any old copy is dropped first).
+export async function freshDatabase(name = `cfbx_t_${process.pid}_${Date.now()}`) {
+  if (!/^[a-z0-9_]+$/.test(name)) throw new Error(`bad database name ${name}`);
   const admin = new pg.Client({ connectionString: TEST_DATABASE_URL });
   await admin.connect();
-  const name = `cfbx_t_${process.pid}_${Date.now()}`;
+  await admin.query(`drop database if exists ${name} with (force)`);
   await admin.query(`create database ${name}`);
   await admin.end();
 
