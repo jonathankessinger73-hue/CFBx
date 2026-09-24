@@ -1,0 +1,3626 @@
+[
+  {
+    "week": 4,
+    "home": "CCU",
+    "away": "LIB",
+    "expected_home_margin": -2.5
+  },
+  {
+    "week": 4,
+    "home": "TEM",
+    "away": "ARMY",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 4,
+    "home": "UAB",
+    "away": "NAVY",
+    "expected_home_margin": -7
+  },
+  {
+    "week": 4,
+    "home": "IND",
+    "away": "NW",
+    "expected_home_margin": 20.75
+  },
+  {
+    "week": 4,
+    "home": "CAL",
+    "away": "CLEM",
+    "expected_home_margin": 0.25
+  },
+  {
+    "week": 4,
+    "home": "KENT",
+    "away": "BALL",
+    "expected_home_margin": 3.25
+  },
+  {
+    "week": 4,
+    "home": "UTSA",
+    "away": "CSU",
+    "expected_home_margin": 13.5
+  },
+  {
+    "week": 4,
+    "home": "OSU",
+    "away": "ILL",
+    "expected_home_margin": 27.25
+  },
+  {
+    "week": 4,
+    "home": "TOL",
+    "away": "SDSU",
+    "expected_home_margin": 3
+  },
+  {
+    "week": 4,
+    "home": "BC",
+    "away": "VT",
+    "expected_home_margin": -14
+  },
+  {
+    "week": 4,
+    "home": "BAY",
+    "away": "COL",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 4,
+    "home": "AKR",
+    "away": "UNLV",
+    "expected_home_margin": -13.5
+  },
+  {
+    "week": 4,
+    "home": "TTU",
+    "away": "SHSU",
+    "expected_home_margin": 34.75
+  },
+  {
+    "week": 4,
+    "home": "TENN",
+    "away": "TEX",
+    "expected_home_margin": -5.5
+  },
+  {
+    "week": 4,
+    "home": "LOU",
+    "away": "WAKE",
+    "expected_home_margin": 12.5
+  },
+  {
+    "week": 4,
+    "home": "UK",
+    "away": "USA",
+    "expected_home_margin": 20.5
+  },
+  {
+    "week": 4,
+    "home": "MD",
+    "away": "UCLA",
+    "expected_home_margin": -1.5
+  },
+  {
+    "week": 4,
+    "home": "GAST",
+    "away": "NIU",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 4,
+    "home": "PUR",
+    "away": "ND",
+    "expected_home_margin": -27.75
+  },
+  {
+    "week": 4,
+    "home": "WYO",
+    "away": "HAW",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 4,
+    "home": "MIAOH",
+    "away": "CONN",
+    "expected_home_margin": 3.5
+  },
+  {
+    "week": 4,
+    "home": "ISU",
+    "away": "UTAH",
+    "expected_home_margin": -7.75
+  },
+  {
+    "week": 4,
+    "home": "UCF",
+    "away": "TCU",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 4,
+    "home": "FLA",
+    "away": "OLE",
+    "expected_home_margin": 3
+  },
+  {
+    "week": 4,
+    "home": "UGA",
+    "away": "OU",
+    "expected_home_margin": 14
+  },
+  {
+    "week": 4,
+    "home": "NMSU",
+    "away": "UNM",
+    "expected_home_margin": -11.25
+  },
+  {
+    "week": 4,
+    "home": "WMU",
+    "away": "BSU",
+    "expected_home_margin": -7
+  },
+  {
+    "week": 4,
+    "home": "MICH",
+    "away": "IOWA",
+    "expected_home_margin": 5.5
+  },
+  {
+    "week": 4,
+    "home": "GASO",
+    "away": "HOU",
+    "expected_home_margin": -18.75
+  },
+  {
+    "week": 4,
+    "home": "AUB",
+    "away": "VAN",
+    "expected_home_margin": 9.5
+  },
+  {
+    "week": 4,
+    "home": "PSU",
+    "away": "WIS",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 4,
+    "home": "BGSU",
+    "away": "USF",
+    "expected_home_margin": -17.5
+  },
+  {
+    "week": 4,
+    "home": "MSU",
+    "away": "NEB",
+    "expected_home_margin": -5.5
+  },
+  {
+    "week": 4,
+    "home": "ODU",
+    "away": "JMU",
+    "expected_home_margin": -6
+  },
+  {
+    "week": 4,
+    "home": "UVA",
+    "away": "DEL",
+    "expected_home_margin": 19.5
+  },
+  {
+    "week": 4,
+    "home": "CLT",
+    "away": "LA",
+    "expected_home_margin": -10
+  },
+  {
+    "week": 4,
+    "home": "MIA",
+    "away": "CMU",
+    "expected_home_margin": 41.25
+  },
+  {
+    "week": 4,
+    "home": "TUL",
+    "away": "USM",
+    "expected_home_margin": 18.5
+  },
+  {
+    "week": 4,
+    "home": "CIN",
+    "away": "KSU",
+    "expected_home_margin": -6.25
+  },
+  {
+    "week": 4,
+    "home": "WVU",
+    "away": "OKST",
+    "expected_home_margin": 1.75
+  },
+  {
+    "week": 4,
+    "home": "ARST",
+    "away": "KENN",
+    "expected_home_margin": 6
+  },
+  {
+    "week": 4,
+    "home": "ALA",
+    "away": "SC",
+    "expected_home_margin": 12.5
+  },
+  {
+    "week": 4,
+    "home": "JVST",
+    "away": "MTSU",
+    "expected_home_margin": 7
+  },
+  {
+    "week": 4,
+    "home": "NCST",
+    "away": "APP",
+    "expected_home_margin": 14
+  },
+  {
+    "week": 4,
+    "home": "USU",
+    "away": "TROY",
+    "expected_home_margin": 3
+  },
+  {
+    "week": 4,
+    "home": "USC",
+    "away": "ORE",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 4,
+    "home": "WSU",
+    "away": "ARIZ",
+    "expected_home_margin": -10
+  },
+  {
+    "week": 4,
+    "home": "LSU",
+    "away": "TAMU",
+    "expected_home_margin": 8.5
+  },
+  {
+    "week": 4,
+    "home": "MSST",
+    "away": "MIZ",
+    "expected_home_margin": 6.5
+  },
+  {
+    "week": 4,
+    "home": "ULM",
+    "away": "FAU",
+    "expected_home_margin": -13.5
+  },
+  {
+    "week": 4,
+    "home": "ARK",
+    "away": "TLSA",
+    "expected_home_margin": 7
+  },
+  {
+    "week": 4,
+    "home": "SMU",
+    "away": "MOST",
+    "expected_home_margin": 34.75
+  },
+  {
+    "week": 4,
+    "home": "SACST",
+    "away": "UMASS",
+    "expected_home_margin": -4.5
+  },
+  {
+    "week": 4,
+    "home": "UTEP",
+    "away": "ORST",
+    "expected_home_margin": -10.5
+  },
+  {
+    "week": 4,
+    "home": "FRES",
+    "away": "RICE",
+    "expected_home_margin": 13.5
+  },
+  {
+    "week": 4,
+    "home": "NEV",
+    "away": "AF",
+    "expected_home_margin": -5.5
+  },
+  {
+    "week": 4,
+    "home": "STAN",
+    "away": "GT",
+    "expected_home_margin": -3.5
+  },
+  {
+    "week": 4,
+    "home": "WASH",
+    "away": "MINN",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 5,
+    "home": "NMSU",
+    "away": "WKU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "TLSA",
+    "away": "UNT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "DEL",
+    "away": "LIB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "VT",
+    "away": "PITT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "NW",
+    "away": "PSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "MSST",
+    "away": "ALA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "UNC",
+    "away": "ND",
+    "expected_home_margin": -23.5
+  },
+  {
+    "week": 5,
+    "home": "UGA",
+    "away": "VAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "COL",
+    "away": "TTU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CLEM",
+    "away": "MIA",
+    "expected_home_margin": -7
+  },
+  {
+    "week": 5,
+    "home": "SMU",
+    "away": "BC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "HOU",
+    "away": "UCF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "KU",
+    "away": "MTSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "WAKE",
+    "away": "STAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CONN",
+    "away": "SYR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "AF",
+    "away": "NAVY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "ISU",
+    "away": "WVU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "MINN",
+    "away": "MICH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "WIS",
+    "away": "MSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "BUFF",
+    "away": "WMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "BALL",
+    "away": "TOL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "MIAOH",
+    "away": "BGSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CLT",
+    "away": "MEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "MIZ",
+    "away": "FLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "UMASS",
+    "away": "EMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CMU",
+    "away": "AKR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "TENN",
+    "away": "AUB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "FSU",
+    "away": "UVA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "IOWA",
+    "away": "OSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "KENT",
+    "away": "OHIO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "NCST",
+    "away": "LOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "GAST",
+    "away": "ODU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "UNLV",
+    "away": "CAL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "NDSU",
+    "away": "WYO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "JMU",
+    "away": "MRSH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "NEB",
+    "away": "MD",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "UNM",
+    "away": "UTEP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "ILL",
+    "away": "PUR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "SC",
+    "away": "UK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CSU",
+    "away": "ORST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "RICE",
+    "away": "UTSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "TAMU",
+    "away": "ARK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "TCU",
+    "away": "BYU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "USA",
+    "away": "ULM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "CCU",
+    "away": "GASO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "USF",
+    "away": "TEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "USC",
+    "away": "WASH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "LT",
+    "away": "ARMY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "BSU",
+    "away": "USU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "LA",
+    "away": "ARST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "RUTG",
+    "away": "IND",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "WSU",
+    "away": "FRES",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "ASU",
+    "away": "BAY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "SDSU",
+    "away": "TXST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "ARIZ",
+    "away": "CIN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 5,
+    "home": "HAW",
+    "away": "SJSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "TROY",
+    "away": "USM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "KENN",
+    "away": "JVST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "FIU",
+    "away": "NMSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "WKU",
+    "away": "MOST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "LIB",
+    "away": "SHSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ARST",
+    "away": "USA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UTSA",
+    "away": "USF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "LOU",
+    "away": "FSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "SJSU",
+    "away": "WYO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "USU",
+    "away": "WSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "WASH",
+    "away": "IOWA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "BYU",
+    "away": "ISU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "NCST",
+    "away": "WAKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "APP",
+    "away": "ODU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "WMU",
+    "away": "KENT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "MEM",
+    "away": "UAB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ECU",
+    "away": "RICE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "PUR",
+    "away": "MINN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ORE",
+    "away": "UCLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ALA",
+    "away": "UGA",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 6,
+    "home": "ARK",
+    "away": "TENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "FLA",
+    "away": "SC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UK",
+    "away": "LSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "MIZ",
+    "away": "TAMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "VAN",
+    "away": "OLE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "OKST",
+    "away": "UCF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UTAH",
+    "away": "KU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "PITT",
+    "away": "UNC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "OSU",
+    "away": "MD",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "NEB",
+    "away": "IND",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "LT",
+    "away": "LA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "OHIO",
+    "away": "CMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "WVU",
+    "away": "ARIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "GT",
+    "away": "DUKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "MRSH",
+    "away": "CCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UNT",
+    "away": "CLT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "BGSU",
+    "away": "SACST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UTEP",
+    "away": "NEV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "PSU",
+    "away": "USC",
+    "expected_home_margin": 1.5
+  },
+  {
+    "week": 6,
+    "home": "UMASS",
+    "away": "MIAOH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "KSU",
+    "away": "HOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "NW",
+    "away": "BALL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "MSU",
+    "away": "ILL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "GASO",
+    "away": "JMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "TOL",
+    "away": "BUFF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "TEM",
+    "away": "CONN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "CAL",
+    "away": "VT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UVA",
+    "away": "SYR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ASU",
+    "away": "HAW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ARMY",
+    "away": "TUL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "AKR",
+    "away": "EMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "OU",
+    "away": "TEX",
+    "expected_home_margin": -6
+  },
+  {
+    "week": 6,
+    "home": "ND",
+    "away": "STAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "NAVY",
+    "away": "TLSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "ORST",
+    "away": "SDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "UNLV",
+    "away": "NDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "NIU",
+    "away": "AF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 6,
+    "home": "FRES",
+    "away": "BSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MTSU",
+    "away": "DEL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "JVST",
+    "away": "FIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MOST",
+    "away": "KENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "SHSU",
+    "away": "WKU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "UAB",
+    "away": "ECU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "ODU",
+    "away": "GASO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TXST",
+    "away": "CSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TUL",
+    "away": "MEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "PUR",
+    "away": "WASH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "CCU",
+    "away": "APP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "BUFF",
+    "away": "UMASS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "CMU",
+    "away": "WMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "HAW",
+    "away": "UNM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "BGSU",
+    "away": "BALL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MIAOH",
+    "away": "AKR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "EMU",
+    "away": "TOL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MD",
+    "away": "RUTG",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "LA",
+    "away": "TROY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "VAN",
+    "away": "ARK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TTU",
+    "away": "ASU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "CAL",
+    "away": "WAKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "LSU",
+    "away": "MSST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "USM",
+    "away": "ARST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "BYU",
+    "away": "ND",
+    "expected_home_margin": -10
+  },
+  {
+    "week": 7,
+    "home": "WVU",
+    "away": "CIN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TEX",
+    "away": "FLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "OU",
+    "away": "UK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TENN",
+    "away": "ALA",
+    "expected_home_margin": -1.5
+  },
+  {
+    "week": 7,
+    "home": "UGA",
+    "away": "AUB",
+    "expected_home_margin": 16.5
+  },
+  {
+    "week": 7,
+    "home": "COL",
+    "away": "UTAH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "ORE",
+    "away": "NEB",
+    "expected_home_margin": 21.5
+  },
+  {
+    "week": 7,
+    "home": "UCLA",
+    "away": "WIS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MIA",
+    "away": "FSU",
+    "expected_home_margin": 16.5
+  },
+  {
+    "week": 7,
+    "home": "VT",
+    "away": "GT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "BC",
+    "away": "PITT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "SMU",
+    "away": "UVA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "IND",
+    "away": "OSU",
+    "expected_home_margin": 1.5
+  },
+  {
+    "week": 7,
+    "home": "MICH",
+    "away": "PSU",
+    "expected_home_margin": 6.5
+  },
+  {
+    "week": 7,
+    "home": "OLE",
+    "away": "MIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "KSU",
+    "away": "KU",
+    "expected_home_margin": 7.5
+  },
+  {
+    "week": 7,
+    "home": "HOU",
+    "away": "OKST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "RICE",
+    "away": "TLSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "USF",
+    "away": "KENT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "TEM",
+    "away": "CLT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "JMU",
+    "away": "GAST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "UTSA",
+    "away": "NAVY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "BAY",
+    "away": "TCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "SYR",
+    "away": "LOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "DUKE",
+    "away": "UNC",
+    "expected_home_margin": 4.5
+  },
+  {
+    "week": 7,
+    "home": "ULM",
+    "away": "LT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "MSU",
+    "away": "NW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "SACST",
+    "away": "OHIO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "ARMY",
+    "away": "FAU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "WYO",
+    "away": "NIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "AF",
+    "away": "UNLV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "ORST",
+    "away": "WSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "NDSU",
+    "away": "NEV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "UTEP",
+    "away": "SJSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 7,
+    "home": "SDSU",
+    "away": "FRES",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "DEL",
+    "away": "MOST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "FIU",
+    "away": "MTSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MRSH",
+    "away": "USA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "SHSU",
+    "away": "NMSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "KENN",
+    "away": "LIB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "APP",
+    "away": "JMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MEM",
+    "away": "ECU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UVA",
+    "away": "DUKE",
+    "expected_home_margin": 6.5
+  },
+  {
+    "week": 8,
+    "home": "CONN",
+    "away": "UMASS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TLSA",
+    "away": "ARMY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "WYO",
+    "away": "AF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "STAN",
+    "away": "NCST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MSST",
+    "away": "OU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "OKST",
+    "away": "COL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "SC",
+    "away": "TENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "LT",
+    "away": "ODU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "ALA",
+    "away": "TAMU",
+    "expected_home_margin": 2.5
+  },
+  {
+    "week": 8,
+    "home": "UK",
+    "away": "VAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "CLEM",
+    "away": "VT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TOL",
+    "away": "WMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UNC",
+    "away": "SYR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TUL",
+    "away": "UTSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "SMU",
+    "away": "CAL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UCLA",
+    "away": "MSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "ILL",
+    "away": "ORE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "NIU",
+    "away": "HAW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "BALL",
+    "away": "SACST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "KENT",
+    "away": "AKR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "BUFF",
+    "away": "BGSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TEX",
+    "away": "OLE",
+    "expected_home_margin": 8.5
+  },
+  {
+    "week": 8,
+    "home": "KU",
+    "away": "BAY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UCF",
+    "away": "BYU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UTAH",
+    "away": "HOU",
+    "expected_home_margin": 6.5
+  },
+  {
+    "week": 8,
+    "home": "ARIZ",
+    "away": "ISU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "ASU",
+    "away": "KSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "CMU",
+    "away": "MIAOH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "CIN",
+    "away": "TTU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TCU",
+    "away": "WVU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "GT",
+    "away": "BC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MIA",
+    "away": "PITT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TROY",
+    "away": "ULM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "USM",
+    "away": "LA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "OHIO",
+    "away": "EMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "FAU",
+    "away": "RICE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "WIS",
+    "away": "USC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "NW",
+    "away": "RUTG",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MINN",
+    "away": "IOWA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "MICH",
+    "away": "IND",
+    "expected_home_margin": -6
+  },
+  {
+    "week": 8,
+    "home": "AUB",
+    "away": "LSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "NAVY",
+    "away": "UNT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "NEV",
+    "away": "SJSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "WSU",
+    "away": "BSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "CSU",
+    "away": "SDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "ARST",
+    "away": "GAST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "TXST",
+    "away": "USU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 8,
+    "home": "UNM",
+    "away": "NDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "WKU",
+    "away": "DEL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "MOST",
+    "away": "SHSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "MTSU",
+    "away": "KENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "NMSU",
+    "away": "JVST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UNT",
+    "away": "FAU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "JMU",
+    "away": "TROY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "CLT",
+    "away": "TUL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UCF",
+    "away": "BAY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "SACST",
+    "away": "KENT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "FSU",
+    "away": "CLEM",
+    "expected_home_margin": -1.5
+  },
+  {
+    "week": 9,
+    "home": "ISU",
+    "away": "OKST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "GASO",
+    "away": "APP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UCLA",
+    "away": "NEV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "WAKE",
+    "away": "UVA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "TCU",
+    "away": "KU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "PSU",
+    "away": "PUR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "SJSU",
+    "away": "UNM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "MD",
+    "away": "ILL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "BYU",
+    "away": "ASU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "PITT",
+    "away": "GT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "ORE",
+    "away": "NW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "USC",
+    "away": "OSU",
+    "expected_home_margin": -7.5
+  },
+  {
+    "week": 9,
+    "home": "FRES",
+    "away": "ORST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "MEM",
+    "away": "ARMY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "NCST",
+    "away": "CAL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "USA",
+    "away": "LT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "SYR",
+    "away": "SMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "CIN",
+    "away": "UTAH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "COL",
+    "away": "KSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "TTU",
+    "away": "ARIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "OU",
+    "away": "SC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "OLE",
+    "away": "AUB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "ARK",
+    "away": "MIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "DUKE",
+    "away": "BC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UNC",
+    "away": "MIA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "IND",
+    "away": "MINN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "IOWA",
+    "away": "WIS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "NEB",
+    "away": "WASH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "GAST",
+    "away": "CCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "ODU",
+    "away": "MRSH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "RUTG",
+    "away": "MICH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "LOU",
+    "away": "STAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "USF",
+    "away": "UAB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "TEX",
+    "away": "MSST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "ECU",
+    "away": "TEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "ULM",
+    "away": "USM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "WMU",
+    "away": "BGSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "NAVY",
+    "away": "ND",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "AF",
+    "away": "CONN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UGA",
+    "away": "FLA",
+    "expected_home_margin": 12.5
+  },
+  {
+    "week": 9,
+    "home": "LIB",
+    "away": "FIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "USU",
+    "away": "CSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "NDSU",
+    "away": "UTEP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "SDSU",
+    "away": "WSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "BSU",
+    "away": "TXST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 9,
+    "home": "UNLV",
+    "away": "NIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MIAOH",
+    "away": "BUFF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "AKR",
+    "away": "OHIO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "UMASS",
+    "away": "BALL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "SACST",
+    "away": "TOL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "EMU",
+    "away": "CMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "FAU",
+    "away": "UTSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "USM",
+    "away": "JMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "SMU",
+    "away": "VT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ECU",
+    "away": "USF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ILL",
+    "away": "NEB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "NEV",
+    "away": "UNM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ARIZ",
+    "away": "TCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "NW",
+    "away": "IOWA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "UTEP",
+    "away": "HAW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "FLA",
+    "away": "OU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "OLE",
+    "away": "UGA",
+    "expected_home_margin": -4.5
+  },
+  {
+    "week": 10,
+    "home": "NCST",
+    "away": "DUKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "TTU",
+    "away": "WVU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "SYR",
+    "away": "CLEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "GT",
+    "away": "LOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "UNT",
+    "away": "RICE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "SJSU",
+    "away": "NIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MSST",
+    "away": "VAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "PUR",
+    "away": "MD",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "TENN",
+    "away": "UK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "BC",
+    "away": "FSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "OSU",
+    "away": "ORE",
+    "expected_home_margin": 6
+  },
+  {
+    "week": 10,
+    "home": "UAB",
+    "away": "CLT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "APP",
+    "away": "GAST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "TROY",
+    "away": "LT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "WIS",
+    "away": "RUTG",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "KU",
+    "away": "UCF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "UTAH",
+    "away": "BYU",
+    "expected_home_margin": 3
+  },
+  {
+    "week": 10,
+    "home": "HOU",
+    "away": "CIN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "SC",
+    "away": "TAMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MIZ",
+    "away": "TEX",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "LSU",
+    "away": "ALA",
+    "expected_home_margin": 3.5
+  },
+  {
+    "week": 10,
+    "home": "AUB",
+    "away": "ARK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "WASH",
+    "away": "PSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "BAY",
+    "away": "ISU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "KSU",
+    "away": "OKST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ASU",
+    "away": "COL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "GASO",
+    "away": "MRSH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MINN",
+    "away": "UCLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "CCU",
+    "away": "ODU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MICH",
+    "away": "MSU",
+    "expected_home_margin": 16.5
+  },
+  {
+    "week": 10,
+    "home": "TUL",
+    "away": "TLSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "LA",
+    "away": "USA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "CONN",
+    "away": "UNC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ARST",
+    "away": "ULM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "KENN",
+    "away": "DEL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "NAVY",
+    "away": "TEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "MTSU",
+    "away": "WKU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "FIU",
+    "away": "MOST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "NMSU",
+    "away": "LIB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "CSU",
+    "away": "BSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "JVST",
+    "away": "SHSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ND",
+    "away": "MIA",
+    "expected_home_margin": 6.5
+  },
+  {
+    "week": 10,
+    "home": "ARMY",
+    "away": "AF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "USU",
+    "away": "FRES",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "UNLV",
+    "away": "WYO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 10,
+    "home": "ORST",
+    "away": "TXST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "BGSU",
+    "away": "KENT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "MIAOH",
+    "away": "OHIO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "AKR",
+    "away": "WMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "CMU",
+    "away": "SACST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "BALL",
+    "away": "BUFF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "TOL",
+    "away": "UMASS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "USF",
+    "away": "MEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "ULM",
+    "away": "LA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "PITT",
+    "away": "FSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UCLA",
+    "away": "ILL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "COL",
+    "away": "HOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "VAN",
+    "away": "ALA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "IOWA",
+    "away": "PUR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "PSU",
+    "away": "MINN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "LSU",
+    "away": "TEX",
+    "expected_home_margin": -2.5
+  },
+  {
+    "week": 11,
+    "home": "ORE",
+    "away": "MICH",
+    "expected_home_margin": 13.5
+  },
+  {
+    "week": 11,
+    "home": "MSU",
+    "away": "WASH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "VT",
+    "away": "STAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "CCU",
+    "away": "ARST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UTEP",
+    "away": "WYO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "MRSH",
+    "away": "APP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "BYU",
+    "away": "BAY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UCF",
+    "away": "ASU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "RUTG",
+    "away": "NEB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "ARK",
+    "away": "SC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "IND",
+    "away": "USC",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 11,
+    "home": "TEM",
+    "away": "UAB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "TAMU",
+    "away": "TENN",
+    "expected_home_margin": 8.5
+  },
+  {
+    "week": 11,
+    "home": "OU",
+    "away": "OLE",
+    "expected_home_margin": 4
+  },
+  {
+    "week": 11,
+    "home": "MSST",
+    "away": "AUB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UK",
+    "away": "FLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UGA",
+    "away": "MIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "ARIZ",
+    "away": "UTAH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "OKST",
+    "away": "TTU",
+    "expected_home_margin": -15.5
+  },
+  {
+    "week": 11,
+    "home": "TCU",
+    "away": "KSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "WVU",
+    "away": "KU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "NIU",
+    "away": "NEV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "GAST",
+    "away": "GASO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "USA",
+    "away": "TROY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UVA",
+    "away": "CAL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "LT",
+    "away": "USM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "ISU",
+    "away": "CIN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UNC",
+    "away": "LOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UTSA",
+    "away": "UNT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "CLEM",
+    "away": "GT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "RICE",
+    "away": "TUL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "NCST",
+    "away": "SYR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "SMU",
+    "away": "WAKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "MD",
+    "away": "WIS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "OSU",
+    "away": "NW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "CLT",
+    "away": "ECU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "TLSA",
+    "away": "FAU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "MIA",
+    "away": "DUKE",
+    "expected_home_margin": 21
+  },
+  {
+    "week": 11,
+    "home": "CONN",
+    "away": "JMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "SHSU",
+    "away": "KENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "DEL",
+    "away": "FIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "MOST",
+    "away": "NMSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "LIB",
+    "away": "MTSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "ND",
+    "away": "BC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "WKU",
+    "away": "JVST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "TXST",
+    "away": "FRES",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "BSU",
+    "away": "ORST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "AF",
+    "away": "SJSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "UNM",
+    "away": "UNLV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "SDSU",
+    "away": "USU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "WSU",
+    "away": "CSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 11,
+    "home": "HAW",
+    "away": "NDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "KENT",
+    "away": "MIAOH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "OHIO",
+    "away": "BALL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "WMU",
+    "away": "EMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "UMASS",
+    "away": "AKR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "BUFF",
+    "away": "CMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TEM",
+    "away": "RICE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "UCF",
+    "away": "ISU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TOL",
+    "away": "BGSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "DUKE",
+    "away": "CLEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MSU",
+    "away": "ORE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "AF",
+    "away": "UTEP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "KSU",
+    "away": "ARIZ",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "ILL",
+    "away": "IOWA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TENN",
+    "away": "LSU",
+    "expected_home_margin": -1.5
+  },
+  {
+    "week": 12,
+    "home": "LA",
+    "away": "CCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "SC",
+    "away": "UGA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "OU",
+    "away": "TAMU",
+    "expected_home_margin": 2.5
+  },
+  {
+    "week": 12,
+    "home": "PUR",
+    "away": "WIS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "BAY",
+    "away": "TTU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "ASU",
+    "away": "OKST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "FAU",
+    "away": "USF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "WVU",
+    "away": "HOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "LOU",
+    "away": "PITT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "BC",
+    "away": "SYR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "KU",
+    "away": "BYU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "FSU",
+    "away": "NCST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "PSU",
+    "away": "RUTG",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "USC",
+    "away": "MD",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "WASH",
+    "away": "IND",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TLSA",
+    "away": "CLT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TUL",
+    "away": "UNT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "UAB",
+    "away": "UTSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "NEV",
+    "away": "HAW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MRSH",
+    "away": "GAST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "USM",
+    "away": "USA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "UVA",
+    "away": "UNC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TROY",
+    "away": "GASO",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TCU",
+    "away": "UTAH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "CAL",
+    "away": "STAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MICH",
+    "away": "UCLA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MIZ",
+    "away": "UK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "FLA",
+    "away": "VAN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "GT",
+    "away": "WAKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "APP",
+    "away": "ULM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MINN",
+    "away": "NW",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TEX",
+    "away": "ARK",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "MIA",
+    "away": "VT",
+    "expected_home_margin": 16.5
+  },
+  {
+    "week": 12,
+    "home": "LT",
+    "away": "ARST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "CIN",
+    "away": "COL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "NEB",
+    "away": "OSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "ARMY",
+    "away": "ECU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "NAVY",
+    "away": "MEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "LIB",
+    "away": "WKU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "JVST",
+    "away": "MOST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "SHSU",
+    "away": "MTSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "NMSU",
+    "away": "DEL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "KENN",
+    "away": "FIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "CONN",
+    "away": "ODU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "NDSU",
+    "away": "NIU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "TXST",
+    "away": "WSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "SJSU",
+    "away": "UNLV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "ND",
+    "away": "SMU",
+    "expected_home_margin": 17.5
+  },
+  {
+    "week": 12,
+    "home": "FRES",
+    "away": "CSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "WYO",
+    "away": "UNM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "BSU",
+    "away": "SDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 12,
+    "home": "ORST",
+    "away": "USU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "WMU",
+    "away": "MIAOH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "EMU",
+    "away": "KENT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "TTU",
+    "away": "TCU",
+    "expected_home_margin": 16.5
+  },
+  {
+    "week": 13,
+    "home": "MEM",
+    "away": "TEM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "USF",
+    "away": "TUL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ECU",
+    "away": "FAU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "AKR",
+    "away": "BUFF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "OHIO",
+    "away": "TOL",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "IOWA",
+    "away": "NEB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "OLE",
+    "away": "MSST",
+    "expected_home_margin": 14.5
+  },
+  {
+    "week": 13,
+    "home": "USA",
+    "away": "APP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "SJSU",
+    "away": "NDSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "FSU",
+    "away": "FLA",
+    "expected_home_margin": -4.5
+  },
+  {
+    "week": 13,
+    "home": "TAMU",
+    "away": "TEX",
+    "expected_home_margin": -2.5
+  },
+  {
+    "week": 13,
+    "home": "WIS",
+    "away": "MINN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UTAH",
+    "away": "WVU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UCLA",
+    "away": "USC",
+    "expected_home_margin": -10.5
+  },
+  {
+    "week": 13,
+    "home": "CLT",
+    "away": "NAVY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "IND",
+    "away": "PUR",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "CAL",
+    "away": "PITT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "SYR",
+    "away": "ND",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "WAKE",
+    "away": "DUKE",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "MIA",
+    "away": "BC",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "HOU",
+    "away": "BAY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ARIZ",
+    "away": "ASU",
+    "expected_home_margin": 4.5
+  },
+  {
+    "week": 13,
+    "home": "NW",
+    "away": "ILL",
+    "expected_home_margin": -3.5
+  },
+  {
+    "week": 13,
+    "home": "GASO",
+    "away": "LT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "RICE",
+    "away": "ARMY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "NIU",
+    "away": "UTEP",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UNT",
+    "away": "UAB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UTSA",
+    "away": "TLSA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "VT",
+    "away": "UVA",
+    "expected_home_margin": 1.5
+  },
+  {
+    "week": 13,
+    "home": "UGA",
+    "away": "GT",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UNC",
+    "away": "NCST",
+    "expected_home_margin": -1.5
+  },
+  {
+    "week": 13,
+    "home": "ISU",
+    "away": "KSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "OKST",
+    "away": "KU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "VAN",
+    "away": "TENN",
+    "expected_home_margin": -3
+  },
+  {
+    "week": 13,
+    "home": "ARK",
+    "away": "LSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ALA",
+    "away": "AUB",
+    "expected_home_margin": 10
+  },
+  {
+    "week": 13,
+    "home": "MD",
+    "away": "PSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "MIZ",
+    "away": "OU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "STAN",
+    "away": "SMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ORE",
+    "away": "WASH",
+    "expected_home_margin": 15.5
+  },
+  {
+    "week": 13,
+    "home": "GAST",
+    "away": "LA",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ULM",
+    "away": "MRSH",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "RUTG",
+    "away": "MSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "WYO",
+    "away": "CONN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "JMU",
+    "away": "CCU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "BYU",
+    "away": "CIN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "CLEM",
+    "away": "SC",
+    "expected_home_margin": 3
+  },
+  {
+    "week": 13,
+    "home": "ODU",
+    "away": "USM",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UK",
+    "away": "LOU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "COL",
+    "away": "UCF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "BGSU",
+    "away": "UMASS",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "OSU",
+    "away": "MICH",
+    "expected_home_margin": 13.5
+  },
+  {
+    "week": 13,
+    "home": "BALL",
+    "away": "CMU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "WKU",
+    "away": "KENN",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "FIU",
+    "away": "SHSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "MTSU",
+    "away": "NMSU",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "MOST",
+    "away": "LIB",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "ARST",
+    "away": "TROY",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "DEL",
+    "away": "JVST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UNM",
+    "away": "AF",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "UNLV",
+    "away": "NEV",
+    "expected_home_margin": null
+  },
+  {
+    "week": 13,
+    "home": "HAW",
+    "away": "SACST",
+    "expected_home_margin": null
+  },
+  {
+    "week": 15,
+    "home": "ARMY",
+    "away": "NAVY",
+    "expected_home_margin": -2.5
+  }
+]

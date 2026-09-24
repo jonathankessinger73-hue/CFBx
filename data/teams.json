@@ -1,0 +1,1382 @@
+[
+  {
+    "id": "BC",
+    "name": "Boston College",
+    "mascot": "Eagles",
+    "conference": "ACC",
+    "strength": 45,
+    "primary_color": "#98002E",
+    "secondary_color": "#BC9B6A",
+    "ipo_price": 20.85
+  },
+  {
+    "id": "CAL",
+    "name": "California",
+    "mascot": "Golden Bears",
+    "conference": "ACC",
+    "strength": 51,
+    "primary_color": "#003262",
+    "secondary_color": "#FDB515",
+    "ipo_price": 21.05
+  },
+  {
+    "id": "CLEM",
+    "name": "Clemson",
+    "mascot": "Tigers",
+    "conference": "ACC",
+    "strength": 67,
+    "primary_color": "#F56600",
+    "secondary_color": "#522D80",
+    "ipo_price": 43.5
+  },
+  {
+    "id": "DUKE",
+    "name": "Duke",
+    "mascot": "Blue Devils",
+    "conference": "ACC",
+    "strength": 63,
+    "primary_color": "#001A57",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 24.8
+  },
+  {
+    "id": "FSU",
+    "name": "Florida State",
+    "mascot": "Seminoles",
+    "conference": "ACC",
+    "strength": 64,
+    "primary_color": "#782F40",
+    "secondary_color": "#CEB888",
+    "ipo_price": 25.75
+  },
+  {
+    "id": "GT",
+    "name": "Georgia Tech",
+    "mascot": "Yellow Jackets",
+    "conference": "ACC",
+    "strength": 67,
+    "primary_color": "#B3A369",
+    "secondary_color": "#003057",
+    "ipo_price": 22.45
+  },
+  {
+    "id": "LOU",
+    "name": "Louisville",
+    "mascot": "Cardinals",
+    "conference": "ACC",
+    "strength": 70,
+    "primary_color": "#AD0000",
+    "secondary_color": "#000000",
+    "ipo_price": 26.6
+  },
+  {
+    "id": "MIA",
+    "name": "Miami",
+    "mascot": "Hurricanes",
+    "conference": "ACC",
+    "strength": 81,
+    "primary_color": "#F47321",
+    "secondary_color": "#005030",
+    "ipo_price": 32.3
+  },
+  {
+    "id": "NCST",
+    "name": "NC State",
+    "mascot": "Wolfpack",
+    "conference": "ACC",
+    "strength": 61,
+    "primary_color": "#CC0000",
+    "secondary_color": "#000000",
+    "ipo_price": 26
+  },
+  {
+    "id": "UNC",
+    "name": "North Carolina",
+    "mascot": "Tar Heels",
+    "conference": "ACC",
+    "strength": 47,
+    "primary_color": "#7BAFD4",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 23.3
+  },
+  {
+    "id": "PITT",
+    "name": "Pittsburgh",
+    "mascot": "Panthers",
+    "conference": "ACC",
+    "strength": 65,
+    "primary_color": "#003594",
+    "secondary_color": "#FFB81C",
+    "ipo_price": 25.55
+  },
+  {
+    "id": "SMU",
+    "name": "SMU",
+    "mascot": "Mustangs",
+    "conference": "ACC",
+    "strength": 72,
+    "primary_color": "#C8102E",
+    "secondary_color": "#354CA1",
+    "ipo_price": 23.55
+  },
+  {
+    "id": "STAN",
+    "name": "Stanford",
+    "mascot": "Cardinal",
+    "conference": "ACC",
+    "strength": 41,
+    "primary_color": "#8C1515",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 21.15
+  },
+  {
+    "id": "SYR",
+    "name": "Syracuse",
+    "mascot": "Orange",
+    "conference": "ACC",
+    "strength": 39,
+    "primary_color": "#F76900",
+    "secondary_color": "#000E54",
+    "ipo_price": 21.65
+  },
+  {
+    "id": "UVA",
+    "name": "Virginia",
+    "mascot": "Cavaliers",
+    "conference": "ACC",
+    "strength": 69,
+    "primary_color": "#232D4B",
+    "secondary_color": "#F84C1E",
+    "ipo_price": 22.3
+  },
+  {
+    "id": "VT",
+    "name": "Virginia Tech",
+    "mascot": "Hokies",
+    "conference": "ACC",
+    "strength": 43,
+    "primary_color": "#630031",
+    "secondary_color": "#CF4420",
+    "ipo_price": 22.55
+  },
+  {
+    "id": "WAKE",
+    "name": "Wake Forest",
+    "mascot": "Demon Deacons",
+    "conference": "ACC",
+    "strength": 62,
+    "primary_color": "#9E7E38",
+    "secondary_color": "#000000",
+    "ipo_price": 23.6
+  },
+  {
+    "id": "ARMY",
+    "name": "Army",
+    "mascot": "Black Knights",
+    "conference": "American Athletic",
+    "strength": 56,
+    "primary_color": "#000000",
+    "secondary_color": "#D4BF91",
+    "ipo_price": 20.8
+  },
+  {
+    "id": "CLT",
+    "name": "Charlotte",
+    "mascot": "49ers",
+    "conference": "American Athletic",
+    "strength": 22,
+    "primary_color": "#046A38",
+    "secondary_color": "#B3A369",
+    "ipo_price": 14.75
+  },
+  {
+    "id": "ECU",
+    "name": "East Carolina",
+    "mascot": "Pirates",
+    "conference": "American Athletic",
+    "strength": 65,
+    "primary_color": "#592A8A",
+    "secondary_color": "#FDC82F",
+    "ipo_price": 18.05
+  },
+  {
+    "id": "FAU",
+    "name": "Florida Atlantic",
+    "mascot": "Owls",
+    "conference": "American Athletic",
+    "strength": 44,
+    "primary_color": "#003366",
+    "secondary_color": "#CC0000",
+    "ipo_price": 16.85
+  },
+  {
+    "id": "MEM",
+    "name": "Memphis",
+    "mascot": "Tigers",
+    "conference": "American Athletic",
+    "strength": 64,
+    "primary_color": "#003087",
+    "secondary_color": "#898D8D",
+    "ipo_price": 22.85
+  },
+  {
+    "id": "NAVY",
+    "name": "Navy",
+    "mascot": "Midshipmen",
+    "conference": "American Athletic",
+    "strength": 63,
+    "primary_color": "#00205B",
+    "secondary_color": "#C5B783",
+    "ipo_price": 20.7
+  },
+  {
+    "id": "UNT",
+    "name": "North Texas",
+    "mascot": "Mean Green",
+    "conference": "American Athletic",
+    "strength": 72,
+    "primary_color": "#00853E",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 19.1
+  },
+  {
+    "id": "RICE",
+    "name": "Rice",
+    "mascot": "Owls",
+    "conference": "American Athletic",
+    "strength": 37,
+    "primary_color": "#00205B",
+    "secondary_color": "#C1C6C8",
+    "ipo_price": 15.95
+  },
+  {
+    "id": "USF",
+    "name": "South Florida",
+    "mascot": "Bulls",
+    "conference": "American Athletic",
+    "strength": 69,
+    "primary_color": "#006747",
+    "secondary_color": "#CFC493",
+    "ipo_price": 18.3
+  },
+  {
+    "id": "TEM",
+    "name": "Temple",
+    "mascot": "Owls",
+    "conference": "American Athletic",
+    "strength": 49,
+    "primary_color": "#9D2235",
+    "secondary_color": "#000000",
+    "ipo_price": 16.7
+  },
+  {
+    "id": "TUL",
+    "name": "Tulane",
+    "mascot": "Green Wave",
+    "conference": "American Athletic",
+    "strength": 63,
+    "primary_color": "#006747",
+    "secondary_color": "#418FDE",
+    "ipo_price": 21.8
+  },
+  {
+    "id": "TLSA",
+    "name": "Tulsa",
+    "mascot": "Golden Hurricane",
+    "conference": "American Athletic",
+    "strength": 43,
+    "primary_color": "#002D72",
+    "secondary_color": "#B4A369",
+    "ipo_price": 16.75
+  },
+  {
+    "id": "UAB",
+    "name": "UAB",
+    "mascot": "Blazers",
+    "conference": "American Athletic",
+    "strength": 36,
+    "primary_color": "#1C5632",
+    "secondary_color": "#000000",
+    "ipo_price": 17.7
+  },
+  {
+    "id": "UTSA",
+    "name": "UTSA",
+    "mascot": "Roadrunners",
+    "conference": "American Athletic",
+    "strength": 60,
+    "primary_color": "#0C2340",
+    "secondary_color": "#F15A22",
+    "ipo_price": 20.3
+  },
+  {
+    "id": "ARIZ",
+    "name": "Arizona",
+    "mascot": "Wildcats",
+    "conference": "Big 12",
+    "strength": 70,
+    "primary_color": "#AB0520",
+    "secondary_color": "#0C234B",
+    "ipo_price": 21
+  },
+  {
+    "id": "ASU",
+    "name": "Arizona State",
+    "mascot": "Sun Devils",
+    "conference": "Big 12",
+    "strength": 60,
+    "primary_color": "#8C1D40",
+    "secondary_color": "#FFC627",
+    "ipo_price": 25
+  },
+  {
+    "id": "BYU",
+    "name": "BYU",
+    "mascot": "Cougars",
+    "conference": "Big 12",
+    "strength": 75,
+    "primary_color": "#002E5D",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 26.6
+  },
+  {
+    "id": "BAY",
+    "name": "Baylor",
+    "mascot": "Bears",
+    "conference": "Big 12",
+    "strength": 57,
+    "primary_color": "#003015",
+    "secondary_color": "#FFB81C",
+    "ipo_price": 24.25
+  },
+  {
+    "id": "CIN",
+    "name": "Cincinnati",
+    "mascot": "Bearcats",
+    "conference": "Big 12",
+    "strength": 61,
+    "primary_color": "#E00122",
+    "secondary_color": "#000000",
+    "ipo_price": 22.85
+  },
+  {
+    "id": "COL",
+    "name": "Colorado",
+    "mascot": "Buffaloes",
+    "conference": "Big 12",
+    "strength": 45,
+    "primary_color": "#CFB87C",
+    "secondary_color": "#000000",
+    "ipo_price": 19.85
+  },
+  {
+    "id": "HOU",
+    "name": "Houston",
+    "mascot": "Cougars",
+    "conference": "Big 12",
+    "strength": 64,
+    "primary_color": "#C8102E",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 22.25
+  },
+  {
+    "id": "ISU",
+    "name": "Iowa State",
+    "mascot": "Cyclones",
+    "conference": "Big 12",
+    "strength": 67,
+    "primary_color": "#C8102E",
+    "secondary_color": "#F1BE48",
+    "ipo_price": 25.2
+  },
+  {
+    "id": "KU",
+    "name": "Kansas",
+    "mascot": "Jayhawks",
+    "conference": "Big 12",
+    "strength": 60,
+    "primary_color": "#0051BA",
+    "secondary_color": "#E8000D",
+    "ipo_price": 18.25
+  },
+  {
+    "id": "KSU",
+    "name": "Kansas State",
+    "mascot": "Wildcats",
+    "conference": "Big 12",
+    "strength": 64,
+    "primary_color": "#512888",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 26.2
+  },
+  {
+    "id": "OKST",
+    "name": "Oklahoma State",
+    "mascot": "Cowboys",
+    "conference": "Big 12",
+    "strength": 36,
+    "primary_color": "#FF7300",
+    "secondary_color": "#000000",
+    "ipo_price": 25.2
+  },
+  {
+    "id": "TCU",
+    "name": "TCU",
+    "mascot": "Horned Frogs",
+    "conference": "Big 12",
+    "strength": 65,
+    "primary_color": "#4D1979",
+    "secondary_color": "#A3A9AC",
+    "ipo_price": 29.15
+  },
+  {
+    "id": "TTU",
+    "name": "Texas Tech",
+    "mascot": "Red Raiders",
+    "conference": "Big 12",
+    "strength": 89,
+    "primary_color": "#CC0000",
+    "secondary_color": "#000000",
+    "ipo_price": 25.9
+  },
+  {
+    "id": "UCF",
+    "name": "UCF",
+    "mascot": "Knights",
+    "conference": "Big 12",
+    "strength": 54,
+    "primary_color": "#000000",
+    "secondary_color": "#BA9B37",
+    "ipo_price": 21.7
+  },
+  {
+    "id": "UTAH",
+    "name": "Utah",
+    "mascot": "Utes",
+    "conference": "Big 12",
+    "strength": 82,
+    "primary_color": "#CC0000",
+    "secondary_color": "#000000",
+    "ipo_price": 29
+  },
+  {
+    "id": "WVU",
+    "name": "West Virginia",
+    "mascot": "Mountaineers",
+    "conference": "Big 12",
+    "strength": 47,
+    "primary_color": "#002855",
+    "secondary_color": "#EAAA00",
+    "ipo_price": 22.55
+  },
+  {
+    "id": "ILL",
+    "name": "Illinois",
+    "mascot": "Fighting Illini",
+    "conference": "Big Ten",
+    "strength": 71,
+    "primary_color": "#E84A27",
+    "secondary_color": "#13294B",
+    "ipo_price": 24
+  },
+  {
+    "id": "IND",
+    "name": "Indiana",
+    "mascot": "Hoosiers",
+    "conference": "Big Ten",
+    "strength": 95,
+    "primary_color": "#990000",
+    "secondary_color": "#EEEDEB",
+    "ipo_price": 32.35
+  },
+  {
+    "id": "IOWA",
+    "name": "Iowa",
+    "mascot": "Hawkeyes",
+    "conference": "Big Ten",
+    "strength": 79,
+    "primary_color": "#000000",
+    "secondary_color": "#FFCD00",
+    "ipo_price": 31
+  },
+  {
+    "id": "MD",
+    "name": "Maryland",
+    "mascot": "Terrapins",
+    "conference": "Big Ten",
+    "strength": 56,
+    "primary_color": "#E21833",
+    "secondary_color": "#FFD520",
+    "ipo_price": 21.4
+  },
+  {
+    "id": "MICH",
+    "name": "Michigan",
+    "mascot": "Wolverines",
+    "conference": "Big Ten",
+    "strength": 70,
+    "primary_color": "#00274C",
+    "secondary_color": "#FFCB05",
+    "ipo_price": 41.9
+  },
+  {
+    "id": "MSU",
+    "name": "Michigan State",
+    "mascot": "Spartans",
+    "conference": "Big Ten",
+    "strength": 51,
+    "primary_color": "#18453B",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 24.4
+  },
+  {
+    "id": "MINN",
+    "name": "Minnesota",
+    "mascot": "Golden Gophers",
+    "conference": "Big Ten",
+    "strength": 57,
+    "primary_color": "#7A0019",
+    "secondary_color": "#FFCC33",
+    "ipo_price": 27.1
+  },
+  {
+    "id": "NEB",
+    "name": "Nebraska",
+    "mascot": "Cornhuskers",
+    "conference": "Big Ten",
+    "strength": 63,
+    "primary_color": "#E41C38",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 22.4
+  },
+  {
+    "id": "NW",
+    "name": "Northwestern",
+    "mascot": "Wildcats",
+    "conference": "Big Ten",
+    "strength": 62,
+    "primary_color": "#4E2A84",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 23.55
+  },
+  {
+    "id": "OSU",
+    "name": "Ohio State",
+    "mascot": "Buckeyes",
+    "conference": "Big Ten",
+    "strength": 92,
+    "primary_color": "#BB0000",
+    "secondary_color": "#666666",
+    "ipo_price": 52
+  },
+  {
+    "id": "ORE",
+    "name": "Oregon",
+    "mascot": "Ducks",
+    "conference": "Big Ten",
+    "strength": 87,
+    "primary_color": "#154733",
+    "secondary_color": "#FEE123",
+    "ipo_price": 38.1
+  },
+  {
+    "id": "PSU",
+    "name": "Penn State",
+    "mascot": "Nittany Lions",
+    "conference": "Big Ten",
+    "strength": 77,
+    "primary_color": "#041E42",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 34.55
+  },
+  {
+    "id": "PUR",
+    "name": "Purdue",
+    "mascot": "Boilermakers",
+    "conference": "Big Ten",
+    "strength": 48,
+    "primary_color": "#CEB888",
+    "secondary_color": "#000000",
+    "ipo_price": 20.4
+  },
+  {
+    "id": "RUTG",
+    "name": "Rutgers",
+    "mascot": "Scarlet Knights",
+    "conference": "Big Ten",
+    "strength": 56,
+    "primary_color": "#CC0033",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 20.15
+  },
+  {
+    "id": "UCLA",
+    "name": "UCLA",
+    "mascot": "Bruins",
+    "conference": "Big Ten",
+    "strength": 44,
+    "primary_color": "#2D68C4",
+    "secondary_color": "#F2A900",
+    "ipo_price": 22.7
+  },
+  {
+    "id": "USC",
+    "name": "USC",
+    "mascot": "Trojans",
+    "conference": "Big Ten",
+    "strength": 76,
+    "primary_color": "#990000",
+    "secondary_color": "#FFC72C",
+    "ipo_price": 28.7
+  },
+  {
+    "id": "WASH",
+    "name": "Washington",
+    "mascot": "Huskies",
+    "conference": "Big Ten",
+    "strength": 78,
+    "primary_color": "#4B2E83",
+    "secondary_color": "#B7A57A",
+    "ipo_price": 32.55
+  },
+  {
+    "id": "WIS",
+    "name": "Wisconsin",
+    "mascot": "Badgers",
+    "conference": "Big Ten",
+    "strength": 50,
+    "primary_color": "#C5050C",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 28.35
+  },
+  {
+    "id": "DEL",
+    "name": "Delaware",
+    "mascot": "Blue Hens",
+    "conference": "Conference USA",
+    "strength": 42,
+    "primary_color": "#00539F",
+    "secondary_color": "#FFD200",
+    "ipo_price": 16.05
+  },
+  {
+    "id": "FIU",
+    "name": "Florida International",
+    "mascot": "Panthers",
+    "conference": "Conference USA",
+    "strength": 42,
+    "primary_color": "#081E3F",
+    "secondary_color": "#B6862C",
+    "ipo_price": 16.05
+  },
+  {
+    "id": "JVST",
+    "name": "Jacksonville State",
+    "mascot": "Gamecocks",
+    "conference": "Conference USA",
+    "strength": 47,
+    "primary_color": "#A6192E",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 18.75
+  },
+  {
+    "id": "KENN",
+    "name": "Kennesaw State",
+    "mascot": "Owls",
+    "conference": "Conference USA",
+    "strength": 48,
+    "primary_color": "#000000",
+    "secondary_color": "#FFC629",
+    "ipo_price": 16.6
+  },
+  {
+    "id": "LIB",
+    "name": "Liberty",
+    "mascot": "Flames",
+    "conference": "Conference USA",
+    "strength": 44,
+    "primary_color": "#002D62",
+    "secondary_color": "#C41230",
+    "ipo_price": 20.25
+  },
+  {
+    "id": "MTSU",
+    "name": "Middle Tennessee",
+    "mascot": "Blue Raiders",
+    "conference": "Conference USA",
+    "strength": 35,
+    "primary_color": "#0066CC",
+    "secondary_color": "#000000",
+    "ipo_price": 16.85
+  },
+  {
+    "id": "MOST",
+    "name": "Missouri State",
+    "mascot": "Bears",
+    "conference": "Conference USA",
+    "strength": 42,
+    "primary_color": "#6F263D",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 14.7
+  },
+  {
+    "id": "NMSU",
+    "name": "New Mexico State",
+    "mascot": "Aggies",
+    "conference": "Conference USA",
+    "strength": 36,
+    "primary_color": "#8B2332",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 15.65
+  },
+  {
+    "id": "SHSU",
+    "name": "Sam Houston",
+    "mascot": "Bearkats",
+    "conference": "Conference USA",
+    "strength": 21,
+    "primary_color": "#FF6600",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 17.95
+  },
+  {
+    "id": "WKU",
+    "name": "Western Kentucky",
+    "mascot": "Hilltoppers",
+    "conference": "Conference USA",
+    "strength": 57,
+    "primary_color": "#C8102E",
+    "secondary_color": "#000000",
+    "ipo_price": 21.1
+  },
+  {
+    "id": "ND",
+    "name": "Notre Dame",
+    "mascot": "Fighting Irish",
+    "conference": "FBS Independents",
+    "strength": 85,
+    "primary_color": "#0C2340",
+    "secondary_color": "#C99700",
+    "ipo_price": 37.2
+  },
+  {
+    "id": "CONN",
+    "name": "UConn",
+    "mascot": "Huskies",
+    "conference": "FBS Independents",
+    "strength": 61,
+    "primary_color": "#000E2F",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 16.9
+  },
+  {
+    "id": "AKR",
+    "name": "Akron",
+    "mascot": "Zips",
+    "conference": "Mid-American",
+    "strength": 38,
+    "primary_color": "#041E42",
+    "secondary_color": "#A89968",
+    "ipo_price": 14.3
+  },
+  {
+    "id": "BALL",
+    "name": "Ball State",
+    "mascot": "Cardinals",
+    "conference": "Mid-American",
+    "strength": 27,
+    "primary_color": "#BA0C2F",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 16.25
+  },
+  {
+    "id": "BGSU",
+    "name": "Bowling Green",
+    "mascot": "Falcons",
+    "conference": "Mid-American",
+    "strength": 40,
+    "primary_color": "#4F2C1D",
+    "secondary_color": "#FE5000",
+    "ipo_price": 16.45
+  },
+  {
+    "id": "BUFF",
+    "name": "Buffalo",
+    "mascot": "Bulls",
+    "conference": "Mid-American",
+    "strength": 46,
+    "primary_color": "#005BBB",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 17.9
+  },
+  {
+    "id": "CMU",
+    "name": "Central Michigan",
+    "mascot": "Chippewas",
+    "conference": "Mid-American",
+    "strength": 44,
+    "primary_color": "#6A0032",
+    "secondary_color": "#FFC82E",
+    "ipo_price": 17.1
+  },
+  {
+    "id": "EMU",
+    "name": "Eastern Michigan",
+    "mascot": "Eagles",
+    "conference": "Mid-American",
+    "strength": 37,
+    "primary_color": "#00674F",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 16.75
+  },
+  {
+    "id": "KENT",
+    "name": "Kent State",
+    "mascot": "Golden Flashes",
+    "conference": "Mid-American",
+    "strength": 31,
+    "primary_color": "#002664",
+    "secondary_color": "#EAAB00",
+    "ipo_price": 14.65
+  },
+  {
+    "id": "UMASS",
+    "name": "Massachusetts",
+    "mascot": "Minutemen",
+    "conference": "Mid-American",
+    "strength": 10,
+    "primary_color": "#881C1C",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 13
+  },
+  {
+    "id": "MIAOH",
+    "name": "Miami (OH)",
+    "mascot": "RedHawks",
+    "conference": "Mid-American",
+    "strength": 51,
+    "primary_color": "#C41230",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 20.75
+  },
+  {
+    "id": "OHIO",
+    "name": "Ohio",
+    "mascot": "Bobcats",
+    "conference": "Mid-American",
+    "strength": 50,
+    "primary_color": "#00694E",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 21.4
+  },
+  {
+    "id": "SACST",
+    "name": "Sacramento State",
+    "mascot": "Hornets",
+    "conference": "Mid-American",
+    "strength": 28,
+    "primary_color": "#043927",
+    "secondary_color": "#C4B581",
+    "ipo_price": 13
+  },
+  {
+    "id": "NDSU",
+    "name": "North Dakota State",
+    "mascot": "Bison",
+    "conference": "Mountain West",
+    "strength": 38,
+    "primary_color": "#009A44",
+    "secondary_color": "#FFC629",
+    "ipo_price": 14.5
+  },
+  {
+    "id": "TOL",
+    "name": "Toledo",
+    "mascot": "Rockets",
+    "conference": "Mid-American",
+    "strength": 62,
+    "primary_color": "#003E7E",
+    "secondary_color": "#FFCD00",
+    "ipo_price": 21.9
+  },
+  {
+    "id": "WMU",
+    "name": "Western Michigan",
+    "mascot": "Broncos",
+    "conference": "Mid-American",
+    "strength": 53,
+    "primary_color": "#532E1F",
+    "secondary_color": "#FFC72C",
+    "ipo_price": 20.25
+  },
+  {
+    "id": "AF",
+    "name": "Air Force",
+    "mascot": "Falcons",
+    "conference": "Mountain West",
+    "strength": 51,
+    "primary_color": "#003087",
+    "secondary_color": "#8A8D8F",
+    "ipo_price": 19.65
+  },
+  {
+    "id": "HAW",
+    "name": "Hawai'i",
+    "mascot": "Rainbow Warriors",
+    "conference": "Mountain West",
+    "strength": 57,
+    "primary_color": "#024731",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 18.15
+  },
+  {
+    "id": "NEV",
+    "name": "Nevada",
+    "mascot": "Wolf Pack",
+    "conference": "Mountain West",
+    "strength": 39,
+    "primary_color": "#003366",
+    "secondary_color": "#C0C0C0",
+    "ipo_price": 16.7
+  },
+  {
+    "id": "UNM",
+    "name": "New Mexico",
+    "mascot": "Lobos",
+    "conference": "Mountain West",
+    "strength": 56,
+    "primary_color": "#BA0C2F",
+    "secondary_color": "#000000",
+    "ipo_price": 16.35
+  },
+  {
+    "id": "NIU",
+    "name": "Northern Illinois",
+    "mascot": "Huskies",
+    "conference": "Mountain West",
+    "strength": 35,
+    "primary_color": "#BA0C2F",
+    "secondary_color": "#000000",
+    "ipo_price": 19.25
+  },
+  {
+    "id": "SJSU",
+    "name": "San José State",
+    "mascot": "Spartans",
+    "conference": "Mountain West",
+    "strength": 37,
+    "primary_color": "#0055A2",
+    "secondary_color": "#FFB81C",
+    "ipo_price": 17.95
+  },
+  {
+    "id": "UNLV",
+    "name": "UNLV",
+    "mascot": "Rebels",
+    "conference": "Mountain West",
+    "strength": 60,
+    "primary_color": "#B10202",
+    "secondary_color": "#A7A9AC",
+    "ipo_price": 18.35
+  },
+  {
+    "id": "UTEP",
+    "name": "UTEP",
+    "mascot": "Miners",
+    "conference": "Mountain West",
+    "strength": 34,
+    "primary_color": "#041E42",
+    "secondary_color": "#FF8200",
+    "ipo_price": 14.4
+  },
+  {
+    "id": "WYO",
+    "name": "Wyoming",
+    "mascot": "Cowboys",
+    "conference": "Mountain West",
+    "strength": 41,
+    "primary_color": "#492F24",
+    "secondary_color": "#FFC425",
+    "ipo_price": 18.4
+  },
+  {
+    "id": "BSU",
+    "name": "Boise State",
+    "mascot": "Broncos",
+    "conference": "Pac-12",
+    "strength": 59,
+    "primary_color": "#0033A0",
+    "secondary_color": "#D64309",
+    "ipo_price": 25.05
+  },
+  {
+    "id": "CSU",
+    "name": "Colorado State",
+    "mascot": "Rams",
+    "conference": "Pac-12",
+    "strength": 36,
+    "primary_color": "#1E4D2B",
+    "secondary_color": "#C8C372",
+    "ipo_price": 16.4
+  },
+  {
+    "id": "FRES",
+    "name": "Fresno State",
+    "mascot": "Bulldogs",
+    "conference": "Pac-12",
+    "strength": 57,
+    "primary_color": "#DB0032",
+    "secondary_color": "#002E6D",
+    "ipo_price": 20.9
+  },
+  {
+    "id": "ORST",
+    "name": "Oregon State",
+    "mascot": "Beavers",
+    "conference": "Pac-12",
+    "strength": 36,
+    "primary_color": "#DC4405",
+    "secondary_color": "#000000",
+    "ipo_price": 19.25
+  },
+  {
+    "id": "SDSU",
+    "name": "San Diego State",
+    "mascot": "Aztecs",
+    "conference": "Pac-12",
+    "strength": 63,
+    "primary_color": "#A6192E",
+    "secondary_color": "#000000",
+    "ipo_price": 20.55
+  },
+  {
+    "id": "TXST",
+    "name": "Texas State",
+    "mascot": "Bobcats",
+    "conference": "Pac-12",
+    "strength": 58,
+    "primary_color": "#501214",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 16.75
+  },
+  {
+    "id": "USU",
+    "name": "Utah State",
+    "mascot": "Aggies",
+    "conference": "Pac-12",
+    "strength": 51,
+    "primary_color": "#0F2439",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 18.9
+  },
+  {
+    "id": "WSU",
+    "name": "Washington State",
+    "mascot": "Cougars",
+    "conference": "Pac-12",
+    "strength": 60,
+    "primary_color": "#981E32",
+    "secondary_color": "#5E6A71",
+    "ipo_price": 22.4
+  },
+  {
+    "id": "ALA",
+    "name": "Alabama",
+    "mascot": "Crimson Tide",
+    "conference": "SEC",
+    "strength": 73,
+    "primary_color": "#9E1B32",
+    "secondary_color": "#EEEEEE",
+    "ipo_price": 58
+  },
+  {
+    "id": "ARK",
+    "name": "Arkansas",
+    "mascot": "Razorbacks",
+    "conference": "SEC",
+    "strength": 61,
+    "primary_color": "#9D2235",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 22.5
+  },
+  {
+    "id": "AUB",
+    "name": "Auburn",
+    "mascot": "Tigers",
+    "conference": "SEC",
+    "strength": 69,
+    "primary_color": "#0C2340",
+    "secondary_color": "#E87722",
+    "ipo_price": 26.85
+  },
+  {
+    "id": "FLA",
+    "name": "Florida",
+    "mascot": "Gators",
+    "conference": "SEC",
+    "strength": 59,
+    "primary_color": "#0021A5",
+    "secondary_color": "#FA4616",
+    "ipo_price": 27.85
+  },
+  {
+    "id": "UGA",
+    "name": "Georgia",
+    "mascot": "Bulldogs",
+    "conference": "SEC",
+    "strength": 85,
+    "primary_color": "#BA0C2F",
+    "secondary_color": "#000000",
+    "ipo_price": 54.35
+  },
+  {
+    "id": "UK",
+    "name": "Kentucky",
+    "mascot": "Wildcats",
+    "conference": "SEC",
+    "strength": 57,
+    "primary_color": "#0033A0",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 26.3
+  },
+  {
+    "id": "LSU",
+    "name": "LSU",
+    "mascot": "Tigers",
+    "conference": "SEC",
+    "strength": 68,
+    "primary_color": "#461D7C",
+    "secondary_color": "#FDD023",
+    "ipo_price": 36.4
+  },
+  {
+    "id": "MSST",
+    "name": "Mississippi State",
+    "mascot": "Bulldogs",
+    "conference": "SEC",
+    "strength": 60,
+    "primary_color": "#660000",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 25.5
+  },
+  {
+    "id": "MIZ",
+    "name": "Missouri",
+    "mascot": "Tigers",
+    "conference": "SEC",
+    "strength": 73,
+    "primary_color": "#000000",
+    "secondary_color": "#F1B82D",
+    "ipo_price": 28.8
+  },
+  {
+    "id": "OU",
+    "name": "Oklahoma",
+    "mascot": "Sooners",
+    "conference": "SEC",
+    "strength": 78,
+    "primary_color": "#841617",
+    "secondary_color": "#FDF9D8",
+    "ipo_price": 35.5
+  },
+  {
+    "id": "OLE",
+    "name": "Ole Miss",
+    "mascot": "Rebels",
+    "conference": "SEC",
+    "strength": 85,
+    "primary_color": "#14213D",
+    "secondary_color": "#CE1126",
+    "ipo_price": 34
+  },
+  {
+    "id": "SC",
+    "name": "South Carolina",
+    "mascot": "Gamecocks",
+    "conference": "SEC",
+    "strength": 62,
+    "primary_color": "#73000A",
+    "secondary_color": "#000000",
+    "ipo_price": 25.5
+  },
+  {
+    "id": "TENN",
+    "name": "Tennessee",
+    "mascot": "Volunteers",
+    "conference": "SEC",
+    "strength": 74,
+    "primary_color": "#FF8200",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 29.6
+  },
+  {
+    "id": "TEX",
+    "name": "Texas",
+    "mascot": "Longhorns",
+    "conference": "SEC",
+    "strength": 75,
+    "primary_color": "#BF5700",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 35.3
+  },
+  {
+    "id": "TAMU",
+    "name": "Texas A&M",
+    "mascot": "Aggies",
+    "conference": "SEC",
+    "strength": 81,
+    "primary_color": "#500000",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 30.7
+  },
+  {
+    "id": "VAN",
+    "name": "Vanderbilt",
+    "mascot": "Commodores",
+    "conference": "SEC",
+    "strength": 80,
+    "primary_color": "#000000",
+    "secondary_color": "#C5B358",
+    "ipo_price": 21.95
+  },
+  {
+    "id": "APP",
+    "name": "App State",
+    "mascot": "Mountaineers",
+    "conference": "Sun Belt",
+    "strength": 41,
+    "primary_color": "#000000",
+    "secondary_color": "#FFCC00",
+    "ipo_price": 21
+  },
+  {
+    "id": "ARST",
+    "name": "Arkansas State",
+    "mascot": "Red Wolves",
+    "conference": "Sun Belt",
+    "strength": 44,
+    "primary_color": "#CC092F",
+    "secondary_color": "#000000",
+    "ipo_price": 18.3
+  },
+  {
+    "id": "CCU",
+    "name": "Coastal Carolina",
+    "mascot": "Chanticleers",
+    "conference": "Sun Belt",
+    "strength": 36,
+    "primary_color": "#006F71",
+    "secondary_color": "#A27752",
+    "ipo_price": 19.6
+  },
+  {
+    "id": "GASO",
+    "name": "Georgia Southern",
+    "mascot": "Eagles",
+    "conference": "Sun Belt",
+    "strength": 44,
+    "primary_color": "#002664",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 19.05
+  },
+  {
+    "id": "GAST",
+    "name": "Georgia State",
+    "mascot": "Panthers",
+    "conference": "Sun Belt",
+    "strength": 25,
+    "primary_color": "#0039A6",
+    "secondary_color": "#C8102E",
+    "ipo_price": 16.75
+  },
+  {
+    "id": "JMU",
+    "name": "James Madison",
+    "mascot": "Dukes",
+    "conference": "Sun Belt",
+    "strength": 70,
+    "primary_color": "#450084",
+    "secondary_color": "#CBB677",
+    "ipo_price": 23.35
+  },
+  {
+    "id": "LA",
+    "name": "Louisiana",
+    "mascot": "Ragin' Cajuns",
+    "conference": "Sun Belt",
+    "strength": 43,
+    "primary_color": "#CE181E",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 20.8
+  },
+  {
+    "id": "LT",
+    "name": "Louisiana Tech",
+    "mascot": "Bulldogs",
+    "conference": "Sun Belt",
+    "strength": 53,
+    "primary_color": "#002D72",
+    "secondary_color": "#C60C30",
+    "ipo_price": 18.15
+  },
+  {
+    "id": "MRSH",
+    "name": "Marshall",
+    "mascot": "Thundering Herd",
+    "conference": "Sun Belt",
+    "strength": 50,
+    "primary_color": "#00B140",
+    "secondary_color": "#000000",
+    "ipo_price": 20.3
+  },
+  {
+    "id": "ODU",
+    "name": "Old Dominion",
+    "mascot": "Monarchs",
+    "conference": "Sun Belt",
+    "strength": 62,
+    "primary_color": "#003057",
+    "secondary_color": "#7C878E",
+    "ipo_price": 17.25
+  },
+  {
+    "id": "USA",
+    "name": "South Alabama",
+    "mascot": "Jaguars",
+    "conference": "Sun Belt",
+    "strength": 39,
+    "primary_color": "#00205B",
+    "secondary_color": "#C41E3A",
+    "ipo_price": 17.3
+  },
+  {
+    "id": "USM",
+    "name": "Southern Miss",
+    "mascot": "Golden Eagles",
+    "conference": "Sun Belt",
+    "strength": 46,
+    "primary_color": "#FFAA00",
+    "secondary_color": "#000000",
+    "ipo_price": 16.8
+  },
+  {
+    "id": "TROY",
+    "name": "Troy",
+    "mascot": "Trojans",
+    "conference": "Sun Belt",
+    "strength": 49,
+    "primary_color": "#8A2432",
+    "secondary_color": "#FFFFFF",
+    "ipo_price": 20
+  },
+  {
+    "id": "ULM",
+    "name": "UL Monroe",
+    "mascot": "Warhawks",
+    "conference": "Sun Belt",
+    "strength": 28,
+    "primary_color": "#4B1F60",
+    "secondary_color": "#F2A900",
+    "ipo_price": 14.65
+  }
+]

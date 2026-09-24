@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CFBx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="tape-wrap"><div class="tape" id="tape"></div></div>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="mark">CFB<span>x</span></div>
+    <div class="tag">Prices move on gameday, not sentiment</div>
+  </div>
+  <nav class="tabs">
+    <a class="tab active" id="tab-market" href="#/">Market</a>
+    <a class="tab" id="tab-portfolio" href="#/portfolio">Portfolio</a>
+    <a class="tab" id="tab-leaderboard" href="#/leaderboard">Leaders</a>
+  </nav>
+  <div class="acct" id="acct"></div>
+</header>
+
+<main id="main"><div class="loading">Loading market…</div></main>
+
+<footer class="simfoot">Play-money simulation · no purchase, no cash prizes, no affiliation with any school or league</footer>
+
+<!-- Public runtime config (API URL, Supabase URL + anon key), served by the API. -->
+<script src="config.js"></script>
+<!-- Supabase Auth browser bundle, served by the API from node_modules. -->
+<script src="vendor/supabase.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

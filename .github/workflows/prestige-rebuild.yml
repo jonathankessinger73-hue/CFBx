@@ -1,0 +1,44 @@
+name: Prestige rebuild
+
+# Once per season, before the first game: compute next season's opening
+# prices from the 12-season Program Prestige Score. Manual only. Without
+# "apply" it just produces the report (uploaded as a workflow artifact) for
+# review. Applying is refused if the season already has a completed game.
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season the opening prices are for (e.g. 2027)"
+        required: true
+      apply:
+        description: "Apply as opening prices (otherwise report only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cfbd-sync
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+      - name: Rebuild
+        run: node src/jobs/prestige.js --season "${{ inputs.season }}" ${{ inputs.apply && '--apply' || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prestige-${{ inputs.season }}
+          path: reports/prestige-${{ inputs.season }}.json
+          if-no-files-found: ignore

@@ -1,0 +1,56 @@
+name: CFBD sync
+
+# Pulls results and newly posted lines from CollegeFootballData and moves
+# prices. Once a day year-round, plus extra runs on game nights so results
+# land the same evening. Times are UTC (ET = UTC-4 during the season).
+on:
+  schedule:
+    - cron: "0 10 * * *"   # daily, 6am ET
+    - cron: "30 4 * * 5,6" # Thu + Fri nights, 12:30am ET
+    - cron: "0 21 * * 6"   # Sat, 5pm ET (early games)
+    - cron: "0 1 * * 0"    # Sat, 9pm ET (afternoon games)
+    - cron: "30 5 * * 0"   # Sat night, 1:30am ET (late games)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Compute and log price moves without writing"
+        type: boolean
+        default: false
+
+# Never run two syncs at once: each applies games against the prices it read.
+concurrency:
+  group: cfbd-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Points at staging until the repo variable CFBX_JOB_ENVIRONMENT is set
+    # to "production". Each environment holds its own DATABASE_URL secret.
+    environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+      SEASON: ${{ vars.SEASON || '2026' }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$CFBD_API_KEY" ]; then
+            echo "::warning::DATABASE_URL / CFBD_API_KEY secrets are not set for this environment; skipping sync."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+        if: steps.config.outputs.ready == 'true'
+      - run: node src/jobs/daily.js ${{ inputs.dry_run && '--dry-run' || '' }}
+        if: steps.config.outputs.ready == 'true'
