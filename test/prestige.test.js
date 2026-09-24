@@ -6,6 +6,7 @@ import {
   conferenceTier,
   isConferenceChampionship,
   computePrestige,
+  playoffStages,
 } from "../src/prestige/score.js";
 
 const close = (actual, expected, msg) => assert.ok(Math.abs(actual - expected) < 0.01, `${msg}: ${actual} vs ${expected}`);
@@ -198,4 +199,56 @@ test("a CFBD team id keeps a program together across a rename", () => {
     tickers: ["N", "B"],
   });
   assert.equal(r.rows.find((x) => x.ticker === "N").components.fbs_seasons, 2);
+});
+
+test("semifinals with blank notes are inferred from the title game (2015/2016 shape)", () => {
+  // The real 2016 season as CFBD reports it: both semifinals have null notes,
+  // and so does an ordinary bowl (South Alabama vs Air Force).
+  const post = (id, date, away, home, ap, hp, notes = null) =>
+    g({ id, seasonType: "postseason", neutralSite: true, startDate: date, away, home, awayPoints: ap, homePoints: hp, notes });
+  const games = [
+    post(1, "2016-12-27", "South Alabama", "Air Force", 21, 45),
+    post(2, "2016-12-31", "Washington", "Alabama", 7, 24),
+    post(3, "2016-12-31", "Ohio State", "Clemson", 0, 31),
+    post(4, "2017-01-02", "Auburn", "Oklahoma", 19, 35, "ALLSTATE SUGAR BOWL"),
+    post(5, "2017-01-09", "Clemson", "Alabama", 35, 31, "CFP NATIONAL CHAMPIONSHIP GAME PRESENTED BY AT&T"),
+  ];
+  const s = playoffStages(games);
+  const stageOf = (id) => s.get(games.find((x) => x.id === id));
+  assert.deepEqual(stageOf(2), { stage: 3, inferred: true });
+  assert.deepEqual(stageOf(3), { stage: 3, inferred: true });
+  assert.deepEqual(stageOf(1), { stage: 0, inferred: false }); // still just a bowl
+  assert.deepEqual(stageOf(4), { stage: 0, inferred: false });
+  assert.deepEqual(stageOf(5), { stage: 4, inferred: false });
+
+  // Scored as semifinals: Clemson's semi win earns appear + win.
+  const r = computePrestige({
+    gamesByYear: { 2016: games },
+    talent: [],
+    window: { start: 2015, end: 2016 },
+    resolve: (n) => ({ Clemson: "CLEM", "Ohio State": "OSU", "Air Force": "AF" })[n] ?? null,
+    tickers: ["CLEM", "OSU", "AF"],
+  });
+  const row = (t) => r.rows.find((x) => x.ticker === t).components;
+  const R = 1.15;
+  close(row("OSU").cfp, 26 * R, "OSU semi appearance");
+  close(row("CLEM").cfp, (26 + 19) * R + (45 + 30) * R, "CLEM semi win + title win");
+  close(row("AF").bowls, 9 * R, "Air Force bowl win");
+  assert.equal(r.report.playoff.filter((p) => p.inferred).length, 2);
+});
+
+test("labelled semifinals are left alone (12-team era)", () => {
+  const post = (id, date, away, home, ap, hp, notes) =>
+    g({ id, seasonType: "postseason", neutralSite: true, startDate: date, away, home, awayPoints: ap, homePoints: hp, notes });
+  const games = [
+    post(1, "2025-01-01", "Ohio State", "Oregon", 41, 21, "CFP Quarterfinal - Rose Bowl"),
+    post(2, "2025-01-10", "Texas", "Ohio State", 14, 28, "CFP Semifinal - Cotton Bowl"),
+    post(3, "2025-01-20", "Notre Dame", "Ohio State", 23, 34, "CFP National Championship"),
+  ];
+  const s = playoffStages(games);
+  assert.deepEqual(games.map((x) => s.get(x)), [
+    { stage: 2, inferred: false },
+    { stage: 3, inferred: false },
+    { stage: 4, inferred: false },
+  ]);
 });

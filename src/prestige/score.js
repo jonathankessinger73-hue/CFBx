@@ -62,6 +62,36 @@ export function cfpStage(notes) {
   return 0;
 }
 
+const teamKey = (g, home) => String((home ? g.homeId : g.awayId) ?? (home ? g.home : g.away));
+const byDate = (a, b) => String(a.startDate ?? "").localeCompare(String(b.startDate ?? "")) || (a.id ?? 0) - (b.id ?? 0);
+
+// Playoff round for each of a season's postseason games: from the notes
+// first (cfpStage), then filling gaps from structure. CFBD has blank notes
+// for some semifinals (e.g. the 2015 and 2016 seasons), and a blank note
+// alone can't tell a semifinal from an ordinary bowl. But both teams in the
+// national championship game got there by winning a semifinal: if a finalist
+// has no recognized semifinal, its last postseason win before the title game
+// was its semifinal.
+// Returns Map(game -> { stage, inferred }).
+export function playoffStages(postseasonGames) {
+  const stages = new Map(postseasonGames.map((g) => [g, { stage: cfpStage(g.notes), inferred: false }]));
+  const involves = (g, key) => teamKey(g, true) === key || teamKey(g, false) === key;
+  const winnerKey = (g) =>
+    g.homePoints > g.awayPoints ? teamKey(g, true) : g.awayPoints > g.homePoints ? teamKey(g, false) : null;
+  for (const final of postseasonGames.filter((g) => stages.get(g).stage === 4)) {
+    for (const finalist of [teamKey(final, true), teamKey(final, false)]) {
+      const games = postseasonGames.filter((g) => g !== final && involves(g, finalist));
+      if (games.some((g) => stages.get(g).stage === 3)) continue;
+      const semi = games
+        .filter((g) => stages.get(g).stage === 0 && winnerKey(g) === finalist && byDate(g, final) < 0)
+        .sort(byDate)
+        .pop();
+      if (semi) stages.set(semi, { stage: 3, inferred: true });
+    }
+  }
+  return stages;
+}
+
 const isArmyNavy = (g) => {
   const names = [g.home, g.away].map((n) => String(n).toLowerCase());
   return names.includes("army") && names.includes("navy");
@@ -180,9 +210,11 @@ export function computePrestige({ gamesByYear, talent, window, resolve, tickers,
       }
     }
 
+    const stages = playoffStages(games.filter((g) => g.seasonType === "postseason"));
+
     for (const g of games) {
-      const hKey = String(g.homeId ?? g.home);
-      const aKey = String(g.awayId ?? g.away);
+      const hKey = teamKey(g, true);
+      const aKey = teamKey(g, false);
       const hFbs = season.get(hKey).fbs;
       const aFbs = season.get(aKey).fbs;
       const winner = g.homePoints > g.awayPoints ? hKey : g.awayPoints > g.homePoints ? aKey : null;
@@ -194,14 +226,14 @@ export function computePrestige({ gamesByYear, talent, window, resolve, tickers,
       }
 
       if (g.seasonType === "postseason") {
-        const stage = cfpStage(g.notes);
+        const { stage, inferred } = stages.get(g);
         for (const [key, fbs] of [[hKey, hFbs], [aKey, aFbs]]) {
           if (!fbs) continue;
           const won = key === winner;
           if (stage) acc(key).cfp += STAGE_APPEAR[stage] * rec + (won ? STAGE_WIN[stage] * rec : 0);
           else acc(key).bowls += (BOWL_APPEAR + (won ? BOWL_WIN : 0)) * rec;
         }
-        if (stage) report.playoff.push({ year, stage, home: g.home, away: g.away, notes: g.notes });
+        if (stage) report.playoff.push({ year, stage, inferred, home: g.home, away: g.away, notes: g.notes });
       } else if (isConferenceChampionship(g, finalWeek, confGames.get(confWeekKey(g)))) {
         // Both teams get the appearance bonus; the winner also gets the win
         // bonus (8 + 16), mirroring how the CFP appear/win bonuses stack.

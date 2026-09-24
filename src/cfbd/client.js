@@ -86,6 +86,7 @@ export function normalizeGame(g) {
     homeClassification: (pick(g, "homeClassification", "home_division") ?? null)?.toLowerCase?.() ?? null,
     awayClassification: (pick(g, "awayClassification", "away_division") ?? null)?.toLowerCase?.() ?? null,
     notes: pick(g, "notes") ?? null,
+    startDate: pick(g, "startDate", "start_date") ?? null,
   };
 }
 
