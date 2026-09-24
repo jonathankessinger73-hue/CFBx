@@ -6,7 +6,7 @@ import { buildSeed } from "../src/seed/buildSeed.js";
 import { writeSeed } from "../src/seed/writeSeed.js";
 import { syncSeason } from "../src/jobs/syncSeason.js";
 import { createTeamResolver } from "../src/cfbd/teamNames.js";
-import { consensusSpread } from "../src/cfbd/client.js";
+import { consensusSpread, cleanApiKey, createCfbdClient } from "../src/cfbd/client.js";
 
 const skip = !TEST_DATABASE_URL && "TEST_DATABASE_URL not set";
 const read = (f) => JSON.parse(fs.readFileSync(new URL(`../data/${f}`, import.meta.url), "utf8"));
@@ -107,4 +107,20 @@ test("dry run writes nothing", { skip }, async () => {
   const summary = await syncSeason({ pool, cfbd, season: 2026, dryRun: true, log: () => {} });
   assert.equal(summary.gamesApplied, 1);
   assert.equal(await price("OSU"), before);
+});
+
+test("CFBD keys are cleaned of quotes, spaces and a pasted Bearer prefix", async () => {
+  for (const k of ["abc123", " abc123 ", '"abc123"', "Bearer abc123", "'Bearer abc123'", "bearer   abc123"]) {
+    assert.equal(cleanApiKey(k), "abc123", k);
+  }
+  let sent;
+  const cfbd = createCfbdClient({
+    apiKey: "Bearer abc123",
+    fetchImpl: async (url, opts) => {
+      sent = opts.headers.Authorization;
+      return new Response("{}", { status: 401 });
+    },
+  });
+  await assert.rejects(cfbd.lines(2026), /rejected the API key \(401\).*6 characters/);
+  assert.equal(sent, "Bearer abc123");
 });

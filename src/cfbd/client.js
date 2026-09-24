@@ -13,7 +13,19 @@ const BASE_URL = process.env.CFBD_BASE_URL || "https://api.collegefootballdata.c
  *        by URL. Only for historical pulls (the prestige rebuild); live jobs
  *        must not use it or they'd never see new results.
  */
+// Keys get pasted with extras: quotes, spaces, or a "Bearer " prefix copied
+// from CFBD's docs (we add that prefix ourselves). Strip them.
+export function cleanApiKey(key) {
+  return String(key ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .trim()
+    .replace(/^bearer\s+/i, "")
+    .trim();
+}
+
 export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl = fetch, cacheDir } = {}) {
+  apiKey = cleanApiKey(apiKey);
   if (!apiKey) throw new Error("CFBD_API_KEY is not set");
   async function get(pathname, params) {
     const url = new URL(pathname, BASE_URL);
@@ -24,6 +36,12 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     const res = await fetchImpl(url, {
       headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
     });
+    if (res.status === 401) {
+      throw new Error(
+        `CFBD rejected the API key (401). Check CFBD_API_KEY in .env: it should be only the key ` +
+          `from CFBD's email (${apiKey.length} characters were sent), with no quotes or "Bearer".`
+      );
+    }
     if (!res.ok) throw new Error(`CFBD ${url.pathname} failed: ${res.status} ${await res.text()}`);
     const body = await res.json();
     if (cacheFile) {
