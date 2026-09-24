@@ -4,6 +4,8 @@
 // from the API, and trades are *requests* the server executes at its own price.
 // Nothing here computes or asserts a price.
 
+import { helmetSVG } from "./helmet.js";
+
 const cfg = window.CFBX_CONFIG || {};
 const API = (cfg.apiUrl || "").replace(/\/$/, "");
 const STARTING_CASH = 10000;
@@ -66,22 +68,6 @@ function esc(s) {
   );
 }
 const safeColor = (c, fallback) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : fallback);
-
-function helmetSVG(primary, secondary, size = 56) {
-  const p = safeColor(primary, "#3A4657");
-  const s = safeColor(secondary, "#8993A3");
-  const h = Math.round(size * 0.72);
-  return (
-    `<svg width="${size}" height="${h}" viewBox="0 0 120 90" aria-hidden="true">` +
-    `<path d="M15,55 C15,20 45,10 70,10 C95,10 105,30 103,45 C101,58 90,63 79,60 L77,49 C76,43 69,39 59,39 L34,39 C24,39 19,45 17,55 Z" fill="${p}"/>` +
-    `<path d="M69,10 C81,10 88,16 92,24" stroke="${s}" stroke-width="6" fill="none" stroke-linecap="round"/>` +
-    `<circle cx="86" cy="43" r="5" fill="${s}"/>` +
-    `<path d="M19,49 Q11,56 17,66" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>` +
-    `<path d="M26,46 Q17,55 24,68" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>` +
-    `<path d="M33,44 Q24,53 31,66" stroke="#9AA0A6" stroke-width="4.5" fill="none" stroke-linecap="round"/>` +
-    `</svg>`
-  );
-}
 
 function sparklinePath(history, w, h, pad = 3) {
   const hist = history.length > 1 ? history : [history[0], history[0]];
@@ -398,7 +384,7 @@ function renderGrid() {
       return (
         `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
-        helmetSVG(t.primary_color, t.secondary_color, 44) +
+        helmetSVG(t.primary_color, t.secondary_color, 44, t.name) +
         `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div></div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
@@ -536,7 +522,7 @@ function renderDetail(ticker) {
   $("main").innerHTML =
     `<a class="detail-back" href="#/">&larr; Back to market</a>` +
     `<div class="detail-head"><div style="display:flex;align-items:center;gap:16px">` +
-    helmetSVG(t.primary_color, t.secondary_color, 84) +
+    helmetSVG(t.primary_color, t.secondary_color, 84, t.name) +
     `<div class="tk-name"><div class="tk">${esc(t.id)} &middot; ${esc(t.conference)} &middot; STRENGTH ${t.strength}</div>` +
     `<h1>${esc(t.name)}</h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}</div></div>` +
     `<div class="detail-price">` +
