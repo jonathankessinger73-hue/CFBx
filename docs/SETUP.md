@@ -302,6 +302,7 @@ the error.
 | `ENOTFOUND` / `ENETUNREACH` / timeout connecting | You used the Direct connection string. Use the **Session pooler** one (1.3). |
 | `self-signed certificate in certificate chain` | `DATABASE_CA_CERT_FILE` is missing or points at the wrong file, or `DATABASE_URL` has `?sslmode=require` on the end (remove it). |
 | `migrate` fails on `001_schema.sql` with a permission error on `auth.users` | Open Supabase **SQL Editor**, paste each file from `db/migrations/` in order, and click **Run**. Tell me which statement failed. |
+| Sign-in says `Invalid path specified in request URL` | `SUPABASE_URL` has extra text after `.supabase.co` (e.g. `/rest/v1/`). Current code strips it automatically; on older code, edit `.env` so it's just `https://<ref>.supabase.co`, then restart the app. |
 | Sign-in email never arrives | The built-in email sender only delivers to your Supabase organization's members and is heavily rate-limited (1.5.3). Check spam, wait a few minutes, or set up custom SMTP. |
 | Clicking the email link opens a "can't reach" page | The Site URL / Redirect URLs in 1.5.1 don't match where the app is running. |
 | `CFBD /games failed: 401` | `CFBD_API_KEY` is wrong or missing. |

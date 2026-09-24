@@ -6,6 +6,7 @@ import request from "supertest";
 import { TEST_DATABASE_URL, freshDatabase, createAuthUser } from "./helpers/db.js";
 import { createStore } from "../src/db/store.js";
 import { createApp } from "../src/api/app.js";
+import { supabaseBaseUrl } from "../src/api/auth.js";
 import { buildSeed } from "../src/seed/buildSeed.js";
 import { writeSeed } from "../src/seed/writeSeed.js";
 
@@ -223,4 +224,11 @@ test("serves the web app, its public config and the Supabase bundle", { skip }, 
   const bundle = await request(app).get("/vendor/supabase.js").expect(200);
   assert.match(bundle.text, /createClient/);
   await request(app).get("/app.js").expect(200);
+});
+
+test("SUPABASE_URL is reduced to the bare project address", () => {
+  for (const u of ["https://abcd.supabase.co", "https://abcd.supabase.co/", " https://abcd.supabase.co/rest/v1/ "]) {
+    assert.equal(supabaseBaseUrl(u), "https://abcd.supabase.co", u);
+  }
+  assert.throws(() => supabaseBaseUrl("abcd.supabase.co"), /not a valid URL/);
 });

@@ -3,13 +3,26 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+// Supabase clients want the bare project address ("https://<ref>.supabase.co").
+// Dashboard pages also show longer URLs (e.g. ".../rest/v1/"); anything after
+// the domain makes auth requests hit unknown paths ("Invalid path specified in
+// request URL"), so keep only scheme + host.
+export function supabaseBaseUrl(url) {
+  if (!url) return url;
+  try {
+    return new URL(url.trim()).origin;
+  } catch {
+    throw new Error(`SUPABASE_URL is not a valid URL: ${url}`);
+  }
+}
+
 // Returns an async (token) => userId | null backed by Supabase Auth.
 export function supabaseTokenVerifier({
   url = process.env.SUPABASE_URL,
   key = process.env.SUPABASE_ANON_KEY,
 } = {}) {
   if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY must be set");
-  const supabase = createClient(url, key, {
+  const supabase = createClient(supabaseBaseUrl(url), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return async (token) => {

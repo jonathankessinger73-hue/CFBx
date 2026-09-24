@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
-import { supabaseTokenVerifier } from "./auth.js";
+import { supabaseTokenVerifier, supabaseBaseUrl } from "./auth.js";
 import { createPool, createStore } from "../db/store.js";
 
 const store = createStore(createPool());
@@ -20,7 +20,7 @@ const app = createApp({
           // Public values only: this is sent to every browser.
           config: {
             apiUrl: process.env.PUBLIC_API_URL || "",
-            supabaseUrl: process.env.SUPABASE_URL,
+            supabaseUrl: supabaseBaseUrl(process.env.SUPABASE_URL),
             supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
           },
         },
