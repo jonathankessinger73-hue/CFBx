@@ -403,25 +403,154 @@ function renderGrid() {
 
 /* ---------- Rendering: team detail ---------- */
 
-function priceChart(hist) {
-  const w = 560, h = 220, pad = 30;
-  const min = Math.min(...hist), max = Math.max(...hist);
-  const range = max - min || 1;
-  const pts = hist
-    .map((v, i) => {
-      const x = pad + i * ((w - 2 * pad) / Math.max(hist.length - 1, 1));
-      const y = h - pad - ((v - min) / range) * (h - 2 * pad);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
+// Round numbers for the price axis: ~4 gridlines at a 1/2/2.5/5 x 10^n step.
+function niceTicks(min, max, count = 4) {
+  if (max - min < 0.01) {
+    min -= 1;
+    max += 1;
+  }
+  const raw = (max - min) / count;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const ticks = [];
+  for (let v = Math.floor(min / step) * step; v <= max + step * 0.999; v += step) ticks.push(round2(v));
+  return ticks;
+}
+
+// One point per price: the opening price, then the price after each game.
+function chartPoints(d) {
+  const games = d.game_log.slice().reverse(); // oldest first
+  return [
+    { label: "Open", price: d.price_history[0], event: null },
+    ...games.map((e) => ({ label: `W${e.week}`, price: e.price_after, event: e })),
+  ];
+}
+
+const fmtAxis = (v) => "$" + (Number.isInteger(v) ? v : v.toFixed(2));
+
+// Price history: line with a marker per week, week labels, a price axis,
+// direct labels on the first and latest price, and a hover/tap tooltip
+// with each week's details (bindPriceChart wires it up after render).
+function priceChart(points) {
+  // Size the drawing to the room it will get (panel padding ~70px), so
+  // axis text stays legible on phones instead of scaling down.
+  const w = Math.round(Math.min(560, Math.max(300, (window.innerWidth || 560) - 70)));
+  const h = w < 420 ? 210 : 240;
+  const padL = 44, padR = 56, padT = 22, padB = 30;
+  const prices = points.map((p) => p.price);
+  const ticks = niceTicks(Math.min(...prices), Math.max(...prices));
+  const lo = ticks[0], hi = ticks[ticks.length - 1];
+  const step = (w - padL - padR) / Math.max(points.length - 1, 1);
+  const x = (i) => padL + (points.length === 1 ? (w - padL - padR) / 2 : i * step);
+  const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
+  const first = prices[0], last = prices[prices.length - 1];
+  const color = last >= first ? "var(--positive)" : "var(--negative)";
+  const every = Math.ceil(points.length / Math.floor((w - padL - padR) / 34)); // thin x labels when crowded
+
+  const grid = ticks
+    .map(
+      (t) =>
+        `<line x1="${padL}" x2="${w - padR + 8}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)" stroke-width="1"/>` +
+        `<text class="axis-label" x="${padL - 8}" y="${y(t)}" dy=".32em" text-anchor="end">${fmtAxis(t)}</text>`
+    )
+    .join("");
+  const xLabels = points
+    .map((p, i) =>
+      i % every === 0 || i === points.length - 1
+        ? `<text class="axis-label" x="${x(i)}" y="${h - 8}" text-anchor="middle">${p.label}</text>`
+        : ""
+    )
+    .join("");
+  const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join(" ");
+  const dots = points
+    .map((p, i) => `<circle cx="${x(i)}" cy="${y(p.price)}" r="4" fill="${color}" stroke="var(--bg-panel)" stroke-width="2"/>`)
+    .join("");
+  const direct = (i, anchor) =>
+    `<text class="chart-value" x="${x(i) + (anchor === "start" ? 8 : 0)}" y="${y(points[i].price) - 10}" text-anchor="${anchor}">$${points[i].price.toFixed(2)}</text>`;
+  const labels = direct(0, "start") + (points.length > 1 ? direct(points.length - 1, "start") : "");
+  // Hit targets: a full-height column per point, wider than the marker.
+  const hits = points
+    .map((p, i) => {
+      const x0 = i === 0 ? x(0) - step / 2 : (x(i - 1) + x(i)) / 2;
+      const x1 = i === points.length - 1 ? x(i) + step / 2 : (x(i) + x(i + 1)) / 2;
+      return `<rect class="chart-hit" data-i="${i}" x="${Math.max(0, x0)}" y="0" width="${Math.max(12, x1 - Math.max(0, x0))}" height="${h}" fill="transparent" tabindex="0" aria-label="${esc(pointText(p))}"/>`;
     })
-    .join(" ");
-  const color = hist[hist.length - 1] >= hist[0] ? "var(--positive)" : "var(--negative)";
+    .join("");
+
   return (
-    `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:560px" role="img" aria-label="Price history from $${hist[0].toFixed(2)} to $${hist[hist.length - 1].toFixed(2)}">` +
-    `<line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="var(--border)"/>` +
-    `<text class="axis-label" x="${pad}" y="18">$${max.toFixed(2)}</text>` +
-    `<text class="axis-label" x="${pad}" y="${h - pad + 16}">$${min.toFixed(2)}</text>` +
-    `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4"/></svg>`
+    `<div class="chart-box">` +
+    `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px" role="img" data-w="${w}" ` +
+    `aria-label="Price by week, from $${first.toFixed(2)} to $${last.toFixed(2)}">` +
+    grid +
+    `<line class="chart-cross" x1="0" x2="0" y1="${padT - 6}" y2="${h - padB}" stroke="var(--text-faint)" stroke-dasharray="3 3" visibility="hidden"/>` +
+    `<path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+    dots +
+    labels +
+    xLabels +
+    hits +
+    `</svg><div class="chart-tip" role="status" hidden></div></div>`
   );
+}
+
+// Plain-text version of a point, for screen readers.
+function pointText(p) {
+  if (!p.event) return `Opening price $${p.price.toFixed(2)}`;
+  const e = p.event;
+  const result = e.team_score > e.opp_score ? "won" : e.team_score < e.opp_score ? "lost" : "tied";
+  return `Week ${e.week}, ${result} ${e.team_score}-${e.opp_score} vs ${e.opponent_name || e.opponent_id}: $${p.price.toFixed(2)}, ${fmtPct(e.pct_change)}`;
+}
+
+function tipHtml(p) {
+  if (!p.event) {
+    return `<div class="tip-head">Opening price</div><div class="tip-price">$${p.price.toFixed(2)}</div><div class="tip-note">Program Prestige Score</div>`;
+  }
+  const e = p.event;
+  const opp = esc(e.opponent_name || e.opponent_id);
+  const res = e.team_score > e.opp_score ? "W" : e.team_score < e.opp_score ? "L" : "T";
+  return (
+    `<div class="tip-head">Week ${e.week} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
+    `<div class="tip-price">$${p.price.toFixed(2)} <span class="txt-${dirClass(e.pct_change)}">${fmtPct(e.pct_change)}</span></div>` +
+    (e.summary ? `<div class="tip-note">${esc(e.summary)}${e.is_real_line ? "" : " (SP+ line)"}</div>` : "")
+  );
+}
+
+// Hover, tap and keyboard focus show a point's tooltip and a crosshair.
+function bindPriceChart(root, points) {
+  const box = root.querySelector(".chart-box");
+  if (!box) return;
+  const svg = box.querySelector("svg");
+  const tip = box.querySelector(".chart-tip");
+  const cross = box.querySelector(".chart-cross");
+  const w = Number(svg.dataset.w);
+  const show = (i) => {
+    const dot = svg.querySelectorAll("circle")[i];
+    const cx = Number(dot.getAttribute("cx"));
+    const cy = Number(dot.getAttribute("cy"));
+    cross.setAttribute("x1", cx);
+    cross.setAttribute("x2", cx);
+    cross.setAttribute("visibility", "visible");
+    tip.innerHTML = tipHtml(points[i]);
+    tip.hidden = false;
+    const scale = svg.getBoundingClientRect().width / w;
+    const half = tip.offsetWidth / 2;
+    const left = Math.min(Math.max(cx * scale, half + 4), box.clientWidth - half - 4);
+    const below = cy * scale - 14 - tip.offsetHeight < 0;
+    tip.classList.toggle("below", below);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${below ? cy * scale + 14 : cy * scale - 14}px`;
+  };
+  const hide = () => {
+    tip.hidden = true;
+    cross.setAttribute("visibility", "hidden");
+  };
+  svg.querySelectorAll(".chart-hit").forEach((r) => {
+    const i = Number(r.dataset.i);
+    r.addEventListener("pointerenter", () => show(i));
+    r.addEventListener("click", () => show(i));
+    r.addEventListener("focus", () => show(i));
+    r.addEventListener("blur", hide);
+  });
+  svg.addEventListener("pointerleave", hide);
 }
 
 function gameLogItem(e) {
@@ -434,7 +563,8 @@ function gameLogItem(e) {
   const proj = e.is_real_line ? "" : ` <span class="proj-tag">SP+ LINE</span>`;
   return (
     `<div class="log-item"><span class="lw">Week ${e.week}</span> &middot; ${text}${summary}${proj} ` +
-    `<span class="ld ch ${e.pct_change >= 0 ? "up" : "down"}">${fmtPct(e.pct_change)}</span></div>`
+    `<span class="ld ch ${e.pct_change >= 0 ? "up" : "down"}">${fmtPct(e.pct_change)}</span> ` +
+    `<span class="log-price">&rarr; $${e.price_after.toFixed(2)}</span></div>`
   );
 }
 
@@ -534,7 +664,7 @@ function renderDetail(ticker) {
     lastGame +
     `</div></div>` +
     `<div class="detail-body">` +
-    `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(d.price_history))}</div></div>` +
+    `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(chartPoints(d)))}</div></div>` +
     `<div class="panel"><h2>trade</h2>${tradePanel}</div>` +
     `</div>` +
     `<div class="detail-body" style="margin-top:16px">` +
@@ -547,6 +677,8 @@ function renderDetail(ticker) {
         : `<div class="log-item">No more games scheduled.</div>`
     )}</div></div>` +
     `</div>`;
+
+  if (data) bindPriceChart($("main"), chartPoints(data));
 
   document.querySelectorAll("#detail-pricemode button").forEach((btn) =>
     btn.addEventListener("click", () => {
