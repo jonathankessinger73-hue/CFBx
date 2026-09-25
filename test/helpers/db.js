@@ -13,10 +13,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const SUPABASE_STUB = `
+-- Roles are cluster-wide and test files run in parallel, so two files can
+-- both see a role missing and race to create it; the loser treats "already
+-- exists" as success instead of failing its whole file.
 do $$ begin
-  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+  begin create role anon nologin; exception when duplicate_object or unique_violation then null; end;
+  begin create role authenticated nologin; exception when duplicate_object or unique_violation then null; end;
+  begin create role service_role nologin bypassrls; exception when duplicate_object or unique_violation then null; end;
 end $$;
 create schema if not exists auth;
 create table if not exists auth.users (id uuid primary key);

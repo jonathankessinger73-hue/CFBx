@@ -58,6 +58,7 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     lines: (year, seasonType = "regular") => get("/lines", { year, seasonType }),
     spRatings: (year) => get("/ratings/sp", { year }),
     talent: (year) => get("/talent", { year }),
+    records: (year) => get("/records", { year }),
   };
 }
 
@@ -121,4 +122,20 @@ export function normalizeSpRating(r) {
 export function normalizeTalent(r) {
   const talent = Number(pick(r, "talent"));
   return { team: pick(r, "team", "school"), talent: Number.isFinite(talent) ? talent : null };
+}
+
+// /records rows -> { team, wins, losses, ties, confWins, confLosses, confTies }.
+export function normalizeRecord(r) {
+  const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const total = pick(r, "total") || {};
+  const conf = pick(r, "conferenceGames", "conference_games") || {};
+  return {
+    team: pick(r, "team"),
+    wins: n(total.wins),
+    losses: n(total.losses),
+    ties: n(total.ties),
+    confWins: n(conf.wins),
+    confLosses: n(conf.losses),
+    confTies: n(conf.ties),
+  };
 }

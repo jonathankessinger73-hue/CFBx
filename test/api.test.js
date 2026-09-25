@@ -63,6 +63,43 @@ test("GET /teams is public and lists all teams", { skip }, async () => {
   assert.equal(typeof uga.last_covered, "boolean");
 });
 
+test("records: overall, conference and ATS from played games, official numbers preferred", { skip }, async () => {
+  const byId = async () => new Map((await request(app).get("/teams").expect(200)).body.teams.map((t) => [t.id, t]));
+  let teams = await byId();
+  // Georgia: beat WKU 70-20 (line -40.3) and SEC foe Arkansas 45-17 (line -24.5): covered both.
+  assert.deepEqual(teams.get("UGA").records, {
+    overall: { wins: 2, losses: 0, ties: 0 },
+    conference: { wins: 1, losses: 0, ties: 0 },
+    ats: { wins: 2, losses: 0, pushes: 0 },
+    official: false,
+  });
+  // TCU: lost to UNC as a 7.5-point favorite, beat Arkansas State by 24 as an 18.8 favorite.
+  assert.deepEqual(teams.get("TCU").records.overall, { wins: 1, losses: 1, ties: 0 });
+  assert.deepEqual(teams.get("TCU").records.conference, { wins: 0, losses: 0, ties: 0 });
+  assert.deepEqual(teams.get("TCU").records.ats, { wins: 1, losses: 1, pushes: 0 });
+  // Independents have no conference record.
+  assert.equal(teams.get("ND").records.conference, null);
+
+  // Once the daily sync stores CFBD's official record (which counts FCS games), it wins.
+  await pool.query(
+    "update teams set record_season = 2026, wins = 3, losses = 0, ties = 0, conf_wins = 1, conf_losses = 0, conf_ties = 0 where id = 'UGA'"
+  );
+  try {
+    teams = await byId();
+    assert.deepEqual(teams.get("UGA").records.overall, { wins: 3, losses: 0, ties: 0 });
+    assert.equal(teams.get("UGA").records.official, true);
+    assert.deepEqual(teams.get("UGA").records.ats, { wins: 2, losses: 0, pushes: 0 }); // ATS stays computed
+    const detail = await request(app).get("/teams/UGA").expect(200);
+    assert.deepEqual(detail.body.team.records.overall, { wins: 3, losses: 0, ties: 0 });
+    // A record stored for another season is ignored.
+    await pool.query("update teams set record_season = 2025 where id = 'UGA'");
+    teams = await byId();
+    assert.deepEqual(teams.get("UGA").records.overall, { wins: 2, losses: 0, ties: 0 });
+  } finally {
+    await pool.query("update teams set record_season = null, wins = null, losses = null, ties = null, conf_wins = null, conf_losses = null, conf_ties = null where id = 'UGA'");
+  }
+});
+
 test("GET /teams/:id returns history, game log and upcoming games", { skip }, async () => {
   const res = await request(app).get("/teams/uga").expect(200);
   assert.equal(res.body.team.id, "UGA");

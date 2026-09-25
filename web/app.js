@@ -86,6 +86,34 @@ function seasonPct(t) {
 }
 const headlinePct = (t) => (state.view.priceMode === "season" ? seasonPct(t) : t.last_change_pct);
 
+// "2-1", or "2-1-1" with ties/pushes.
+const fmtRec = (a, b, c) => `${a}-${b}${c ? `-${c}` : ""}`;
+const overallRec = (r) => fmtRec(r.overall.wins, r.overall.losses, r.overall.ties);
+const atsRec = (r) => fmtRec(r.ats.wins, r.ats.losses, r.ats.pushes);
+
+// One-line summary under the name on market cards.
+function recordLine(t) {
+  if (!t.records) return "";
+  return `<div class="rec"><span>${overallRec(t.records)}</span> &middot; <span>ATS ${atsRec(t.records)}</span></div>`;
+}
+
+// Overall / conference / ATS boxes on the team page.
+function recordChips(t) {
+  const r = t.records;
+  if (!r) return "";
+  const chip = (label, value, title) =>
+    `<div class="rec-chip" title="${esc(title)}"><div class="rec-label">${esc(label)}</div><div class="rec-value">${value}</div></div>`;
+  return (
+    `<div class="rec-row">` +
+    chip("overall", overallRec(r), "Season record") +
+    (r.conference
+      ? chip(t.conference, fmtRec(r.conference.wins, r.conference.losses, r.conference.ties), "Conference record")
+      : "") +
+    chip("vs spread", atsRec(r), "Against the spread: covered-missed(-push), games with a posted sportsbook line") +
+    `</div>`
+  );
+}
+
 function coverTag(t) {
   if (state.view.priceMode !== "week" || typeof t.last_covered !== "boolean") return "";
   return `<span class="cover-tag ${t.last_covered ? "covered" : "missed"}">${t.last_covered ? "COVERED" : "MISSED LINE"}</span>`;
@@ -385,7 +413,7 @@ function renderGrid() {
         `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
         helmetSVG(t.primary_color, t.secondary_color, 44, t.name) +
-        `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div></div>` +
+        `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
         `<div style="text-align:right"><div class="ch ${dirClass(pct)}">${fmtPct(pct)}</div>${coverTag(t)}</div></div>` +
@@ -654,7 +682,7 @@ function renderDetail(ticker) {
     `<div class="detail-head"><div style="display:flex;align-items:center;gap:16px">` +
     helmetSVG(t.primary_color, t.secondary_color, 84, t.name) +
     `<div class="tk-name"><div class="tk">${esc(t.id)} &middot; ${esc(t.conference)} &middot; STRENGTH ${t.strength}</div>` +
-    `<h1>${esc(t.name)}</h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}</div></div>` +
+    `<h1>${esc(t.name)}</h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}${recordChips(t)}</div></div>` +
     `<div class="detail-price">` +
     `<nav class="tabs" id="detail-pricemode" style="margin-bottom:8px;display:inline-flex">` +
     `<button data-mode="week" class="${mode === "week" ? "active" : ""}" style="padding:5px 11px;font-size:12px">Week</button>` +

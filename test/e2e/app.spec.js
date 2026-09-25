@@ -35,8 +35,12 @@ test.describe("with fake auth", () => {
     await page.getByLabel("Conference").selectOption("SEC");
     await expect(page.locator("a.card")).toHaveCount(16);
 
+    // Market cards show the overall and ATS record.
+    await expect(page.locator('a.card[href="#/team/UGA"] .rec')).toHaveText("2-0 · ATS 2-0");
     await page.locator('a.card[href="#/team/UGA"]').click();
     await expect(page.getByRole("heading", { name: "Georgia" })).toBeVisible();
+    // Team page: overall, conference (labelled with its name) and ATS.
+    await expect(page.locator(".rec-chip")).toHaveText([/overall\s*2-0/, /SEC\s*1-0/, /vs spread\s*2-0/]);
     await expect(page.locator(".log-item").first()).toContainText("Week 3");
     const upNext = page.locator(".upcoming-item");
     await expect(upNext.first()).toContainText("Oklahoma");

@@ -50,11 +50,15 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
 
   app.get("/teams", async (req, res) => {
     const { season, week } = await store.getMarketClock();
-    const [teams, histories] = await Promise.all([store.listTeams(), store.listPriceHistories(season)]);
+    const [teams, histories, records] = await Promise.all([
+      store.listTeams(),
+      store.listPriceHistories(season),
+      store.listRecords(season),
+    ]);
     res.json({
       season,
       week,
-      teams: teams.map((t) => ({ ...t, history: histories.get(t.id) || [t.ipo_price] })),
+      teams: teams.map((t) => ({ ...t, history: histories.get(t.id) || [t.ipo_price], records: records.get(t.id) })),
     });
   });
 
@@ -63,12 +67,14 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     const team = await store.getTeam(id);
     if (!team) return res.status(404).json({ error: "unknown_team" });
     const season = req.query.season ? Number.parseInt(req.query.season, 10) : undefined;
-    const [events, upcoming] = await Promise.all([
+    const { season: current } = await store.getMarketClock();
+    const [events, upcoming, records] = await Promise.all([
       store.getPriceEvents(id, Number.isFinite(season) ? season : undefined),
       store.getUpcomingGames(id),
+      store.listRecords(Number.isFinite(season) ? season : current),
     ]);
     res.json({
-      team,
+      team: { ...team, records: records.get(id) },
       // Chart series: IPO price, then the price after each game.
       price_history: [team.ipo_price, ...events.map((e) => e.price_after)],
       game_log: events.slice().reverse(),

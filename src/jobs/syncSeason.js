@@ -3,7 +3,7 @@
 // Exposed as a function (CFBD client and pg pool injected) so it can be tested.
 
 import "../db/pg.js"; // numeric/bigint type parsers
-import { normalizeGame, normalizeLineGame } from "../cfbd/client.js";
+import { normalizeGame, normalizeLineGame, normalizeRecord } from "../cfbd/client.js";
 import { createTeamResolver } from "../cfbd/teamNames.js";
 import { applyGame } from "../engine/replay.js";
 import { spreadToExpectedHomeMargin } from "../engine/pricing.js";
@@ -56,7 +56,7 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     return byTeams.get(`${cfbdGame.week}:${home}:${away}`) || null;
   }
 
-  const summary = { linesPosted: 0, gamesApplied: 0, unmatched: [] };
+  const summary = { linesPosted: 0, gamesApplied: 0, unmatched: [], recordsUpdated: 0 };
 
   // ---- 1. lines ------------------------------------------------------------
   const lineGames = (await cfbd.lines(season)).map(normalizeLineGame);
@@ -152,5 +152,37 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   }
 
   if (summary.unmatched.length) log(`unmatched FBS games (not in schedule): ${summary.unmatched.join("; ")}`);
+
+  // ---- 3. official records ---------------------------------------------------
+  // Overall and conference records as CFBD counts them, including games
+  // against teams outside the market (FCS) that never move a price. A failure
+  // here is logged but doesn't fail the run: prices matter more than records.
+  if (cfbd.records) {
+    try {
+      const seen = new Set();
+      const rows = [];
+      for (const r of (await cfbd.records(season)).map(normalizeRecord)) {
+        const id = resolve(r.team);
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        rows.push({ id, ...r });
+      }
+      summary.recordsUpdated = rows.length;
+      log(`records: ${rows.length} teams`);
+      if (!dryRun && rows.length) {
+        await pool.query(
+          `update teams t set record_season = $2, wins = x.wins, losses = x.losses, ties = x.ties,
+                  conf_wins = x."confWins", conf_losses = x."confLosses", conf_ties = x."confTies",
+                  record_updated_at = now()
+             from jsonb_to_recordset($1::jsonb) as x(id text, wins int, losses int, ties int,
+                  "confWins" int, "confLosses" int, "confTies" int)
+            where t.id = x.id`,
+          [JSON.stringify(rows), season]
+        );
+      }
+    } catch (err) {
+      log(`records not updated: ${err.message}`);
+    }
+  }
   return summary;
 }
