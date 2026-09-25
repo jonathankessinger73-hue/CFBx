@@ -63,11 +63,11 @@ export function createStore(pool) {
         `with games as (
            select e.team_id,
                   e.team_score - e.opp_score as margin,
-                  t.conference = o.conference and t.conference <> 'FBS Independents' as conf_game,
+                  coalesce(t.conference = o.conference and t.conference <> 'FBS Independents', false) as conf_game,
                   case when e.is_real_line then sign(e.actual_margin - e.expected_margin) end as ats
              from price_events e
              join teams t on t.id = e.team_id
-             join teams o on o.id = e.opponent_id
+             left join teams o on o.id = e.opponent_id -- null for FCS opponents
             where e.season = $1
          ), computed as (
            select team_id,
@@ -121,7 +121,7 @@ export function createStore(pool) {
 
     async getPriceEvents(teamId, season) {
       const { rows } = await pool.query(
-        `select e.id, e.season, e.week, e.opponent_id, o.name as opponent_name,
+        `select e.id, e.season, e.week, e.opponent_id, coalesce(o.name, e.opponent_name) as opponent_name, e.vs_fcs,
                 e.team_score, e.opp_score, e.pct_change, e.price_after,
                 e.expected_margin, e.actual_margin, e.is_real_line, e.summary, e.created_at
            from price_events e
