@@ -53,6 +53,67 @@ export function createStore(pool) {
       return rows[0];
     },
 
+    // Season records per team: overall, conference and against the spread.
+    // Overall/conference use CFBD's official numbers when the daily sync has
+    // stored them for this season (they include FCS games), otherwise they're
+    // counted from price_events. ATS always comes from price_events, counting
+    // only games with a real posted line; exact pushes are listed separately.
+    async listRecords(season) {
+      const { rows } = await pool.query(
+        `with games as (
+           select e.team_id,
+                  e.team_score - e.opp_score as margin,
+                  t.conference = o.conference and t.conference <> 'FBS Independents' as conf_game,
+                  case when e.is_real_line then sign(e.actual_margin - e.expected_margin) end as ats
+             from price_events e
+             join teams t on t.id = e.team_id
+             join teams o on o.id = e.opponent_id
+            where e.season = $1
+         ), computed as (
+           select team_id,
+                  count(*) filter (where margin > 0)::int as w,
+                  count(*) filter (where margin < 0)::int as l,
+                  count(*) filter (where margin = 0)::int as t,
+                  count(*) filter (where conf_game and margin > 0)::int as cw,
+                  count(*) filter (where conf_game and margin < 0)::int as cl,
+                  count(*) filter (where conf_game and margin = 0)::int as ct,
+                  count(*) filter (where ats = 1)::int as aw,
+                  count(*) filter (where ats = -1)::int as al,
+                  count(*) filter (where ats = 0)::int as ap
+             from games group by team_id
+         )
+         select t.id, t.conference,
+                (t.record_season = $1 and t.wins is not null) as official,
+                coalesce(case when t.record_season = $1 then t.wins end, c.w, 0) as wins,
+                coalesce(case when t.record_season = $1 then t.losses end, c.l, 0) as losses,
+                coalesce(case when t.record_season = $1 then t.ties end, c.t, 0) as ties,
+                coalesce(case when t.record_season = $1 then t.conf_wins end, c.cw, 0) as conf_wins,
+                coalesce(case when t.record_season = $1 then t.conf_losses end, c.cl, 0) as conf_losses,
+                coalesce(case when t.record_season = $1 then t.conf_ties end, c.ct, 0) as conf_ties,
+                coalesce(c.aw, 0) as ats_wins,
+                coalesce(c.al, 0) as ats_losses,
+                coalesce(c.ap, 0) as ats_pushes
+           from teams t
+           left join computed c on c.team_id = t.id`,
+        [season]
+      );
+      return new Map(
+        rows.map((r) => [
+          r.id,
+          {
+            overall: { wins: r.wins, losses: r.losses, ties: r.ties },
+            // Independents have no conference record.
+            conference:
+              r.conference === "FBS Independents"
+                ? null
+                : { wins: r.conf_wins, losses: r.conf_losses, ties: r.conf_ties },
+            ats: { wins: r.ats_wins, losses: r.ats_losses, pushes: r.ats_pushes },
+            official: r.official,
+          },
+        ])
+      );
+    },
+
     async getTeam(id) {
       const { rows } = await pool.query(`select ${TEAM_COLUMNS} from teams where id = $1`, [id]);
       return rows[0] || null;

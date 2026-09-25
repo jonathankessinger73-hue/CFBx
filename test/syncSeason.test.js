@@ -96,6 +96,35 @@ test("sync posts missing lines and applies completed games exactly once", { skip
   assert.equal(await price("UGA"), ugaAfter);
 });
 
+test("sync stores CFBD's official records; a failing /records call doesn't fail the run", { skip }, async () => {
+  const records = [
+    { year: 2026, team: "Georgia", total: { games: 4, wins: 4, losses: 0, ties: 0 }, conferenceGames: { games: 2, wins: 2, losses: 0, ties: 0 } },
+    { year: 2026, team: "Montana", total: { wins: 3, losses: 1, ties: 0 }, conferenceGames: { wins: 1, losses: 0, ties: 0 } },
+  ];
+  const base = { lines: async () => [], games: async () => [] };
+  const rec = async () =>
+    (await pool.query("select record_season, wins, losses, conf_wins, conf_losses from teams where id = 'UGA'")).rows[0];
+
+  const dry = await syncSeason({ pool, cfbd: { ...base, records: async () => records }, season: 2026, dryRun: true, log: () => {} });
+  assert.equal(dry.recordsUpdated, 1);
+  assert.equal((await rec()).wins, null);
+
+  const r = await syncSeason({ pool, cfbd: { ...base, records: async () => records }, season: 2026, log: () => {} });
+  assert.equal(r.recordsUpdated, 1); // Montana isn't in the market
+  assert.deepEqual(await rec(), { record_season: 2026, wins: 4, losses: 0, conf_wins: 2, conf_losses: 0 });
+
+  const logs = [];
+  const failing = await syncSeason({
+    pool,
+    cfbd: { ...base, records: async () => { throw new Error("CFBD /records failed: 500"); } },
+    season: 2026,
+    log: (m) => logs.push(m),
+  });
+  assert.equal(failing.recordsUpdated, 0);
+  assert.ok(logs.some((m) => m.includes("records not updated")));
+  assert.equal((await rec()).wins, 4);
+});
+
 test("dry run writes nothing", { skip }, async () => {
   const cfbd = {
     lines: async () => [],
