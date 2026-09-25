@@ -538,7 +538,7 @@ function tipHtml(p) {
   return (
     `<div class="tip-head">Week ${e.week} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
     `<div class="tip-price">$${p.price.toFixed(2)} <span class="txt-${dirClass(e.pct_change)}">${fmtPct(e.pct_change)}</span></div>` +
-    (e.summary ? `<div class="tip-note">${esc(e.summary)}${e.is_real_line ? "" : " (SP+ line)"}</div>` : "")
+    (e.summary ? `<div class="tip-note">${esc(e.summary)}${e.is_real_line || e.vs_fcs ? "" : " (SP+ line)"}</div>` : "")
   );
 }
 
@@ -588,7 +588,11 @@ function gameLogItem(e) {
     ? `def. ${esc(opp)} ${e.team_score}-${e.opp_score}`
     : `fell to ${esc(opp)} ${e.team_score}-${e.opp_score}`;
   const summary = e.summary ? ` (${esc(e.summary)})` : "";
-  const proj = e.is_real_line ? "" : ` <span class="proj-tag">SP+ LINE</span>`;
+  const proj = e.vs_fcs
+    ? ` <span class="proj-tag">FCS</span>`
+    : e.is_real_line
+      ? ""
+      : ` <span class="proj-tag">SP+ LINE</span>`;
   return (
     `<div class="log-item"><span class="lw">Week ${e.week}</span> &middot; ${text}${summary}${proj} ` +
     `<span class="ld ch ${e.pct_change >= 0 ? "up" : "down"}">${fmtPct(e.pct_change)}</span> ` +

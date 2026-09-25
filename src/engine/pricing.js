@@ -84,6 +84,28 @@ export function computePriceImpact(teamA, scoreA, teamB, scoreB, realLineForA, r
   };
 }
 
+// Games against FCS (and lower) opponents have no betting line. A win or tie
+// leaves the price alone; a loss is an automatic penalty: 15% plus half a
+// point per point of losing margin, capped at 25%.
+export const FCS_LOSS_BASE = 15;
+export const FCS_LOSS_PER_POINT = 0.5;
+export const FCS_LOSS_MAX = 25;
+
+export function fcsGameImpact(price, teamScore, oppScore) {
+  const margin = teamScore - oppScore;
+  if (margin >= 0) {
+    return { pct: 0, price, lastChangePct: 0, summary: "FCS opponent, no line — price unchanged" };
+  }
+  const pct = -Math.min(FCS_LOSS_MAX, FCS_LOSS_BASE + FCS_LOSS_PER_POINT * -margin);
+  const move = applyPriceChange(price, pct);
+  return {
+    pct,
+    price: move.price,
+    lastChangePct: move.lastChangePct,
+    summary: `lost to an FCS opponent by ${-margin} — automatic penalty`,
+  };
+}
+
 // Human-readable line/result summary from one team's perspective.
 export function spreadPhrase(expectedMargin, actualMargin) {
   const lineText =

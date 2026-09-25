@@ -16,7 +16,7 @@ try {
   const summary = await syncSeason({ pool, cfbd: createCfbdClient(), season, dryRun });
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ` +
-      `${summary.gamesApplied} games applied, ${summary.unmatched.length} unmatched, ` +
+      `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +
       `${summary.recordsUpdated} records`
   );
 } finally {

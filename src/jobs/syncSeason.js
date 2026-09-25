@@ -6,7 +6,7 @@ import "../db/pg.js"; // numeric/bigint type parsers
 import { normalizeGame, normalizeLineGame, normalizeRecord } from "../cfbd/client.js";
 import { createTeamResolver } from "../cfbd/teamNames.js";
 import { applyGame } from "../engine/replay.js";
-import { spreadToExpectedHomeMargin } from "../engine/pricing.js";
+import { fcsGameImpact, spreadToExpectedHomeMargin } from "../engine/pricing.js";
 
 /**
  * @param {object} opts
@@ -35,6 +35,12 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
       .filter((g) => g.completed)
       .flatMap((g) => [`${g.week}:${g.home_team_id}:${g.away_team_id}`, `${g.week}:${g.away_team_id}:${g.home_team_id}`])
   );
+  // FCS games already recorded, as "cfbdGameId:teamId".
+  const { rows: fcsDone } = await pool.query(
+    "select cfbd_game_id, team_id from price_events where season = $1 and vs_fcs",
+    [season]
+  );
+  const fcsRecorded = new Set(fcsDone.map((r) => `${r.cfbd_game_id}:${r.team_id}`));
   const alreadyRecorded = (cfbdGame) =>
     doneIds.has(cfbdGame.id) || doneTeams.has(`${cfbdGame.week}:${resolve(cfbdGame.home)}:${resolve(cfbdGame.away)}`);
 
@@ -52,11 +58,26 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     if (direct) return { row: direct, flipped: direct.home_team_id !== resolve(cfbdGame.home) };
     const home = resolve(cfbdGame.home);
     const away = resolve(cfbdGame.away);
-    if (!home || !away) return null; // e.g. an FCS opponent: not a tradable game
+    if (!home || !away) return null; // e.g. an FCS opponent: see fcsSide()
     return byTeams.get(`${cfbdGame.week}:${home}:${away}`) || null;
   }
 
-  const summary = { linesPosted: 0, gamesApplied: 0, unmatched: [], recordsUpdated: 0 };
+  // A game between a market team and an opponent outside FBS (FCS, D-II...).
+  // Returns the market team's side, or null. An unresolved opponent that CFBD
+  // itself calls FBS is a name we failed to map, not an FCS team.
+  function fcsSide(cfbdGame) {
+    const home = resolve(cfbdGame.home);
+    const away = resolve(cfbdGame.away);
+    if (home && !away && cfbdGame.awayClassification !== "fbs") {
+      return { teamId: home, opponent: cfbdGame.away, teamScore: cfbdGame.homePoints, oppScore: cfbdGame.awayPoints };
+    }
+    if (away && !home && cfbdGame.homeClassification !== "fbs") {
+      return { teamId: away, opponent: cfbdGame.home, teamScore: cfbdGame.awayPoints, oppScore: cfbdGame.homePoints };
+    }
+    return null;
+  }
+
+  const summary = { linesPosted: 0, gamesApplied: 0, fcsGames: 0, unmatched: [], recordsUpdated: 0 };
 
   // ---- 1. lines ------------------------------------------------------------
   const lineGames = (await cfbd.lines(season)).map(normalizeLineGame);
@@ -85,8 +106,15 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   for (const g of games) {
     if (g.homePoints === null || g.awayPoints === null) continue;
     const m = match(g);
+    const fcs = !m && fcsSide(g);
+    if (fcs) {
+      if (!fcsRecorded.has(`${g.id}:${fcs.teamId}`)) await applyFcsGame(g, fcs);
+      continue;
+    }
     if (!m) {
-      if (resolve(g.home) && resolve(g.away) && !alreadyRecorded(g)) {
+      // Both teams in the market but no schedule row, or one side an FBS
+      // school we couldn't map to a ticker.
+      if ((resolve(g.home) || resolve(g.away)) && !alreadyRecorded(g)) {
         summary.unmatched.push(`${g.week}: ${g.away} @ ${g.home}`);
       }
       continue;
@@ -149,6 +177,31 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
       }
     }
     summary.gamesApplied++;
+  }
+
+  // No line and no ticker for the opponent: a win is recorded with no price
+  // change, a loss costs a fixed penalty (fcsGameImpact).
+  async function applyFcsGame(g, { teamId, opponent, teamScore, oppScore }) {
+    const team = market.get(teamId);
+    const prev = team.current_price;
+    const impact = fcsGameImpact(prev, teamScore, oppScore);
+    log(
+      `final (FCS): week ${g.week} ${teamId} ${teamScore}, ${opponent} ${oppScore} -> ` +
+        `${teamId} ${impact.lastChangePct >= 0 ? "+" : ""}${impact.lastChangePct}%`
+    );
+    if (!dryRun) {
+      const { rows } = await pool.query(
+        "select apply_fcs_result($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as applied",
+        [teamId, season, g.week, g.id, opponent, teamScore, oppScore, prev, impact.price, impact.lastChangePct, impact.summary]
+      );
+      if (!rows[0].applied) {
+        const { rows: fresh } = await pool.query("select current_price from teams where id = $1", [teamId]);
+        team.current_price = fresh[0].current_price;
+        return;
+      }
+    }
+    team.current_price = impact.price;
+    summary.fcsGames++;
   }
 
   if (summary.unmatched.length) log(`unmatched FBS games (not in schedule): ${summary.unmatched.join("; ")}`);

@@ -6,6 +6,7 @@ import {
   spreadToExpectedHomeMargin,
   strengthFromRatings,
   spreadPhrase,
+  fcsGameImpact,
 } from "../src/engine/pricing.js";
 
 const noNoise = () => 0.5; // (0.5 - 0.5) * 0.6 = 0
@@ -86,4 +87,20 @@ test("strength rescales SP+ ratings to 10..95", () => {
 test("spread phrase", () => {
   assert.equal(spreadPhrase(7, 3), "favored by 7.0, won by 3 — missed the line");
   assert.equal(spreadPhrase(-7, -3), "underdog by 7.0, lost by 3 — covered");
+});
+
+test("FCS games: a win leaves the price alone, a loss is a 15-25% penalty", () => {
+  assert.deepEqual(fcsGameImpact(40, 56, 7), {
+    pct: 0,
+    price: 40,
+    lastChangePct: 0,
+    summary: "FCS opponent, no line — price unchanged",
+  });
+  const close = fcsGameImpact(40, 20, 21); // lost by 1: 15.5%
+  assert.equal(close.pct, -15.5);
+  assert.equal(close.price, 33.8);
+  assert.equal(close.summary, "lost to an FCS opponent by 1 — automatic penalty");
+  assert.equal(fcsGameImpact(40, 10, 20).pct, -20);
+  assert.equal(fcsGameImpact(40, 0, 45).pct, -25); // capped
+  assert.equal(fcsGameImpact(3.2, 0, 10).price, 3); // $3 floor
 });

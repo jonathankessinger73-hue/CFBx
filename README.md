@@ -119,6 +119,15 @@ All three share one concurrency group, so they never overlap. Every job has
 a dry-run or report-only mode. The workflows run against the `staging`
 environment until `CFBX_JOB_ENVIRONMENT` is set to `production`.
 
+**FCS games.** CFBD's `/games` feed includes every game an FBS team plays,
+FCS opponents included, so the daily job records those too. They appear in the
+team's game log (tagged `FCS`), price chart and overall record. There is no
+betting line on these games, so they never count toward the ATS record. A win
+or tie leaves the price unchanged. A loss costs an automatic 15%, plus 0.5% per
+point of losing margin, capped at 25% (`fcsGameImpact` in
+`src/engine/pricing.js`). If a result is reported late for an earlier week, the
+team's "last game" fields stay pointed at its latest game.
+
 **Strength refresh.** Pulls the current season's SP+ (`/ratings/sp`), rescales
 it with the spec's formula, `round(10 + (rating - min) / (max - min) * 85)`, and
 writes `teams.strength`. It also adds a row per team to `strength_history`,
