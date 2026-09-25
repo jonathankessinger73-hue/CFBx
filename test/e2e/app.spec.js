@@ -45,6 +45,23 @@ test.describe("with fake auth", () => {
     await expect(upNext.nth(1)).toContainText("PROJECTED");
     await expect(page.getByText("Sign in to trade.")).toBeVisible();
 
+    // Price chart: week labels, opening + latest price labelled, per-week tooltip.
+    const chart = page.locator(".chart-box svg");
+    await expect(chart.locator("text.axis-label", { hasText: "Open" })).toBeVisible();
+    await expect(chart.locator("text.axis-label", { hasText: "W3" })).toBeVisible();
+    const current = (await page.locator(".detail-price .px").innerText()).trim();
+    await expect(chart.locator("text.chart-value").last()).toHaveText(current);
+    await chart.locator(".chart-hit").last().hover();
+    const tip = page.locator(".chart-tip");
+    await expect(tip).toBeVisible();
+    await expect(tip).toContainText("Week 3");
+    await expect(tip).toContainText("vs Arkansas");
+    await expect(tip).toContainText(current);
+    await chart.locator(".chart-hit").first().focus();
+    await expect(tip).toContainText("Opening price");
+    // The game log lists each week's resulting price too.
+    await expect(page.locator(".log-item").first()).toContainText(`\u2192 ${current}`);
+
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.getByText("Sign in to see your portfolio")).toBeVisible();
   });
