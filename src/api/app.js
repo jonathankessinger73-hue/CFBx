@@ -198,7 +198,7 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     // Serve the Supabase browser bundle ourselves rather than from a CDN.
     const supabaseUmd = createRequire(import.meta.url).resolve("@supabase/supabase-js/dist/umd/supabase.js");
     app.get("/vendor/supabase.js", (req, res) => res.sendFile(supabaseUmd));
-    app.use(express.static(web.dir, { index: "index.html" }));
+    app.use(express.static(web.dir, { index: "index.html", extensions: ["html"] })); // /privacy -> privacy.html
   }
 
   app.use((req, res) => res.status(404).json({ error: "not_found" }));
