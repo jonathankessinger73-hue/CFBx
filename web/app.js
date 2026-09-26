@@ -91,6 +91,20 @@ const fmtRec = (a, b, c) => `${a}-${b}${c ? `-${c}` : ""}`;
 const overallRec = (r) => fmtRec(r.overall.wins, r.overall.losses, r.overall.ties);
 const atsRec = (r) => fmtRec(r.ats.wins, r.ats.losses, r.ats.pushes);
 
+// The team's logo, falling back to the generic helmet when there's no logo
+// URL or the image fails to load (see the error listener in boot()). The site
+// is dark, so prefer ESPN's variant made for dark backgrounds.
+function teamMark(t, size) {
+  const helmet = helmetSVG(t.primary_color, t.secondary_color, size, t.name);
+  const src = t.logo_dark_url || t.logo_url;
+  if (!src || !/^(https:|data:image\/)/.test(src)) return helmet;
+  return (
+    `<span class="team-mark" style="width:${size}px;height:${size}px">` +
+    `<img class="team-logo" src="${esc(src)}" width="${size}" height="${size}" alt="${esc(t.name)} logo" loading="lazy" decoding="async">` +
+    `<span class="team-mark-fallback" hidden>${helmet}</span></span>`
+  );
+}
+
 // One-line summary under the name on market cards.
 function recordLine(t) {
   if (!t.records) return "";
@@ -412,7 +426,7 @@ function renderGrid() {
       return (
         `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
-        helmetSVG(t.primary_color, t.secondary_color, 44, t.name) +
+        teamMark(t, 44) +
         `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
@@ -684,7 +698,7 @@ function renderDetail(ticker) {
   $("main").innerHTML =
     `<a class="detail-back" href="#/">&larr; Back to market</a>` +
     `<div class="detail-head"><div style="display:flex;align-items:center;gap:16px">` +
-    helmetSVG(t.primary_color, t.secondary_color, 84, t.name) +
+    teamMark(t, 84) +
     `<div class="tk-name"><div class="tk">${esc(t.id)} &middot; ${esc(t.conference)} &middot; STRENGTH ${t.strength}</div>` +
     `<h1>${esc(t.name)}</h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}${recordChips(t)}</div></div>` +
     `<div class="detail-price">` +
@@ -1103,6 +1117,17 @@ function renderCheckEmail() {
 
 async function boot() {
   window.addEventListener("hashchange", onRouteChange);
+  // A logo that fails to load (missing, blocked, offline) shows the helmet.
+  document.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement) || !img.classList.contains("team-logo")) return;
+      img.nextElementSibling?.removeAttribute("hidden");
+      img.remove();
+    },
+    true
+  );
 
   if (supabase) {
     const { data } = await supabase.auth.getSession();

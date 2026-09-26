@@ -119,6 +119,11 @@ All three share one concurrency group, so they never overlap. Every job has
 a dry-run or report-only mode. The workflows run against the `staging`
 environment until `CFBX_JOB_ENVIRONMENT` is set to `production`.
 
+**Team logos.** The daily job also reads CFBD's `/teams/fbs` list and stores each team's
+ESPN logo URLs (`teams.logo_url`, `logo_dark_url`). The site prefers the dark-background
+variant. Browsers load the images straight from ESPN's CDN, so no logo files are kept in
+this repo. A team with no logo, or one that fails to load, shows the generic helmet instead.
+
 **FCS games.** CFBD's `/games` feed includes every game an FBS team plays,
 FCS opponents included, so the daily job records those too. They appear in the
 team's game log (tagged `FCS`), price chart and overall record. There is no

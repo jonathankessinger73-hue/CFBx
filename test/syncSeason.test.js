@@ -196,6 +196,43 @@ test("sync stores CFBD's official records; a failing /records call doesn't fail 
   assert.equal((await rec()).wins, 4);
 });
 
+test("sync stores ESPN logo URLs from CFBD, preferring https", { skip }, async () => {
+  const base = { lines: async () => [], games: async () => [] };
+  const fbsTeams = async () => [
+    { id: 61, school: "Georgia", logos: ["http://a.espncdn.com/i/teamlogos/ncaa/500/61.png", "http://a.espncdn.com/i/teamlogos/ncaa/500-dark/61.png"] },
+    { id: 333, school: "Alabama", logos: ["https://a.espncdn.com/i/teamlogos/ncaa/500/333.png"] },
+    { id: 999, school: "Nowhere Tech", logos: ["https://a.espncdn.com/i/teamlogos/ncaa/500/999.png"] },
+    { id: 2, school: "Auburn", logos: null },
+  ];
+  const logo = async (id) =>
+    (await pool.query("select logo_url, logo_dark_url from teams where id = $1", [id])).rows[0];
+
+  const dry = await syncSeason({ pool, cfbd: { ...base, fbsTeams }, season: 2026, dryRun: true, log: () => {} });
+  assert.equal(dry.logosUpdated, 2);
+  assert.deepEqual(await logo("UGA"), { logo_url: null, logo_dark_url: null });
+
+  const r = await syncSeason({ pool, cfbd: { ...base, fbsTeams }, season: 2026, log: () => {} });
+  assert.equal(r.logosUpdated, 2);
+  assert.deepEqual(await logo("UGA"), {
+    logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+    logo_dark_url: "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/61.png",
+  });
+  assert.deepEqual(await logo("ALA"), { logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", logo_dark_url: null });
+  assert.deepEqual(await logo("AUB"), { logo_url: null, logo_dark_url: null });
+
+  // Unchanged logos aren't rewritten; a failing call doesn't fail the run.
+  assert.equal((await syncSeason({ pool, cfbd: { ...base, fbsTeams }, season: 2026, log: () => {} })).logosUpdated, 0);
+  const logs = [];
+  const failing = await syncSeason({
+    pool,
+    cfbd: { ...base, fbsTeams: async () => { throw new Error("CFBD /teams/fbs failed: 500"); } },
+    season: 2026,
+    log: (m) => logs.push(m),
+  });
+  assert.equal(failing.logosUpdated, 0);
+  assert.ok(logs.some((m) => m.includes("logos not updated")));
+});
+
 test("dry run writes nothing", { skip }, async () => {
   const cfbd = {
     lines: async () => [],
