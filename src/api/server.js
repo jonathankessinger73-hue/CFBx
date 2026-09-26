@@ -22,6 +22,13 @@ const app = createApp({
             apiUrl: process.env.PUBLIC_API_URL || "",
             supabaseUrl: supabaseBaseUrl(process.env.SUPABASE_URL),
             supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+            // Sign-in providers switched on in Supabase besides email, e.g. "google".
+            authProviders: (process.env.AUTH_PROVIDERS || "")
+              .split(",")
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean),
+            // Shown on the "check your email" screen so people know what to look for.
+            authEmailFrom: process.env.AUTH_EMAIL_FROM || "",
           },
         },
 });

@@ -457,6 +457,30 @@
     padding: 10px 12px;
     margin-bottom: 12px;
   }
+  /* Google's sign-in button guidelines: white, grey border, the "G" mark. */
+  .btn-google{
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-family: var(--font-body); font-weight: 600; font-size: 15px;
+    background: #fff; color: #1f1f1f; border: 1px solid #747775;
+    padding: 10px 16px; border-radius: 8px; cursor: pointer;
+  }
+  .btn-google:hover{ background: #f2f2f2; }
+  .btn-google:disabled{ opacity: .6; cursor: default; }
+  .auth-or{ display: flex; align-items: center; gap: 10px; margin: 16px 0;
+    color: var(--text-faint); font-size: 12px; }
+  .auth-or::before, .auth-or::after{ content: ""; flex: 1; border-top: 1px solid var(--border); }
+  .code-field{ font-family: var(--font-mono, monospace); font-size: 20px; letter-spacing: .2em; text-align: center; }
+  .auth-help{ margin-top: 18px; padding: 12px 14px; background: var(--bg-panel-alt);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .auth-help-title{ font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .auth-help ul{ margin: 0; padding-left: 18px; }
+  .auth-help strong{ color: var(--text); overflow-wrap: anywhere; }
+  .auth-panel p strong{ color: var(--text); overflow-wrap: anywhere; }
+  .auth-actions{ display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; margin-top: 14px; }
+  .btn-secondary:disabled{ opacity: .6; cursor: default; }
+  .link-btn{ background: none; border: none; padding: 0; cursor: pointer;
+    color: var(--accent); font: inherit; font-size: 13px; text-decoration: underline; }
   .form-msg{ font-size: 13px; margin-top: 10px; min-height: 18px; }
   .form-msg.err{ color: var(--negative); }
   .form-msg.ok{ color: var(--positive); }

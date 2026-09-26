@@ -1,0 +1,21 @@
+<!--
+  CFBx sign-in email. Paste this into BOTH Supabase templates:
+  Authentication -> Emails -> Templates -> "Magic Link" and "Confirm signup"
+  (new players get "Confirm signup", returning players get "Magic Link").
+  Subject for both:  Your CFBx sign-in code: {{ .Token }}
+
+  Written to stay out of spam: plain layout, no images, no tracking, one
+  clearly labelled link, says who it's from and why it was sent, and a code
+  that works even when the link doesn't.
+-->
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; color: #1f1f1f; max-width: 480px;">
+  <p>Hi,</p>
+  <p>Here's your code to sign in to CFBx, the play-money college football stock market:</p>
+  <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; margin: 16px 0;">{{ .Token }}</p>
+  <p>Type it on the sign-in page, or use this link instead:
+    <a href="{{ .ConfirmationURL }}">Sign in to CFBx</a></p>
+  <p>The code and link work once and expire in 1 hour.</p>
+  <p>You're getting this because someone entered this email address on the CFBx sign-in page.
+    If that wasn't you, ignore this email and nothing will happen.</p>
+  <p>Thanks,<br>CFBx</p>
+</div>

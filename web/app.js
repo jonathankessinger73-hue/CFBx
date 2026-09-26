@@ -940,6 +940,18 @@ function renderLeaderboard() {
 
 /* ---------- Rendering: sign in ---------- */
 
+// Google's "G" mark, for the sign-in button.
+const GOOGLE_G =
+  `<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">` +
+  `<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>` +
+  `<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>` +
+  `<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>` +
+  `<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>` +
+  `</svg>`;
+
+const RESEND_WAIT_S = 60; // Supabase allows one email per address per minute
+const signInState = { email: null, sentAt: 0 };
+
 function renderSignIn() {
   if (!supabase) {
     $("main").innerHTML = `<div class="panel auth-panel"><h2>sign in</h2><p>Sign-in isn't configured on this server.</p></div>`;
@@ -949,13 +961,37 @@ function renderSignIn() {
     location.hash = "#/";
     return;
   }
+  if (signInState.email) return renderCheckEmail();
+
+  const google = (cfg.authProviders || []).includes("google");
   $("main").innerHTML =
     `<div class="panel auth-panel"><h2>sign in</h2>` +
-    `<p>Enter your email and we'll send you a sign-in link. New here? The same link creates your account with ${fmtMoney(STARTING_CASH)} in play money.</p>` +
+    `<p>New here? Signing in creates your account with ${fmtMoney(STARTING_CASH)} in play money.</p>` +
+    (google
+      ? `<button class="btn-google" type="button" id="signin-google">${GOOGLE_G}<span>Continue with Google</span></button>` +
+        `<div class="auth-or"><span>or use your email</span></div>`
+      : `<p>Enter your email and we'll send you a sign-in link.</p>`) +
     `<form id="signin-form" novalidate>` +
     `<input class="field" type="email" id="signin-email" autocomplete="email" required placeholder="you@example.com" aria-label="Email">` +
     `<button class="btn-primary" type="submit" id="signin-submit" style="width:100%">Email me a link</button>` +
     `<div class="form-msg" id="signin-msg" role="status" aria-live="polite"></div></form></div>`;
+
+  if (google) {
+    $("signin-google").addEventListener("click", async () => {
+      $("signin-google").disabled = true;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: location.origin + location.pathname },
+      });
+      // On success the browser is already on its way to Google.
+      if (error) {
+        $("signin-google").disabled = false;
+        const msg = $("signin-msg");
+        msg.className = "form-msg err";
+        msg.textContent = error.message || "Couldn't start Google sign-in. Try again.";
+      }
+    });
+  }
 
   $("signin-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -967,18 +1003,99 @@ function renderSignIn() {
       return;
     }
     $("signin-submit").disabled = true;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: location.origin + location.pathname },
-    });
+    const error = await sendSignInEmail(email);
+    if (!$("signin-submit")) return; // signed in (or navigated away) meanwhile
     $("signin-submit").disabled = false;
     if (error) {
       msg.className = "form-msg err";
-      msg.textContent = error.message || "Couldn't send the link. Try again.";
-    } else {
-      msg.className = "form-msg ok";
-      msg.textContent = `Check ${email} for your sign-in link.`;
+      msg.textContent = error;
+    } else if (!state.session) {
+      renderCheckEmail();
     }
+  });
+}
+
+// Returns an error message, or null once the email is on its way.
+async function sendSignInEmail(email) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: location.origin + location.pathname },
+  });
+  if (error) return error.message || "Couldn't send the email. Try again.";
+  signInState.email = email;
+  signInState.sentAt = Date.now();
+  return null;
+}
+
+// After the email is sent: sign in with the code from it (handy when the link
+// opens in a different browser, or a mail scanner has used it up), plus help
+// finding an email that went to spam.
+function renderCheckEmail() {
+  const email = signInState.email;
+  const from = cfg.authEmailFrom;
+  $("main").innerHTML =
+    `<div class="panel auth-panel"><h2>check your email</h2>` +
+    `<p>We sent a sign-in email to <strong>${esc(email)}</strong>${from ? ` from <strong>${esc(from)}</strong>` : ""}. ` +
+    `Click the link in it, or type the code from it here:</p>` +
+    `<form id="code-form" novalidate>` +
+    `<input class="field code-field" id="signin-code" inputmode="numeric" autocomplete="one-time-code" ` +
+    `maxlength="10" placeholder="123456" aria-label="Sign-in code">` +
+    `<button class="btn-primary" type="submit" id="code-submit" style="width:100%">Sign in</button>` +
+    `<div class="form-msg" id="code-msg" role="status" aria-live="polite"></div></form>` +
+    `<div class="auth-help"><div class="auth-help-title">Don't see it?</div><ul>` +
+    `<li>Give it a minute, then check <strong>Spam</strong> or <strong>Junk</strong>` +
+    `, plus Gmail's <strong>Promotions</strong> tab or Outlook's <strong>Other</strong> tab.</li>` +
+    `<li>Search your mail for <strong>CFBx</strong>.</li>` +
+    `<li>Found it in spam? Mark it <strong>Not spam</strong>${from ? ` and add ${esc(from)} to your contacts` : ""}, so the next one lands in your inbox.</li>` +
+    `</ul></div>` +
+    `<div class="auth-actions">` +
+    `<button class="btn-secondary" type="button" id="code-resend"></button>` +
+    `<button class="link-btn" type="button" id="code-change">Use a different email</button>` +
+    `</div></div>`;
+
+  const resend = $("code-resend");
+  const tick = () => {
+    if (!resend.isConnected) return clearInterval(timer);
+    const left = Math.ceil((signInState.sentAt + RESEND_WAIT_S * 1000 - Date.now()) / 1000);
+    resend.disabled = left > 0;
+    resend.textContent = left > 0 ? `Resend in ${left}s` : "Resend email";
+  };
+  const timer = setInterval(tick, 1000);
+  tick();
+
+  resend.addEventListener("click", async () => {
+    resend.disabled = true;
+    const error = await sendSignInEmail(email);
+    const msg = $("code-msg");
+    if (!msg) return;
+    msg.className = error ? "form-msg err" : "form-msg ok";
+    msg.textContent = error || "Sent again. Only the newest email's code and link will work.";
+    tick();
+  });
+
+  $("code-change").addEventListener("click", () => {
+    signInState.email = null;
+    renderSignIn();
+  });
+
+  $("code-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const token = $("signin-code").value.replace(/\D/g, "");
+    const msg = $("code-msg");
+    if (token.length < 6) {
+      msg.className = "form-msg err";
+      msg.textContent = "Enter the code from the email (at least 6 digits).";
+      return;
+    }
+    $("code-submit").disabled = true;
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (!$("code-submit")) return;
+    $("code-submit").disabled = false;
+    if (error) {
+      msg.className = "form-msg err";
+      msg.textContent = "That code didn't work. It may have expired or been replaced by a newer email.";
+    }
+    // On success onAuthStateChange takes over and leaves this page.
   });
 }
 
@@ -998,6 +1115,7 @@ async function boot() {
         setTimeout(async () => {
           await loadAccount();
           if (parseRoute().page === "leaderboard") await loadLeaderboard();
+          if (session) signInState.email = null;
           if (session && parseRoute().page === "signin") location.hash = "#/";
           else render();
         }, 0);
