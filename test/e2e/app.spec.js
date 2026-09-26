@@ -70,6 +70,15 @@ test.describe("with fake auth", () => {
     await expect(page.getByText("Sign in to see your portfolio")).toBeVisible();
   });
 
+  test("privacy and terms pages are linked from every page", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("footer").getByRole("link", { name: "Privacy" }).click();
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+    await page.locator("footer").getByRole("link", { name: "Terms" }).click();
+    await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
+  });
+
   test("sign-in: Google button, and a code from the email when the link isn't handy", async ({ page }) => {
     await page.goto("/#/signin");
     await page.getByRole("button", { name: "Continue with Google" }).click();

@@ -354,20 +354,39 @@ New domains land in spam at first. It improves as people mark the emails **Not
 spam** over the first couple of weeks. For Outlook, you can also ask Microsoft to
 review the domain at https://olcsupport.office.com.
 
+## Part 6b: Use your own domain (needed for Google sign-in)
+
+Google's consent screen requires a home page, privacy policy and terms on a domain you
+own. The app serves `/privacy` and `/terms`. `onrender.com` isn't accepted, so move the
+site to your domain first:
+
+1. In Render, go to **Settings → Custom Domains → Add Custom Domain** and add
+   `cfbxchange.com`. Render shows the DNS record to create.
+2. In Cloudflare, go to **DNS → Records → Add record**: type **CNAME**, name `@`,
+   target your `….onrender.com` address, **DNS only** (grey cloud). Then click
+   **Verify** in Render and wait for the certificate.
+3. In Supabase, go to **Authentication → URL Configuration**. Change **Site URL** to
+   `https://cfbxchange.com` and add `https://cfbxchange.com/**` to Redirect URLs.
+4. The pages list `contact@cfbxchange.com`. To receive those emails, go to Cloudflare
+   → **Email → Email Routing** and forward `contact@` to your own inbox. Email Routing
+   uses the main domain, so it doesn't clash with Resend's `mail.` subdomain.
+
 ## Part 7: Sign in with Google
 
 People who sign in with Google skip email entirely.
 
 1. Go to **console.cloud.google.com**. Create a project named `CFBx`.
 2. Open **Google Auth Platform** (shown as "OAuth consent screen" in older menus).
-   - **Branding:** app name `CFBx`, support email: yours. Don't upload a logo,
-     because a logo means Google has to review the app.
+   - **Branding:** app name `CFBx`, support email: yours. Home page
+     `https://cfbxchange.com`, privacy `https://cfbxchange.com/privacy`, terms
+     `https://cfbxchange.com/terms`, authorized domain `cfbxchange.com`. Don't upload
+     a logo, because a logo means Google has to review the app.
    - **Audience:** choose **External**, then click **Publish app**, so it's "In
      production". Otherwise only test users you list can sign in.
    - **Data access:** leave it alone. The default email/profile access is all
      that's needed.
 3. Go to **Clients → Create client**. Pick **Web application**, name it `CFBx`.
-   - **Authorized JavaScript origins:** `https://<your-app>.onrender.com`
+   - **Authorized JavaScript origins:** `https://cfbxchange.com`
    - **Authorized redirect URIs:** the **Callback URL** shown in Supabase under
      **Authentication → Sign In / Providers → Google**. It looks like
      `https://<project-ref>.supabase.co/auth/v1/callback`.
