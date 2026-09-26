@@ -294,6 +294,96 @@ the error.
 
 ---
 
+## Part 5: Put it online (Render)
+
+1. Sign in at **render.com** with GitHub. Click **+ New → Web Service** and connect the CFBx repo.
+2. Set these fields: **Branch** `main`, **Runtime** Node, **Build Command** `npm ci`,
+   **Start Command** `npm start`, **Instance Type** Free.
+3. Add these **Environment Variables**. Paste each value with no quotes, spaces or
+   `# comments`:
+
+   | Name | Value |
+   |---|---|
+   | `NODE_VERSION` | `24` |
+   | `DATABASE_URL` | same as your `.env` |
+   | `DATABASE_CA_CERT` | the whole text of `supabase-ca.crt`, including the BEGIN and END lines |
+   | `SUPABASE_URL` | same as your `.env` |
+   | `SUPABASE_ANON_KEY` | same as your `.env` |
+   | `AUTH_EMAIL_FROM` | the sender address from Part 6, e.g. `noreply@mail.cfbxchange.com` |
+   | `AUTH_PROVIDERS` | `google`, once Part 7 is done |
+
+4. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to the
+   Render address and add `https://<your-app>.onrender.com/**` to **Redirect URLs**.
+   Keep the localhost entry.
+
+Free Render services sleep after 15 minutes with no visitors. The first visit after
+that takes 30–60 seconds. Every merge to `main` redeploys automatically.
+
+## Part 6: Sign-in emails that reach the inbox (Resend)
+
+Supabase's built-in sender only emails your own address, a couple of times an
+hour. To let anyone sign in, send through Resend from a domain you own.
+
+1. **Domain:** buy one, for example on Cloudflare. In Resend, go to **Domains → Add
+   Domain** and add a `mail.` subdomain, like `mail.cfbxchange.com`. Then add every
+   DNS record Resend lists. In Cloudflare, set CNAME records to **DNS only** (grey
+   cloud). Wait for **Verified**.
+2. **DMARC:** in Cloudflare, add a **TXT** record with Name `_dmarc` and Content
+   `v=DMARC1; p=none;`. Outlook and Yahoo trust new domains much more with one.
+3. **Tracking off:** under Resend → Domains → your domain, turn off click and open
+   tracking. Tracked links look suspicious in sign-in emails.
+4. **API key:** go to Resend → **API Keys → Create**, with **Sending access** for
+   that domain.
+5. **Supabase SMTP:** go to **Authentication → Emails → SMTP Settings** and enable
+   custom SMTP:
+   - host `smtp.resend.com`, port `465`, username `resend`
+   - password: the API key
+   - sender `noreply@mail.<your-domain>`, sender name `CFBx`
+
+   Then go to **Authentication → Rate Limits** and raise emails per hour to `100`.
+6. **Templates:** paste [`docs/email/sign-in.html`](email/sign-in.html) into both
+   the **Magic Link** and **Confirm signup** templates, with the subject
+   `Your CFBx sign-in code: {{ .Token }}`. The template includes a 6-digit code, and
+   the sign-in page has a box to type it. That helps when the link opens in the
+   wrong browser, or when an email scanner (common with Outlook) has already
+   "clicked" the one-time link.
+7. **On Render,** set `AUTH_EMAIL_FROM` to the sender address. The "check your email"
+   screen then tells people exactly which sender to look for in spam.
+
+New domains land in spam at first. It improves as people mark the emails **Not
+spam** over the first couple of weeks. For Outlook, you can also ask Microsoft to
+review the domain at https://olcsupport.office.com.
+
+## Part 7: Sign in with Google
+
+People who sign in with Google skip email entirely.
+
+1. Go to **console.cloud.google.com**. Create a project named `CFBx`.
+2. Open **Google Auth Platform** (shown as "OAuth consent screen" in older menus).
+   - **Branding:** app name `CFBx`, support email: yours. Don't upload a logo,
+     because a logo means Google has to review the app.
+   - **Audience:** choose **External**, then click **Publish app**, so it's "In
+     production". Otherwise only test users you list can sign in.
+   - **Data access:** leave it alone. The default email/profile access is all
+     that's needed.
+3. Go to **Clients → Create client**. Pick **Web application**, name it `CFBx`.
+   - **Authorized JavaScript origins:** `https://<your-app>.onrender.com`
+   - **Authorized redirect URIs:** the **Callback URL** shown in Supabase under
+     **Authentication → Sign In / Providers → Google**. It looks like
+     `https://<project-ref>.supabase.co/auth/v1/callback`.
+
+   Click **Create**, then copy the **Client ID** and **Client secret**.
+4. In Supabase, go to **Authentication → Sign In / Providers → Google**. Turn it on,
+   paste the Client ID and Client secret, and click **Save**.
+5. On Render, add the environment variable `AUTH_PROVIDERS` = `google` and save.
+   The **Continue with Google** button appears after the redeploy. For local use, add
+   the same line to `.env` and add `http://localhost:3000` as another JavaScript origin.
+
+Someone who used an email link before and then picks Google with the same address
+gets the same account.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause / fix |

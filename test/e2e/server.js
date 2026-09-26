@@ -35,7 +35,13 @@ const app = createApp({
   },
   web: {
     dir: path.join(root, "web"),
-    config: { apiUrl: "", supabaseUrl: "http://supabase.test", supabaseAnonKey: "test-anon-key" },
+    config: {
+      apiUrl: "",
+      supabaseUrl: "http://supabase.test",
+      supabaseAnonKey: "test-anon-key",
+      authProviders: ["google"],
+      authEmailFrom: "noreply@mail.example.test",
+    },
   },
 });
 

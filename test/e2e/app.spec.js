@@ -70,6 +70,28 @@ test.describe("with fake auth", () => {
     await expect(page.getByText("Sign in to see your portfolio")).toBeVisible();
   });
 
+  test("sign-in: Google button, and a code from the email when the link isn't handy", async ({ page }) => {
+    await page.goto("/#/signin");
+    await page.getByRole("button", { name: "Continue with Google" }).click();
+    expect(await page.evaluate(() => window.__oauthProvider)).toBe("google");
+
+    await page.getByLabel("Email").fill("fan+code@example.com");
+    await page.getByRole("button", { name: "Email me a link" }).click();
+    await expect(page.getByRole("heading", { name: "check your email" })).toBeVisible();
+    await expect(page.locator(".auth-panel")).toContainText("noreply@mail.example.test");
+    await expect(page.getByText("Don't see it?")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Resend in \d+s/ })).toBeDisabled();
+
+    await page.getByLabel("Sign-in code").fill("000000");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.locator("#code-msg")).toContainText("didn't work");
+
+    await page.getByLabel("Sign-in code").fill("123 456");
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
+    await expect(page).not.toHaveURL(/signin/);
+  });
+
   test("sign in, buy, see the position, sell", async ({ page }) => {
     await page.goto("/#/signin");
     await page.getByLabel("Email").fill("fan@example.com");
