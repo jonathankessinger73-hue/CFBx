@@ -105,6 +105,20 @@ function teamMark(t, size) {
   );
 }
 
+// teamMark by ticker, for lists that only carry the team id. `iconOnly`: just
+// the logo (decorative, next to the ticker), nothing when there isn't one.
+function miniMark(teamId, size, { iconOnly = false } = {}) {
+  const t = state.teams.get(teamId);
+  if (!t) return "";
+  if (!iconOnly) return `<span class="mini-mark">${teamMark(t, size)}</span>`;
+  const src = t.logo_dark_url || t.logo_url;
+  if (!src || !/^(https:|data:image\/)/.test(src)) return "";
+  return (
+    `<span class="mini-mark" style="width:${size}px;height:${size}px">` +
+    `<img class="team-logo" src="${esc(src)}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async"></span>`
+  );
+}
+
 // One-line summary under the name on market cards.
 function recordLine(t) {
   if (!t.records) return "";
@@ -812,7 +826,8 @@ function renderPortfolio() {
           const gl = h.unrealized_pl;
           const glPct = cost ? round2((gl / cost) * 100) : 0;
           return (
-            `<tr><td class="nm-cell"><a href="#/team/${encodeURIComponent(h.team_id)}" style="text-decoration:none">${esc(h.name)}</a><br><span class="tk-mini">${esc(h.team_id)}</span></td>` +
+            `<tr><td class="nm-cell"><div class="nm-flex">${miniMark(h.team_id, 32)}<div>` +
+            `<a href="#/team/${encodeURIComponent(h.team_id)}" style="text-decoration:none">${esc(h.name)}</a><br><span class="tk-mini">${esc(h.team_id)}</span></div></div></td>` +
             `<td>${h.shares}</td><td>$${h.avg_cost.toFixed(2)}</td><td>$${h.current_price.toFixed(2)}</td>` +
             `<td>$${h.market_value.toFixed(2)}</td>` +
             `<td class="ch ${gl >= 0 ? "up" : "down"}" style="background:none;padding:12px 10px">${gl >= 0 ? "+" : "-"}$${Math.abs(gl).toFixed(2)} (${fmtPct(glPct)})</td></tr>`
@@ -827,7 +842,7 @@ function renderPortfolio() {
         .map(
           (x) =>
             `<div class="log-item"><span class="lw">${esc(new Date(x.created_at).toLocaleString())}</span> &middot; ` +
-            `${x.side === "buy" ? "Bought" : "Sold"} ${x.shares} <a href="#/team/${encodeURIComponent(x.team_id)}">${esc(x.team_id)}</a> @ $${x.price.toFixed(2)} ` +
+            `${x.side === "buy" ? "Bought" : "Sold"} ${x.shares} ${miniMark(x.team_id, 18, { iconOnly: true })}<a href="#/team/${encodeURIComponent(x.team_id)}">${esc(x.team_id)}</a> @ $${x.price.toFixed(2)} ` +
             `<span class="ld">${fmtMoney(x.amount)}</span></div>`
         )
         .join("") +
@@ -1123,8 +1138,13 @@ async function boot() {
     (e) => {
       const img = e.target;
       if (!(img instanceof HTMLImageElement) || !img.classList.contains("team-logo")) return;
-      img.nextElementSibling?.removeAttribute("hidden");
-      img.remove();
+      const fallback = img.nextElementSibling;
+      if (fallback) {
+        fallback.removeAttribute("hidden");
+        img.remove();
+      } else {
+        (img.closest(".mini-mark") || img).remove(); // icon-only: leave no gap
+      }
     },
     true
   );

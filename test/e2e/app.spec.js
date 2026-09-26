@@ -145,6 +145,9 @@ test.describe("with fake auth", () => {
     await expect(page.locator("table.holdings tbody tr")).toHaveCount(1);
     await expect(page.locator("table.holdings")).toContainText("Georgia");
     await expect(page.locator(".log-list .log-item").first()).toContainText(`Bought 3 UGA @ $${price.toFixed(2)}`);
+    // Team logos (UGA has one in the e2e data) next to the holding and the trade.
+    await expect(page.locator("table.holdings tbody tr img.team-logo")).toBeVisible();
+    await expect(page.locator(".log-list .log-item").first().locator("img.team-logo")).toBeVisible();
 
     await page.goto("/#/team/UGA");
     await page.getByLabel("Shares").fill("3");
