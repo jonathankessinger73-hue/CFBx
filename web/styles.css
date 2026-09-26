@@ -393,6 +393,9 @@
     border-bottom: 1px solid var(--border);
   }
   table.holdings td.nm-cell{ font-family: var(--font-body); }
+  table.holdings td.nm-cell .nm-flex{ display: flex; align-items: center; gap: 10px; }
+  .mini-mark{ display: inline-flex; vertical-align: middle; margin-right: 5px; }
+  .nm-flex .mini-mark{ margin-right: 0; }
   table.holdings td.nm-cell .tk-mini{ color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; }
   table.holdings tr:last-child td{ border-bottom:none; }
   .empty-state{
