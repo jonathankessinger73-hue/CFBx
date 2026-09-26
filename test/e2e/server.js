@@ -24,6 +24,13 @@ await writeSeed(
     season: 2026,
   })
 );
+// Logos: UGA gets an inline image (no network needed), ALA one that can't
+// load (must fall back to the helmet), everyone else none.
+const UGA_LOGO =
+  "data:image/svg+xml," +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="red"/></svg>');
+await pool.query("update teams set logo_dark_url = $1 where id = 'UGA'", [UGA_LOGO]);
+await pool.query("update teams set logo_url = 'https://127.0.0.1:1/missing.png' where id = 'ALA'");
 
 const app = createApp({
   store: createStore(pool),

@@ -70,6 +70,20 @@ test.describe("with fake auth", () => {
     await expect(page.getByText("Sign in to see your portfolio")).toBeVisible();
   });
 
+  test("team logos show where known; a logo that can't load falls back to the helmet", async ({ page }) => {
+    await page.goto("/");
+    const uga = page.locator('a.card[href="#/team/UGA"]');
+    await expect(uga.locator("img.team-logo")).toHaveJSProperty("complete", true);
+    expect(await uga.locator("img.team-logo").evaluate((img) => img.naturalWidth > 0)).toBe(true);
+    const ala = page.locator('a.card[href="#/team/ALA"]');
+    await expect(ala.locator("img.team-logo")).toHaveCount(0);
+    await expect(ala.locator(".team-mark-fallback svg")).toBeVisible();
+    await expect(page.locator('a.card[href="#/team/OSU"] svg').first()).toBeVisible();
+
+    await page.goto("/#/team/UGA");
+    await expect(page.locator(".detail-head img.team-logo")).toBeVisible();
+  });
+
   test("privacy and terms pages are linked from every page", async ({ page }) => {
     await page.goto("/");
     await page.locator("footer").getByRole("link", { name: "Privacy" }).click();

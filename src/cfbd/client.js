@@ -59,6 +59,7 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     spRatings: (year) => get("/ratings/sp", { year }),
     talent: (year) => get("/talent", { year }),
     records: (year) => get("/records", { year }),
+    fbsTeams: (year) => get("/teams/fbs", { year }),
   };
 }
 
@@ -125,6 +126,18 @@ export function normalizeTalent(r) {
 }
 
 // /records rows -> { team, wins, losses, ties, confWins, confLosses, confTies }.
+// Logo URLs from a /teams entry. CFBD lists ESPN's images, the regular one and
+// a "-dark" variant for dark backgrounds, sometimes over plain http.
+export function normalizeTeamLogos(t) {
+  const logos = (pick(t, "logos") || []).filter((u) => typeof u === "string" && u).map((u) => u.replace(/^http:\/\//, "https://"));
+  const dark = logos.find((u) => /-dark\//.test(u)) || null;
+  return {
+    team: pick(t, "school"),
+    logo: logos.find((u) => u !== dark) || dark,
+    logoDark: dark,
+  };
+}
+
 export function normalizeRecord(r) {
   const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
   const total = pick(r, "total") || {};

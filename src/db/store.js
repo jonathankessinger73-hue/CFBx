@@ -15,7 +15,7 @@ export const TRADE_ERRORS = new Set([
 
 const TEAM_COLUMNS = `id, name, mascot, conference, strength, primary_color, secondary_color,
   ipo_price, current_price, last_change_pct, last_covered, last_expected, last_actual,
-  last_line_is_real`;
+  last_line_is_real, logo_url, logo_dark_url`;
 
 export function createStore(pool) {
   return {

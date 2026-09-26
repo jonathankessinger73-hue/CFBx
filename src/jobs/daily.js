@@ -17,7 +17,7 @@ try {
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ` +
       `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +
-      `${summary.recordsUpdated} records`
+      `${summary.recordsUpdated} records, ${summary.logosUpdated} logos`
   );
 } finally {
   await pool.end();

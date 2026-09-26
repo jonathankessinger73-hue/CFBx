@@ -3,7 +3,7 @@
 // Exposed as a function (CFBD client and pg pool injected) so it can be tested.
 
 import "../db/pg.js"; // numeric/bigint type parsers
-import { normalizeGame, normalizeLineGame, normalizeRecord } from "../cfbd/client.js";
+import { normalizeGame, normalizeLineGame, normalizeRecord, normalizeTeamLogos } from "../cfbd/client.js";
 import { createTeamResolver } from "../cfbd/teamNames.js";
 import { applyGame } from "../engine/replay.js";
 import { fcsGameImpact, spreadToExpectedHomeMargin } from "../engine/pricing.js";
@@ -77,7 +77,7 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     return null;
   }
 
-  const summary = { linesPosted: 0, gamesApplied: 0, fcsGames: 0, unmatched: [], recordsUpdated: 0 };
+  const summary = { linesPosted: 0, gamesApplied: 0, fcsGames: 0, unmatched: [], recordsUpdated: 0, logosUpdated: 0 };
 
   // ---- 1. lines ------------------------------------------------------------
   const lineGames = (await cfbd.lines(season)).map(normalizeLineGame);
@@ -235,6 +235,36 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
       }
     } catch (err) {
       log(`records not updated: ${err.message}`);
+    }
+  }
+  // ---- 4. team logos ---------------------------------------------------------
+  // ESPN logo URLs as CFBD lists them. Only changed rows are written, so this
+  // is a no-op most days. Like records, a failure is logged and ignored.
+  if (cfbd.fbsTeams) {
+    try {
+      const seen = new Set();
+      const rows = [];
+      for (const t of (await cfbd.fbsTeams(season)).map(normalizeTeamLogos)) {
+        const id = resolve(t.team);
+        if (!id || !t.logo || seen.has(id)) continue;
+        seen.add(id);
+        rows.push({ id, logo: t.logo, dark: t.logoDark });
+      }
+      if (dryRun) {
+        summary.logosUpdated = rows.length;
+      } else if (rows.length) {
+        const { rowCount } = await pool.query(
+          `update teams t set logo_url = x.logo, logo_dark_url = x.dark
+             from jsonb_to_recordset($1::jsonb) as x(id text, logo text, dark text)
+            where t.id = x.id
+              and (t.logo_url is distinct from x.logo or t.logo_dark_url is distinct from x.dark)`,
+          [JSON.stringify(rows)]
+        );
+        summary.logosUpdated = rowCount;
+      }
+      log(`logos: ${rows.length} teams listed, ${dryRun ? "(dry run)" : `${summary.logosUpdated} updated`}`);
+    } catch (err) {
+      log(`logos not updated: ${err.message}`);
     }
   }
   return summary;
