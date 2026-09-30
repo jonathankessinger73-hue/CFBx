@@ -7,6 +7,9 @@ import {
   strengthFromRatings,
   spreadPhrase,
   fcsGameImpact,
+  lineMovePct,
+  pollMovePct,
+  pollMoveSummary,
 } from "../src/engine/pricing.js";
 
 const noNoise = () => 0.5; // (0.5 - 0.5) * 0.6 = 0
@@ -103,4 +106,25 @@ test("FCS games: a win leaves the price alone, a loss is a 15-25% penalty", () =
   assert.equal(fcsGameImpact(40, 10, 20).pct, -20);
   assert.equal(fcsGameImpact(40, 0, 45).pct, -25); // capped
   assert.equal(fcsGameImpact(3.2, 0, 10).price, 3); // $3 floor
+});
+
+test("line moves: 0.5% per point of expected margin, capped at 3%, tiny moves ignored", () => {
+  assert.equal(lineMovePct(3), 1.5);
+  assert.equal(lineMovePct(-2), -1);
+  assert.equal(lineMovePct(10), 3);
+  assert.equal(lineMovePct(-10), -3);
+  assert.equal(lineMovePct(0.4), 0);
+});
+
+test("poll moves: per spot (unranked = No. 30), CFP worth more, capped at 4%", () => {
+  assert.equal(pollMovePct("AP Top 25", 10, 7), 0.75);
+  assert.equal(pollMovePct("AP Top 25", 7, 10), -0.75);
+  assert.equal(pollMovePct("AP Top 25", null, 25), 1.25);
+  assert.equal(pollMovePct("AP Top 25", 3, null), -4);
+  assert.equal(pollMovePct("Playoff Committee Rankings", 10, 7), 1.05);
+  assert.equal(pollMovePct("Coaches Poll", 10, 1), 0);
+  assert.equal(pollMoveSummary("AP Top 25", 10, 7), "Up 3 spots to No. 7 in the AP poll");
+  assert.equal(pollMoveSummary("AP Top 25", 7, 8), "Down 1 spot to No. 8 in the AP poll");
+  assert.equal(pollMoveSummary("Playoff Committee Rankings", null, 12), "Entered the CFP rankings at No. 12");
+  assert.equal(pollMoveSummary("AP Top 25", 18, null), "Dropped out of the AP poll (was No. 18)");
 });

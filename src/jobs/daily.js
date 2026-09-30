@@ -18,9 +18,9 @@ try {
   if (!dryRun) await pool.query("select decay_hype()");
   const summary = await syncSeason({ pool, cfbd: createCfbdClient(), season, dryRun });
   console.log(
-    `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ` +
+    `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ${summary.lineMoves} line moves, ` +
       `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +
-      `${summary.recordsUpdated} records, ${summary.logosUpdated} logos`
+      `${summary.recordsUpdated} records, ${summary.pollMoves} poll moves, ${summary.logosUpdated} logos`
   );
 } finally {
   await pool.end();

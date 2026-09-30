@@ -97,6 +97,76 @@ test("sync posts missing lines and applies completed games exactly once", { skip
   assert.equal(await price("UGA"), ugaAfter);
 });
 
+const fundamental = async (id) =>
+  (await pool.query("select fundamental_price from teams where id = $1", [id])).rows[0].fundamental_price;
+const moves = async (kind) =>
+  (await pool.query("select team_id, pct_change, summary from market_moves where kind = $1 order by id", [kind])).rows;
+
+test("line moves before kickoff move both teams, once per change", { skip }, async () => {
+  // The first test posted week 5 MSST (home) vs ALA at +10.5. It moves to +13.5:
+  // MSST is 3 points more of an underdog.
+  const base = { games: async () => [] };
+  const lines = (spread) => async () => [
+    { id: 501, week: 5, homeTeam: "Mississippi State", awayTeam: "Alabama", lines: [{ spread }] },
+  ];
+  const [msst, ala] = [await fundamental("MSST"), await fundamental("ALA")];
+
+  const dry = await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, dryRun: true, log: () => {} });
+  assert.equal(dry.lineMoves, 1);
+  assert.equal(await fundamental("MSST"), msst);
+
+  const r = await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, log: () => {} });
+  assert.equal(r.lineMoves, 1);
+  assert.equal(await fundamental("MSST"), Math.round(msst * 0.985 * 10000) / 10000);
+  assert.equal(await fundamental("ALA"), Math.round(ala * 1.015 * 10000) / 10000);
+  assert.deepEqual(await moves("line"), [
+    { team_id: "MSST", pct_change: -1.5, summary: "Line moved vs Alabama: now underdog by 13.5 (was underdog by 10.5)" },
+    { team_id: "ALA", pct_change: 1.5, summary: "Line moved vs Mississippi State: now favored by 13.5 (was favored by 10.5)" },
+  ]);
+  const { rows } = await pool.query("select line, line_priced from schedule where cfbd_game_id = 501");
+  assert.deepEqual(rows[0], { line: 13.5, line_priced: 13.5 });
+
+  // Same line again, or a wobble under half a point: nothing.
+  assert.equal((await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, log: () => {} })).lineMoves, 0);
+  assert.equal((await syncSeason({ pool, cfbd: { ...base, lines: lines(13.8) }, season: 2026, log: () => {} })).lineMoves, 0);
+  assert.equal((await moves("line")).length, 2);
+});
+
+test("poll moves: first run is a baseline, then entries, exits and moves; each release once", { skip }, async () => {
+  const base = { lines: async () => [], games: async () => [] };
+  const release = (week, poll, schools) => ({
+    season: 2026, seasonType: "regular", week,
+    polls: [{ poll, ranks: schools.map((school, i) => ({ rank: i + 1, school })) }],
+  });
+  const week4 = release(4, "AP Top 25", ["Georgia", "Alabama", "Ohio State"]);
+  const week5 = release(5, "AP Top 25", ["Alabama", "Georgia", "Texas"]);
+  const cfp5 = release(5, "Playoff Committee Rankings", ["Georgia"]);
+  const run = (weeks) => syncSeason({ pool, cfbd: { ...base, rankings: async () => weeks }, season: 2026, log: () => {} });
+
+  const first = await run([week4]);
+  assert.equal(first.pollMoves, 0);
+  const { rows } = await pool.query("select count(*)::int as n from poll_ranks");
+  assert.equal(rows[0].n, 3);
+
+  const osu = await fundamental("OSU");
+  const second = await run([week4, week5, cfp5]);
+  assert.equal(second.pollMoves, 5);
+  assert.deepEqual(
+    (await moves("poll")).map((m) => [m.team_id, m.pct_change, m.summary]).sort(),
+    [
+      ["ALA", 0.25, "Up 1 spot to No. 1 in the AP poll"],
+      ["OSU", -4, "Dropped out of the AP poll (was No. 3)"],
+      ["TEX", 4, "Entered the AP poll at No. 3"],
+      ["UGA", -0.25, "Down 1 spot to No. 2 in the AP poll"],
+      ["UGA", 4, "Entered the CFP rankings at No. 1"],
+    ]
+  );
+  assert.equal(await fundamental("OSU"), Math.round(osu * 0.96 * 10000) / 10000);
+
+  assert.equal((await run([week4, week5, cfp5])).pollMoves, 0);
+  assert.equal((await moves("poll")).length, 5);
+});
+
 test("FCS games are recorded: wins don't move the price, losses cost a penalty", { skip }, async () => {
   const events = async (id) =>
     (

@@ -60,6 +60,7 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     talent: (year) => get("/talent", { year }),
     records: (year) => get("/records", { year }),
     fbsTeams: (year) => get("/teams/fbs", { year }),
+    rankings: (year, seasonType = "regular") => get("/rankings", { year, seasonType }),
   };
 }
 
@@ -126,6 +127,24 @@ export function normalizeTalent(r) {
 }
 
 // /records rows -> { team, wins, losses, ties, confWins, confLosses, confTies }.
+// /rankings -> flat [{ poll, seasonType, week, school, rank }]. CFBD groups
+// ranks by week and then by poll.
+export function normalizeRankings(weeks) {
+  const out = [];
+  for (const w of weeks || []) {
+    const week = pick(w, "week");
+    const seasonType = pick(w, "seasonType", "season_type") ?? "regular";
+    for (const p of pick(w, "polls") || []) {
+      const poll = pick(p, "poll");
+      for (const r of pick(p, "ranks") || []) {
+        const rank = Number(pick(r, "rank"));
+        if (Number.isInteger(rank)) out.push({ poll, seasonType, week, school: pick(r, "school"), rank });
+      }
+    }
+  }
+  return out;
+}
+
 // Logo URLs from a /teams entry. CFBD lists ESPN's images, the regular one and
 // a "-dark" variant for dark backgrounds, sometimes over plain http.
 export function normalizeTeamLogos(t) {

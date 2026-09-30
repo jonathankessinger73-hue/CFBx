@@ -6,7 +6,8 @@ import "../db/pg.js"; // numeric/bigint type parsers
 import { normalizeGame, normalizeLineGame, normalizeRecord, normalizeTeamLogos } from "../cfbd/client.js";
 import { createTeamResolver } from "../cfbd/teamNames.js";
 import { applyGame } from "../engine/replay.js";
-import { fcsGameImpact, spreadToExpectedHomeMargin } from "../engine/pricing.js";
+import { fcsGameImpact, lineMovePct, spreadToExpectedHomeMargin } from "../engine/pricing.js";
+import { syncPolls } from "./polls.js";
 
 /**
  * @param {object} opts
@@ -23,7 +24,7 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   const market = new Map(teams.map((t) => [t.id, { ...t }]));
 
   const { rows: allGames } = await pool.query(
-    `select id, week, home_team_id, away_team_id, line, cfbd_game_id, completed
+    `select id, week, home_team_id, away_team_id, line, line_priced, cfbd_game_id, completed
        from schedule where season = $1`,
     [season]
   );
@@ -77,7 +78,16 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     return null;
   }
 
-  const summary = { linesPosted: 0, gamesApplied: 0, fcsGames: 0, unmatched: [], recordsUpdated: 0, logosUpdated: 0 };
+  const summary = {
+    linesPosted: 0,
+    lineMoves: 0,
+    gamesApplied: 0,
+    fcsGames: 0,
+    unmatched: [],
+    recordsUpdated: 0,
+    logosUpdated: 0,
+    pollMoves: 0,
+  };
 
   // ---- 1. lines ------------------------------------------------------------
   const lineGames = (await cfbd.lines(season)).map(normalizeLineGame);
@@ -87,17 +97,51 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     if (!m || lg.spread === null) continue;
     const spread = m.flipped ? -lg.spread : lg.spread;
     spreadByCfbdId.set(lg.id, spread);
-    if (m.row.line === null) {
-      summary.linesPosted++;
-      log(`line posted: week ${m.row.week} ${m.row.away_team_id} @ ${m.row.home_team_id} ${spread}`);
+    const row = m.row;
+    if (row.line === null || row.line_priced === null) {
+      // First line seen for this game: post it; it's the baseline for moves.
+      if (row.line === null) {
+        summary.linesPosted++;
+        log(`line posted: week ${row.week} ${row.away_team_id} @ ${row.home_team_id} ${spread}`);
+      }
       if (!dryRun) {
         await pool.query(
-          "update schedule set line = $2, cfbd_game_id = coalesce(cfbd_game_id, $3), updated_at = now() where id = $1 and line is null",
-          [m.row.id, spread, lg.id]
+          `update schedule set line = coalesce(line, $2), line_priced = coalesce(line_priced, line, $2),
+                  cfbd_game_id = coalesce(cfbd_game_id, $3), updated_at = now()
+            where id = $1`,
+          [row.id, spread, lg.id]
         );
       }
-      m.row.line = spread;
+      row.line ??= spread;
+      row.line_priced ??= row.line;
+      continue;
     }
+    // The line moved since prices last reflected it: both teams move.
+    const homePct = lineMovePct(-(spread - row.line_priced));
+    if (homePct === 0) continue;
+    const home = market.get(row.home_team_id);
+    const away = market.get(row.away_team_id);
+    const homeSummary = `Line moved vs ${away.name}: now ${lineText(-spread)} (was ${lineText(-row.line_priced)})`;
+    const awaySummary = `Line moved vs ${home.name}: now ${lineText(spread)} (was ${lineText(row.line_priced)})`;
+    log(
+      `line move: week ${row.week} ${row.away_team_id} @ ${row.home_team_id} ${row.line_priced} -> ${spread}: ` +
+        `${row.home_team_id} ${homePct > 0 ? "+" : ""}${homePct}%, ${row.away_team_id} ${homePct < 0 ? "+" : ""}${-homePct}%`
+    );
+    let applied = true;
+    if (!dryRun) {
+      const { rows } = await pool.query("select apply_line_move($1, $2, $3, $4, $5, $6) as applied", [
+        row.id,
+        row.line_priced,
+        spread,
+        homePct,
+        homeSummary,
+        awaySummary,
+      ]);
+      applied = rows[0].applied;
+    }
+    if (applied) summary.lineMoves++;
+    row.line = spread;
+    row.line_priced = spread;
   }
 
   // ---- 2. completed games ---------------------------------------------------
@@ -223,7 +267,16 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
       log(`records not updated: ${err.message}`);
     }
   }
-  // ---- 4. team logos ---------------------------------------------------------
+  // ---- 4. poll moves ---------------------------------------------------------
+  if (cfbd.rankings) {
+    try {
+      summary.pollMoves = await syncPolls({ pool, cfbd, season, dryRun, log, resolve, teams: market });
+    } catch (err) {
+      log(`polls not updated: ${err.message}`);
+    }
+  }
+
+  // ---- 5. team logos ---------------------------------------------------------
   // ESPN logo URLs as CFBD lists them. Only changed rows are written, so this
   // is a no-op most days. Like records, a failure is logged and ignored.
   if (cfbd.fbsTeams) {
@@ -254,4 +307,11 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
     }
   }
   return summary;
+}
+
+// A team's expected margin as words: "favored by 7.0", "underdog by 3.5".
+function lineText(margin) {
+  if (margin > 0) return `favored by ${margin.toFixed(1)}`;
+  if (margin < 0) return `underdog by ${(-margin).toFixed(1)}`;
+  return "a pick'em";
 }

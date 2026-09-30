@@ -131,6 +131,16 @@ price = fundamental x (1 + hype) x (1 + live move)
     counting at least 5. A small group can't swing prices as far as a crowd.
 - **Live move:** the in-game move while a game is being played, 0 otherwise.
 
+**News moves** (daily job, logged in `market_moves`, shown under "market news"):
+- **Line movement:** when a game's consensus spread moves before kickoff, both teams
+  move by 0.5% per point of expected margin, capped at 3% per move. Moves under half
+  a point are ignored. The first line seen is the baseline (`schedule.line_priced`),
+  and `apply_line_move` applies each change once.
+- **Polls:** each new AP poll or CFP ranking release moves teams by 0.25% per spot
+  (0.35% for CFP), counting unranked as No. 30, capped at 4%. Entering, leaving and
+  moving within the poll all count. Releases are stored in `poll_ranks`. The first
+  run of a season records the releases so far without moving prices.
+
 All the constants are in `market_param()`. `GET /quote` prices an order without placing
 it; the trade box uses it to show the real total. Net worth and the leaderboard value
 holdings at what selling them now would bring (`sell_value`), so pushing up a team you
