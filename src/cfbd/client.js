@@ -61,6 +61,8 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     records: (year) => get("/records", { year }),
     fbsTeams: (year) => get("/teams/fbs", { year }),
     rankings: (year, seasonType = "regular") => get("/rankings", { year, seasonType }),
+    // Today's FBS games with live scores; polled by the API server during games.
+    scoreboard: () => get("/scoreboard", { classification: "fbs" }),
   };
 }
 
@@ -143,6 +145,30 @@ export function normalizeRankings(weeks) {
     }
   }
   return out;
+}
+
+// A /scoreboard game. Teams come as objects ({name, points, classification});
+// status is normalized to "scheduled" | "in_progress" | "completed".
+export function normalizeScoreboardGame(g) {
+  const team = (t) => (t && typeof t === "object" ? t : { name: t });
+  const home = team(pick(g, "homeTeam", "home_team"));
+  const away = team(pick(g, "awayTeam", "away_team"));
+  const points = (v) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const raw = String(pick(g, "status") ?? "").toLowerCase();
+  const status = /final|complete/.test(raw) ? "completed" : /progress|live|half/.test(raw) ? "in_progress" : "scheduled";
+  return {
+    id: pick(g, "id"),
+    status,
+    period: points(pick(g, "period")),
+    clock: pick(g, "clock") ?? null,
+    startDate: pick(g, "startDate", "start_date") ?? null,
+    home: pick(home, "name", "school"),
+    away: pick(away, "name", "school"),
+    homeClassification: (pick(home, "classification") ?? null)?.toLowerCase?.() ?? null,
+    awayClassification: (pick(away, "classification") ?? null)?.toLowerCase?.() ?? null,
+    homePoints: points(pick(home, "points")),
+    awayPoints: points(pick(away, "points")),
+  };
 }
 
 // Logo URLs from a /teams entry. CFBD lists ESPN's images, the regular one and

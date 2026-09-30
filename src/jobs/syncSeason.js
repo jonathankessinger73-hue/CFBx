@@ -24,7 +24,7 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   const market = new Map(teams.map((t) => [t.id, { ...t }]));
 
   const { rows: allGames } = await pool.query(
-    `select id, week, home_team_id, away_team_id, line, line_priced, cfbd_game_id, completed
+    `select id, week, home_team_id, away_team_id, line, line_priced, cfbd_game_id, completed, start_date
        from schedule where season = $1`,
     [season]
   );
@@ -145,7 +145,29 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   }
 
   // ---- 2. completed games ---------------------------------------------------
-  const games = (await cfbd.games(season)).map(normalizeGame).filter((g) => g.completed);
+  const allCfbdGames = (await cfbd.games(season)).map(normalizeGame);
+
+  // Kickoff times for open games, so the live poller knows when games are on.
+  const kickoffs = [];
+  for (const g of allCfbdGames) {
+    if (g.completed || !g.startDate) continue;
+    const m = match(g);
+    const start = new Date(g.startDate);
+    if (!m || Number.isNaN(start.getTime())) continue;
+    if (m.row.start_date?.getTime() !== start.getTime()) {
+      kickoffs.push({ id: m.row.id, start: start.toISOString(), cfbd_id: g.id });
+    }
+  }
+  if (kickoffs.length && !dryRun) {
+    await pool.query(
+      `update schedule s set start_date = x.start, cfbd_game_id = coalesce(s.cfbd_game_id, x.cfbd_id)
+         from jsonb_to_recordset($1::jsonb) as x(id bigint, start timestamptz, cfbd_id bigint)
+        where s.id = x.id`,
+      [JSON.stringify(kickoffs)]
+    );
+  }
+
+  const games = allCfbdGames.filter((g) => g.completed);
   games.sort((a, b) => a.week - b.week || a.id - b.id);
   for (const g of games) {
     if (g.homePoints === null || g.awayPoints === null) continue;

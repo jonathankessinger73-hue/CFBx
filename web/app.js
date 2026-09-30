@@ -442,7 +442,8 @@ function renderGrid() {
         `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
         teamMark(t, 44) +
-        `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
+        `<div><div class="tk">${esc(t.id)}${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}</div>` +
+        `<div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
         `<div style="text-align:right"><div class="ch ${dirClass(pct)}">${fmtPct(pct)}</div>${coverTag(t)}</div></div>` +
@@ -742,7 +743,10 @@ function renderDetail(ticker) {
     `<button data-mode="season" class="${mode === "season" ? "active" : ""}" style="padding:5px 11px;font-size:12px">Season</button></nav>` +
     `<div class="px">$${t.current_price.toFixed(2)}</div>` +
     `<div class="ch ${dirClass(pct)}">${fmtPct(pct)}${mode === "season" ? ` since IPO ($${t.ipo_price.toFixed(2)})` : " last game"}</div>` +
-    lastGame +
+    (t.live_status
+      ? `<div class="live-line"><span class="live-tag">LIVE</span> ${esc(t.live_status)}</div>` +
+        `<div class="position-note" style="margin-top:4px">Price is moving with the score. The final result settles it.</div>`
+      : lastGame) +
     `</div></div>` +
     `<div class="detail-body">` +
     `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(chartPoints(d)))}</div></div>` +

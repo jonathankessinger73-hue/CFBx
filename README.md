@@ -131,6 +131,19 @@ price = fundamental x (1 + hype) x (1 + live move)
     counting at least 5. A small group can't swing prices as far as a crowd.
 - **Live move:** the in-game move while a game is being played, 0 otherwise.
 
+**Live in-game prices** (`src/live/liveGames.js`, migration 010): with `LIVE_GAMES=true`,
+the API server checks every `LIVE_POLL_SECONDS` (default 180) whether any game kicked off
+in the last 5 hours; the daily sync stores kickoff times in `schedule.start_date`.
+- **During a game:** it reads CFBD's `/scoreboard` and sets each team's live move. That's
+  the move the final would make if the game ended now (margin vs the spread, no noise),
+  scaled by the share of the game played. Cards and team pages show **LIVE** with the
+  score.
+- **At the final:** the result applies within one check, through `syncSeason`, and
+  replaces the live move.
+- **Outside game windows:** it makes no CFBD calls. A busy Saturday is about 250 calls at
+  the default interval. If your CFBD plan's monthly limit is tight, raise
+  `LIVE_POLL_SECONDS` (300 roughly halves it).
+
 **News moves** (daily job, logged in `market_moves`, shown under "market news"):
 - **Line movement:** when a game's consensus spread moves before kickoff, both teams
   move by 0.5% per point of expected margin, capped at 3% per move. Moves under half

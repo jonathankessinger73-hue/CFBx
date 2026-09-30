@@ -93,6 +93,14 @@ test.describe("with fake auth", () => {
     await expect(page.getByText("Up 3 spots to No. 2 in the AP poll")).toBeVisible();
   });
 
+  test("a team playing right now shows LIVE with the score", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('a.card[href="#/team/TEX"] .live-tag')).toHaveText("LIVE");
+    await expect(page.locator('a.card[href="#/team/UGA"] .live-tag')).toHaveCount(0);
+    await page.goto("/#/team/TEX");
+    await expect(page.locator(".live-line")).toContainText("Q3 7:32 · TENN 10, TEX 21");
+  });
+
   test("privacy and terms pages are linked from every page", async ({ page }) => {
     await page.goto("/");
     await page.locator("footer").getByRole("link", { name: "Privacy" }).click();

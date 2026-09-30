@@ -144,6 +144,33 @@ export function pollMoveSummary(poll, prevRank, newRank) {
   return `${spots > 0 ? "Up" : "Down"} ${Math.abs(spots)} spot${Math.abs(spots) === 1 ? "" : "s"} to No. ${newRank} in the ${label}`;
 }
 
+// Live in-game move: the move the final would make if the game ended with
+// the current score (same formula as computePriceImpact, without the noise),
+// scaled by how much of the game has been played, so an early touchdown
+// nudges the price and a fourth-quarter lead nearly locks it in.
+export function liveMovePct(expectedMargin, actualMargin, elapsed) {
+  const edge = actualMargin - expectedMargin;
+  const move = (edge >= 0 ? 1 : -1) * Math.min(MAX_BASE_MOVE, 0.15 + Math.abs(edge) * 0.32);
+  return round2(move * Math.max(0, Math.min(1, elapsed))) || 0; // no "-0" at kickoff
+}
+
+// Seconds left in the quarter from a scoreboard clock ("7:32", "00:07:32").
+export function parseClock(clock) {
+  const parts = String(clock ?? "").split(":").map(Number);
+  if (parts.length < 2 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [m, sec] = parts.slice(-2);
+  return m * 60 + sec;
+}
+
+// Fraction of regulation played (0-1). Overtime counts as fully played.
+export function gameElapsed(period, clock) {
+  if (!period || period < 1) return 0;
+  if (period > 4) return 1;
+  const left = parseClock(clock);
+  const played = 900 - Math.min(900, Math.max(0, left ?? 450));
+  return ((period - 1) * 900 + played) / 3600;
+}
+
 // Human-readable line/result summary from one team's perspective.
 export function spreadPhrase(expectedMargin, actualMargin) {
   const lineText =

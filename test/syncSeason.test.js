@@ -58,7 +58,8 @@ test("sync posts missing lines and applies completed games exactly once", { skip
       // Reported with home/away flipped relative to our schedule (TEX @ TENN).
       { id: 402, season: 2026, week: 4, completed: true, homeTeam: "Texas", awayTeam: "Tennessee", homePoints: 30, awayPoints: 10 },
       { id: 403, season: 2026, week: 4, completed: true, homeTeam: "Georgia", awayTeam: "Montana", homePoints: 70, awayPoints: 0 },
-      { id: 501, season: 2026, week: 5, completed: false, homeTeam: "Mississippi State", awayTeam: "Alabama" },
+      { id: 501, season: 2026, week: 5, completed: false, homeTeam: "Mississippi State", awayTeam: "Alabama",
+        startDate: "2026-10-03T23:30:00.000Z" },
     ],
   };
   const ugaBefore = await price("UGA");
@@ -76,6 +77,9 @@ test("sync posts missing lines and applies completed games exactly once", { skip
     "select line, cfbd_game_id from schedule where week = 5 and home_team_id = 'MSST' and away_team_id = 'ALA'"
   );
   assert.deepEqual(msst[0], { line: 10.5, cfbd_game_id: 501 });
+  // Kickoff times are stored for the live poller.
+  const { rows: kick } = await pool.query("select start_date from schedule where cfbd_game_id = 501");
+  assert.equal(kick[0].start_date.toISOString(), "2026-10-03T23:30:00.000Z");
 
   const { rows: tenn } = await pool.query(
     "select home_score, away_score, completed from schedule where week = 4 and home_team_id = 'TENN'"
