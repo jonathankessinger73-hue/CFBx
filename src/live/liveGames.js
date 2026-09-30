@@ -23,7 +23,7 @@ const WINDOW_AFTER_HOURS = 5; // and stop this long after it
  */
 export async function liveTick({ pool, cfbd, log = console.log, now = new Date(), finalized = new Set() }) {
   const { rows: open } = await pool.query(
-    `select s.id, s.season, s.week, s.home_team_id, s.away_team_id, s.line, s.cfbd_game_id,
+    `select s.id, s.season, s.week, s.season_type, s.home_team_id, s.away_team_id, s.line, s.cfbd_game_id,
             h.strength as home_strength, a.strength as away_strength
        from schedule s
        join teams h on h.id = s.home_team_id
@@ -73,6 +73,7 @@ export async function liveTick({ pool, cfbd, log = console.log, now = new Date()
               id: g.id,
               season: row.season,
               week: row.week,
+              seasonType: row.season_type,
               completed: true,
               homeTeam: flipped ? g.away : g.home,
               awayTeam: flipped ? g.home : g.away,

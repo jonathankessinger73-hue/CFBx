@@ -18,7 +18,8 @@
     "job:prestige": "node --env-file-if-exists=.env src/jobs/prestige.js",
     "names": "node --env-file-if-exists=.env scripts/names.js",
     "test": "node --test \"test/**/*.test.js\"",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "news": "node --env-file-if-exists=.env scripts/news.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",

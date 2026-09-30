@@ -144,11 +144,36 @@ in the last 5 hours; the daily sync stores kickoff times in `schedule.start_date
   the default interval. If your CFBD plan's monthly limit is tight, raise
   `LIVE_POLL_SECONDS` (300 roughly halves it).
 
+**Full schedule:** the daily job also pulls bowl and playoff games, and it adds any game
+between two market teams that's missing from the schedule, such as conference title
+games. Every game gets priced (migration 011: `schedule.season_type`, `notes`). Game logs
+label these games with CFBD's name for them, such as "SEC Championship".
+
+**Season payouts** (`pay_dividend`, `dividends`, `dividend_payments`): these are cash
+payments to shareholders when their team hits a milestone, as a % of the share price at
+that moment. The table below shows each one, and each pays once per team per season.
+Shares bought in the 24 hours before a payout don't count. Players see theirs under
+"payouts received" on the Portfolio page (`GET /me/payouts`).
+
+| Milestone | Payout | Detected from |
+|---|---|---|
+| Bowl eligible | 2% | 6 wins in CFBD's official record |
+| Conference champion | 8% | a completed regular-season game labelled "... Championship" between two teams of the same conference |
+| Playoff berth | 8% | a postseason game labelled as a playoff round, paid as soon as it's scheduled |
+| National champion | 20% | the national championship game's winner |
+
 **News moves** (daily job, logged in `market_moves`, shown under "market news"):
 - **Line movement:** when a game's consensus spread moves before kickoff, both teams
   move by 0.5% per point of expected margin, capped at 3% per move. Moves under half
   a point are ignored. The first line seen is the baseline (`schedule.line_priced`),
   and `apply_line_move` applies each change once.
+- **Recruiting (November–February):** a weekly snapshot of CFBD's team recruiting
+  rankings for next year's class. Each snapshot after the first moves teams 0.15% per
+  spot their class rose or fell, capped at 3% (`recruiting_ranks`, migration 012). There
+  are no CFBD calls outside those months or within a week of the last snapshot.
+- **Manual news:** `npm run news -- --team UGA --pct -5 --summary "Head coach leaves"`,
+  or **Actions → Market news → Run workflow** from GitHub. It covers coaching changes,
+  suspensions and anything else with no data feed. Moves are capped at ±15%.
 - **Polls:** each new AP poll or CFP ranking release moves teams by 0.25% per spot
   (0.35% for CFP), counting unranked as No. 30, capped at 4%. Entering, leaving and
   moving within the poll all count. Releases are stored in `poll_ranks`. The first
@@ -245,6 +270,7 @@ aren't in the source as plain text. Maintenance commands:
 | PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_not_allowed` (400, offensive or reserved), `display_name_taken` (409). |
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
+| GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
 | POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. Returns the fill (`price` = average, `amount`) and `price_after`. |
 
 Auth: `Authorization: Bearer <Supabase access token>`. Trade errors return

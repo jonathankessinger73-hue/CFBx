@@ -172,6 +172,23 @@ test("GET /quote prices an order without placing it, and validates input", { ski
   assert.equal((await q("team_id=NOPE&side=buy&shares=1").expect(404)).body.error, "unknown_team");
 });
 
+test("GET /me/payouts lists the season payouts a player received", { skip }, async () => {
+  const me = await login();
+  await request(app).get("/me").set("Authorization", me.auth).expect(200); // creates the account
+  await pool.query("insert into holdings (user_id, team_id, shares, avg_cost) values ($1, 'CLEM', 20, 30)", [me.id]);
+  const { rows } = await pool.query("select pay_dividend('CLEM', 2026, 'bowl_eligible', 2, 'Bowl eligible: 6 wins') as d");
+  const paid = rows[0].d;
+  const res = await request(app).get("/me/payouts").set("Authorization", me.auth).expect(200);
+  assert.equal(res.body.payouts.length, 1);
+  assert.deepEqual(
+    (({ team_id, kind, shares, amount, per_share }) => ({ team_id, kind, shares, amount, per_share }))(res.body.payouts[0]),
+    { team_id: "CLEM", kind: "bowl_eligible", shares: 20, amount: Math.round(20 * paid.per_share * 100) / 100, per_share: paid.per_share }
+  );
+  const acct = await request(app).get("/me").set("Authorization", me.auth).expect(200);
+  assert.equal(acct.body.cash, Math.round((10000 + 20 * paid.per_share) * 100) / 100);
+  await request(app).get("/me/payouts").expect(401);
+});
+
 test("POST /trade validates input and maps domain errors", { skip }, async () => {
   const { auth } = await login();
   const post = (body) => request(app).post("/trade").set("Authorization", auth).send(body);

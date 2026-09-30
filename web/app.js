@@ -28,6 +28,7 @@ const state = {
   me: null, // { cash, holdings_value, net_worth, ... }
   holdings: new Map(), // team_id -> holding row
   transactions: [],
+  payouts: [], // season payouts received
   detail: null, // { id, data, error } for the team detail view
   leaderboard: null, // { data, error } from GET /leaderboard
   editingName: false,
@@ -237,17 +238,20 @@ async function loadAccount() {
     state.me = null;
     state.holdings = new Map();
     state.transactions = [];
+    state.payouts = [];
     return;
   }
   try {
-    const [me, holdings, txs] = await Promise.all([
+    const [me, holdings, txs, payouts] = await Promise.all([
       api("/me", { auth: true }),
       api("/me/holdings", { auth: true }),
       api("/me/transactions?limit=25", { auth: true }),
+      api("/me/payouts", { auth: true }),
     ]);
     state.me = me;
     state.holdings = new Map(holdings.holdings.map((h) => [h.team_id, h]));
     state.transactions = txs.transactions;
+    state.payouts = payouts.payouts;
   } catch (err) {
     if (err.status === 401) {
       await supabase?.auth.signOut();
@@ -475,12 +479,18 @@ function niceTicks(min, max, count = 4) {
   return ticks;
 }
 
+// Week labels. Postseason games restart at week 1, so they get a name instead.
+const isPostseason = (g) => g.season_type === "postseason";
+const isPlayoff = (g) => /playoff|cfp|national championship/i.test(g.notes || "");
+const weekLong = (g) => (isPostseason(g) ? (isPlayoff(g) ? "Playoff" : "Bowl") : `Week ${g.week}`);
+const weekShort = (g) => (isPostseason(g) ? (isPlayoff(g) ? "CFP" : "Bowl") : `W${g.week}`);
+
 // One point per price: the opening price, then the price after each game.
 function chartPoints(d) {
   const games = d.game_log.slice().reverse(); // oldest first
   const points = [
     { label: "Open", price: d.price_history[0], event: null },
-    ...games.map((e) => ({ label: `W${e.week}`, price: e.price_after, event: e })),
+    ...games.map((e) => ({ label: weekShort(e), price: e.price_after, event: e })),
   ];
   // Trading and news move the price between games: end on where it is now.
   const now = state.teams.get(d.team.id)?.current_price ?? d.team.current_price;
@@ -560,7 +570,7 @@ function pointText(p) {
   if (!p.event) return `Opening price $${p.price.toFixed(2)}`;
   const e = p.event;
   const result = e.team_score > e.opp_score ? "won" : e.team_score < e.opp_score ? "lost" : "tied";
-  return `Week ${e.week}, ${result} ${e.team_score}-${e.opp_score} vs ${e.opponent_name || e.opponent_id}: $${p.price.toFixed(2)}, ${fmtPct(e.pct_change)}`;
+  return `${weekLong(e)}, ${result} ${e.team_score}-${e.opp_score} vs ${e.opponent_name || e.opponent_id}: $${p.price.toFixed(2)}, ${fmtPct(e.pct_change)}`;
 }
 
 function tipHtml(p) {
@@ -574,7 +584,8 @@ function tipHtml(p) {
   const opp = esc(e.opponent_name || e.opponent_id);
   const res = e.team_score > e.opp_score ? "W" : e.team_score < e.opp_score ? "L" : "T";
   return (
-    `<div class="tip-head">Week ${e.week} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
+    `<div class="tip-head">${weekLong(e)} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
+    (e.notes ? `<div class="tip-note">${esc(e.notes)}</div>` : "") +
     `<div class="tip-price">$${p.price.toFixed(2)} <span class="txt-${dirClass(e.pct_change)}">${fmtPct(e.pct_change)}</span></div>` +
     (e.summary ? `<div class="tip-note">${esc(e.summary)}${e.is_real_line || e.vs_fcs ? "" : " (SP+ line)"}</div>` : "")
   );
@@ -632,7 +643,7 @@ function gameLogItem(e) {
       ? ""
       : ` <span class="proj-tag">SP+ LINE</span>`;
   return (
-    `<div class="log-item"><span class="lw">Week ${e.week}</span> &middot; ${text}${summary}${proj} ` +
+    `<div class="log-item"><span class="lw">${weekLong(e)}</span> &middot; ${e.notes ? `<strong>${esc(e.notes)}</strong>: ` : ""}${text}${summary}${proj} ` +
     `<span class="ld ch ${e.pct_change >= 0 ? "up" : "down"}">${fmtPct(e.pct_change)}</span> ` +
     `<span class="log-price">&rarr; $${e.price_after.toFixed(2)}</span></div>`
   );
@@ -669,8 +680,9 @@ function upcomingItem(team, g) {
           ? `favored by ${Math.abs(margin).toFixed(1)}`
           : `underdog by ${Math.abs(margin).toFixed(1)}`;
   return (
-    `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">Wk ${g.week}</span> ` +
-    `${g.is_home ? "vs" : "@"} <a class="opp" href="#/team/${encodeURIComponent(g.opponent_id)}">${esc(oppName)}</a></span>` +
+    `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">${isPostseason(g) ? weekShort(g) : `Wk ${g.week}`}</span> ` +
+    `${g.is_home ? "vs" : "@"} <a class="opp" href="#/team/${encodeURIComponent(g.opponent_id)}">${esc(oppName)}</a>` +
+    `${g.notes ? ` <span class="up-note">${esc(g.notes)}</span>` : ""}</span>` +
     `<span>${lineText} ${tag}</span></div>`
   );
 }
@@ -903,7 +915,21 @@ function renderPortfolio() {
       `</div></div>`
     : "";
 
-  $("main").innerHTML = head + standing + summary + body + trades;
+  const payouts = state.payouts.length
+    ? `<div class="panel" style="margin-top:16px"><h2>payouts received</h2><div class="log-list">` +
+      state.payouts
+        .map(
+          (p) =>
+            `<div class="log-item"><span class="lw">${esc(new Date(p.paid_at).toLocaleDateString())}</span> &middot; ` +
+            `${miniMark(p.team_id, 18, { iconOnly: true })}<a href="#/team/${encodeURIComponent(p.team_id)}">${esc(p.team_id)}</a> ` +
+            `${esc(p.summary)}: ${p.shares} sh &times; $${p.per_share.toFixed(2)} ` +
+            `<span class="ld ch up">+${fmtMoney(p.amount)}</span></div>`
+        )
+        .join("") +
+      `</div></div>`
+    : "";
+
+  $("main").innerHTML = head + standing + summary + body + payouts + trades;
 }
 
 /* ---------- Rendering: leaderboard ---------- */

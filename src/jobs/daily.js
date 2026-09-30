@@ -20,7 +20,8 @@ try {
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ${summary.lineMoves} line moves, ` +
       `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +
-      `${summary.recordsUpdated} records, ${summary.pollMoves} poll moves, ${summary.logosUpdated} logos`
+      `${summary.recordsUpdated} records, ${summary.pollMoves} poll moves, ${summary.recruitingMoves} recruiting moves, ` +
+      `${summary.dividendsPaid} payouts, ${summary.gamesAdded} games added, ${summary.logosUpdated} logos`
   );
 } finally {
   await pool.end();

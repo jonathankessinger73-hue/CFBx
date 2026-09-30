@@ -171,6 +171,25 @@ export function gameElapsed(period, clock) {
   return ((period - 1) * 900 + played) / 3600;
 }
 
+// Recruiting: weekly during signing season, 0.15% per spot a team's class
+// moved in the national rankings since the last snapshot, capped at 3%.
+export const RECRUIT_PCT_PER_SPOT = 0.15;
+export const RECRUIT_MOVE_MAX = 3;
+
+export function recruitingMovePct(prevRank, newRank) {
+  if (prevRank == null || newRank == null) return 0;
+  return round2(Math.max(-RECRUIT_MOVE_MAX, Math.min(RECRUIT_MOVE_MAX, (prevRank - newRank) * RECRUIT_PCT_PER_SPOT)));
+}
+
+// Season payouts: cash to shareholders, as a % of the share price when the
+// milestone is reached. Each pays once per team per season.
+export const PAYOUTS = {
+  bowl_eligible: { pct: 2, summary: "Bowl eligible: 6 wins" },
+  conf_title: { pct: 8, summary: "Conference champions" },
+  playoff_berth: { pct: 8, summary: "Made the College Football Playoff" },
+  national_title: { pct: 20, summary: "National champions" },
+};
+
 // Human-readable line/result summary from one team's perspective.
 export function spreadPhrase(expectedMargin, actualMargin) {
   const lineText =

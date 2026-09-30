@@ -187,6 +187,10 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     }
   });
 
+  app.get("/me/payouts", auth, async (req, res) => {
+    res.json({ payouts: await store.listPayouts(req.userId) });
+  });
+
   app.post("/trade", auth, async (req, res) => {
     // Only these three fields are read. Anything else in the body - in
     // particular a price - is ignored: the price comes from the database.

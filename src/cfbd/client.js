@@ -55,6 +55,8 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
       // `classification` is the v2 name for v1's `division`; send both. Returns
       // every game involving an FBS team, including FBS vs FCS.
       get("/games", { year, seasonType, classification: "fbs", division: "fbs" }),
+    postseasonGames: (year) =>
+      get("/games", { year, seasonType: "postseason", classification: "fbs", division: "fbs" }),
     lines: (year, seasonType = "regular") => get("/lines", { year, seasonType }),
     spRatings: (year) => get("/ratings/sp", { year }),
     talent: (year) => get("/talent", { year }),
@@ -63,6 +65,7 @@ export function createCfbdClient({ apiKey = process.env.CFBD_API_KEY, fetchImpl 
     rankings: (year, seasonType = "regular") => get("/rankings", { year, seasonType }),
     // Today's FBS games with live scores; polled by the API server during games.
     scoreboard: () => get("/scoreboard", { classification: "fbs" }),
+    recruitingTeams: (year) => get("/recruiting/teams", { year }),
   };
 }
 
