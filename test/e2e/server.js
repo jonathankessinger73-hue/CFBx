@@ -31,6 +31,8 @@ const UGA_LOGO =
   encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="red"/></svg>');
 await pool.query("update teams set logo_dark_url = $1 where id = 'UGA'", [UGA_LOGO]);
 await pool.query("update teams set logo_url = 'https://127.0.0.1:1/missing.png' where id = 'ALA'");
+// A news move (as the line-move / poll jobs record them) for the news panel.
+await pool.query("select apply_news_move('UGA', 2026, 4, 'poll', 'e2e-poll', 1.5, 'Up 3 spots to No. 2 in the AP poll')");
 
 const app = createApp({
   store: createStore(pool),

@@ -35,3 +35,10 @@ const app = createApp({
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`cfbx api listening on :${port}`));
+
+// Trading hype fades back toward zero; apply that every few minutes so prices
+// drift back even when nobody trades. Safe to run from several places.
+const DECAY_EVERY_MS = 5 * 60 * 1000;
+setInterval(() => {
+  store.pool.query("select decay_hype()").catch((err) => console.error("hype decay failed:", err.message));
+}, DECAY_EVERY_MS).unref();

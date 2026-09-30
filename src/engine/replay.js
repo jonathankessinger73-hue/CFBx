@@ -46,6 +46,7 @@ export function applyGame(market, game, random = Math.random) {
       team_score: teamScore,
       opp_score: oppScore,
       pct_change: side.lastChangePct,
+      move_pct: side.pct, // before the $3 floor: what the daily job asks the database to apply
       price_after: side.price,
       expected_margin: side.expected,
       actual_margin: side.actual,

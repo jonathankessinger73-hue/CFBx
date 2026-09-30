@@ -33,6 +33,7 @@ const state = {
   editingName: false,
   view: { conf: "all", q: "", priceMode: "week", ...loadPrefs() },
   tradePending: false,
+  tradeQty: {}, // ticker -> share count being typed in the trade box
 };
 
 function loadPrefs() {
@@ -384,7 +385,7 @@ function renderMarket() {
   const weekLabel = state.week ? `Week ${state.week}` : "Preseason";
   $("main").innerHTML =
     `<div class="section-head"><div><h1>Market — ${weekLabel}</h1>` +
-    `<p>${all.length} programs, ranked by current price. Prices move after each final score. Tap a card to trade.</p></div></div>` +
+    `<p>${all.length} programs, ranked by current price. Prices move on final scores, football news and every trade. Tap a card to trade.</p></div></div>` +
     `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">` +
     `<input type="search" id="mkt-search" aria-label="Search programs" placeholder="Search team, mascot, or ticker…" value="${esc(state.view.q)}" style="flex:1;min-width:180px;background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px">` +
     `<select id="mkt-conf" aria-label="Conference" style="background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;padding:9px 10px">${confOptions}</select>` +
@@ -476,10 +477,14 @@ function niceTicks(min, max, count = 4) {
 // One point per price: the opening price, then the price after each game.
 function chartPoints(d) {
   const games = d.game_log.slice().reverse(); // oldest first
-  return [
+  const points = [
     { label: "Open", price: d.price_history[0], event: null },
     ...games.map((e) => ({ label: `W${e.week}`, price: e.price_after, event: e })),
   ];
+  // Trading and news move the price between games: end on where it is now.
+  const now = state.teams.get(d.team.id)?.current_price ?? d.team.current_price;
+  if (Math.abs(now - points[points.length - 1].price) >= 0.005) points.push({ label: "Now", price: now, event: null, now: true });
+  return points;
 }
 
 const fmtAxis = (v) => "$" + (Number.isInteger(v) ? v : v.toFixed(2));
@@ -550,6 +555,7 @@ function priceChart(points) {
 
 // Plain-text version of a point, for screen readers.
 function pointText(p) {
+  if (p.now) return `Now $${p.price.toFixed(2)}`;
   if (!p.event) return `Opening price $${p.price.toFixed(2)}`;
   const e = p.event;
   const result = e.team_score > e.opp_score ? "won" : e.team_score < e.opp_score ? "lost" : "tied";
@@ -557,6 +563,9 @@ function pointText(p) {
 }
 
 function tipHtml(p) {
+  if (p.now) {
+    return `<div class="tip-head">Now</div><div class="tip-price">$${p.price.toFixed(2)}</div><div class="tip-note">After trading and news since the last game</div>`;
+  }
   if (!p.event) {
     return `<div class="tip-head">Opening price</div><div class="tip-price">$${p.price.toFixed(2)}</div><div class="tip-note">Program Prestige Score</div>`;
   }
@@ -628,6 +637,16 @@ function gameLogItem(e) {
   );
 }
 
+// A price move between games: a line move, a poll, and so on.
+function newsItem(m) {
+  const when = new Date(m.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return (
+    `<div class="log-item"><span class="lw">${esc(when)}</span> &middot; ${esc(m.summary)} ` +
+    `<span class="ld ch ${m.pct_change >= 0 ? "up" : "down"}">${fmtPct(m.pct_change)}</span> ` +
+    `<span class="log-price">&rarr; $${m.price_after.toFixed(2)}</span></div>`
+  );
+}
+
 function upcomingItem(team, g) {
   const opp = state.teams.get(g.opponent_id);
   const oppName = opp ? opp.name : g.opponent_id;
@@ -694,18 +713,20 @@ function renderDetail(ticker) {
       `<a class="btn-primary" href="#/signin" style="text-decoration:none;display:inline-block">Sign in</a>`;
   } else {
     const positionNote = held
-      ? `${held.shares} shares @ avg $${held.avg_cost.toFixed(2)} &middot; current value $${(held.shares * t.current_price).toFixed(2)}`
+      ? `${held.shares} shares @ avg $${held.avg_cost.toFixed(2)} &middot; worth ${fmtMoney(held.market_value)} if sold now`
       : "No position yet.";
     tradePanel =
       `<div class="trade-form">` +
-      `<div class="trade-row"><input type="number" id="trade-qty" aria-label="Shares" min="1" step="1" inputmode="numeric" placeholder="Shares" value="1"></div>` +
-      `<div class="trade-summary"><span>Est. total at $${t.current_price.toFixed(2)}</span><strong id="trade-cost">$${t.current_price.toFixed(2)}</strong></div>` +
+      `<div class="trade-row"><input type="number" id="trade-qty" aria-label="Shares" min="1" step="1" inputmode="numeric" placeholder="Shares" value="${esc(state.tradeQty[ticker] ?? "1")}"></div>` +
+      `<div class="trade-summary"><span>Buy total</span><strong id="trade-cost">…</strong></div>` +
+      `<div class="trade-quote" id="trade-quote"></div>` +
       `<div class="trade-buttons">` +
       `<button class="btn-buy" id="btn-buy">Buy</button>` +
       `<button class="btn-sell" id="btn-sell"${heldShares < 1 ? " disabled" : ""}>Sell</button></div>` +
       `<div class="position-note">${positionNote}</div>` +
       `<div class="position-note">Buying power: ${fmtMoney(cash)} (~${Math.floor(cash / t.current_price)} sh)</div>` +
-      `<div class="stale-note">Orders fill at the server's current price when received.</div>` +
+      `<div class="stale-note">Every trade moves the price: buying nudges it up and selling nudges it down, ` +
+      `so a big order fills at a slightly higher (or lower) average. Buy and sell prices differ by 0.5%.</div>` +
       `</div>`;
   }
 
@@ -736,7 +757,10 @@ function renderDetail(ticker) {
         ? d.upcoming.slice(0, 5).map((g) => upcomingItem(t, g)).join("")
         : `<div class="log-item">No more games scheduled.</div>`
     )}</div></div>` +
-    `</div>`;
+    `</div>` +
+    (data?.news?.length
+      ? `<div class="panel" style="margin-top:16px"><h2>market news</h2><div class="log-list">${data.news.map(newsItem).join("")}</div></div>`
+      : "");
 
   if (data) bindPriceChart($("main"), chartPoints(data));
 
@@ -754,14 +778,40 @@ function renderDetail(ticker) {
     const v = qtyInput.value.trim();
     return /^\d+$/.test(v) ? parseInt(v, 10) : 0;
   };
-  function refreshCost() {
+  // Live quotes: what this many shares would actually fill at right now.
+  let quoteSeq = 0;
+  let quoteTimer = null;
+  async function refreshQuote() {
     const q = qty();
-    $("trade-cost").textContent = fmtMoney(q * t.current_price);
-    $("btn-buy").disabled = state.tradePending || q < 1 || q * t.current_price > cash;
+    const seq = ++quoteSeq;
+    $("btn-buy").disabled = true;
     $("btn-sell").disabled = state.tradePending || q < 1 || q > heldShares;
+    if (q < 1) {
+      $("trade-cost").textContent = "—";
+      $("trade-quote").textContent = "";
+      return;
+    }
+    try {
+      const path = (side) => `/quote?team_id=${encodeURIComponent(ticker)}&side=${side}&shares=${q}`;
+      const [buy, sell] = await Promise.all([api(path("buy")), q <= heldShares ? api(path("sell")) : null]);
+      if (seq !== quoteSeq || !$("trade-cost")) return; // superseded, or the page changed
+      $("trade-cost").textContent = fmtMoney(buy.amount);
+      $("trade-quote").innerHTML =
+        `Avg $${buy.avg_price.toFixed(2)}/share &middot; price after: $${buy.price_after.toFixed(2)}` +
+        (sell ? `<br>Sell ${q}: ${fmtMoney(sell.amount)} (avg $${sell.avg_price.toFixed(2)})` : "");
+      $("btn-buy").disabled = state.tradePending || buy.amount > cash;
+    } catch (err) {
+      if (seq !== quoteSeq || !$("trade-cost")) return;
+      $("trade-cost").textContent = "—";
+      $("trade-quote").textContent = errorText(err);
+    }
   }
-  qtyInput.addEventListener("input", refreshCost);
-  refreshCost();
+  qtyInput.addEventListener("input", () => {
+    state.tradeQty[ticker] = qtyInput.value; // survives the periodic re-render
+    clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(refreshQuote, 200);
+  });
+  refreshQuote();
   $("btn-buy").addEventListener("click", () => trade(ticker, "buy", qty()));
   $("btn-sell").addEventListener("click", () => trade(ticker, "sell", qty()));
 }
@@ -774,8 +824,8 @@ async function trade(ticker, side, shares) {
   try {
     const r = await api("/trade", { method: "POST", auth: true, body: { team_id: ticker, side, shares } });
     toast(`${side === "buy" ? "Bought" : "Sold"} ${r.shares} ${r.team_id} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
-    // Pull fresh account numbers: the server is the authority.
-    await loadAccount();
+    // Pull fresh numbers: the server is the authority, and the trade moved the price.
+    await Promise.all([loadAccount(), loadTeams()]);
   } catch (err) {
     toast(errorText(err), true);
     if (err.status === 401) await loadAccount();
@@ -819,7 +869,7 @@ function renderPortfolio() {
   const body = !holdings.length
     ? `<div class="panel"><div class="empty-state"><div class="big">No positions yet</div>Head to the market and buy your first shares.</div></div>`
     : `<div class="panel table-scroll"><table class="holdings">` +
-      `<thead><tr><th>program</th><th>shares</th><th>avg cost</th><th>price</th><th>value</th><th>gain / loss</th></tr></thead><tbody>` +
+      `<thead><tr><th>program</th><th>shares</th><th>avg cost</th><th>price</th><th>value if sold</th><th>gain / loss</th></tr></thead><tbody>` +
       holdings
         .map((h) => {
           const cost = h.shares * h.avg_cost;
@@ -1170,6 +1220,16 @@ async function boot() {
 
   await Promise.all([loadTeams(), loadAccount()]);
   await onRouteChange();
+
+  // Prices move with every trade: refresh every 30s while the tab is open.
+  // Skipped while someone is typing (re-rendering would reset their input).
+  setInterval(async () => {
+    if (document.hidden || state.tradePending) return;
+    if (document.activeElement?.matches?.("input, textarea")) return;
+    await Promise.all([loadTeams(), state.session ? loadAccount() : null]);
+    if (document.activeElement?.matches?.("input, textarea")) return;
+    render();
+  }, 30000);
 
   // Prices only move when games finish, so refreshing on focus is enough.
   document.addEventListener("visibilitychange", async () => {

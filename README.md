@@ -107,6 +107,35 @@ workflow uses `staging` until the repo variable `CFBX_JOB_ENVIRONMENT` is set to
 `production`. For a manual run with the "dry run" box checked, open
 Actions → CFBD sync → Run workflow. Locally, run `npm run job:daily -- --dry-run`.
 
+## How prices move
+
+Every team has one displayed price, built from three parts (migration 008):
+
+```
+price = fundamental x (1 + hype) x (1 + live move)
+```
+
+- **Fundamental:** moved by football. Final scores against the spread, FCS losses, and
+  news moves such as line movement and polls (`apply_game_result`, `apply_fcs_result`,
+  `apply_news_move`). Jobs send each move as a percentage, and the database applies it
+  to the price at that moment, so trades happening at the same time never make a
+  result stale.
+- **Hype:** moved by trading. Each share bought pushes it up and each share sold
+  pushes it down, by `price / depth`.
+  - **Filling:** orders fill along that curve, so a big order pays a rising average
+    (`trade_fill`). Buyers pay 0.25% on top and sellers give up 0.25%, a 0.5% spread,
+    so pumping a price and selling into it loses money.
+  - **Limits:** hype is capped at ±15%, and it halves every 24 hours. The API server
+    runs `decay_hype()` every 5 minutes, and the daily job runs it too.
+  - **Depth:** $40,000 per active player (anyone who traded in the last 14 days),
+    counting at least 5. A small group can't swing prices as far as a crowd.
+- **Live move:** the in-game move while a game is being played, 0 otherwise.
+
+All the constants are in `market_param()`. `GET /quote` prices an order without placing
+it; the trade box uses it to show the real total. Net worth and the leaderboard value
+holdings at what selling them now would bring (`sell_value`), so pushing up a team you
+hold doesn't raise your own net worth.
+
 ## Scheduled and seasonal jobs
 
 | Job | When | Command | Workflow |
@@ -186,13 +215,14 @@ aren't in the source as plain text. Maintenance commands:
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/teams` | — | All teams with price, colors, mascot, last-game cover info |
-| GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected) |
+| GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected), `news` (recent non-game moves) |
+| GET | `/quote?team_id=&side=&shares=` | — | What an order would fill at now: `amount`, `avg_price`, `price_before`, `price_after` |
 | GET | `/leaderboard` | optional | `players`, and `leaderboard` rows of `rank`, `display_name`, `net_worth`, `is_me`. Only players with a display name are listed. With a token, `me` is your own entry (or `null` if you haven't joined). User ids are never exposed. |
 | GET | `/me` | ✓ | Cash, holdings value, net worth. Creates the account with $10,000 on first call. |
 | PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_not_allowed` (400, offensive or reserved), `display_name_taken` (409). |
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
-| POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. |
+| POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. Returns the fill (`price` = average, `amount`) and `price_after`. |
 
 Auth: `Authorization: Bearer <Supabase access token>`. Trade errors return
 `{error}` with one of these codes: `invalid_team`, `invalid_side`, `invalid_shares`,

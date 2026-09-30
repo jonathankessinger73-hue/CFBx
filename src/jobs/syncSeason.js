@@ -128,7 +128,6 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
 
     const home = market.get(row.home_team_id);
     const away = market.get(row.away_team_id);
-    const prev = [home.current_price, away.current_price];
     const events = applyGame(
       market,
       {
@@ -142,11 +141,11 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
       },
       random
     );
+    // Moves go to the database as percentages, applied to whatever the price
+    // is at that moment (trades may have moved it since we read it).
     const teamPayload = [home, away].map((t, i) => ({
       id: t.id,
-      prev_price: prev[i],
-      current_price: t.current_price,
-      last_change_pct: t.last_change_pct,
+      pct: events[i].move_pct,
       last_covered: t.last_covered,
       last_expected: t.last_expected,
       last_actual: t.last_actual,
@@ -166,15 +165,7 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
         JSON.stringify(teamPayload),
         JSON.stringify(events),
       ]);
-      if (!rows[0].applied) {
-        // Another run got there first; reload so later games price correctly.
-        const { rows: fresh } = await pool.query(
-          "select id, current_price from teams where id = any($1)",
-          [[home.id, away.id]]
-        );
-        for (const f of fresh) market.get(f.id).current_price = f.current_price;
-        continue;
-      }
+      if (!rows[0].applied) continue; // another run got there first
     }
     summary.gamesApplied++;
   }
@@ -183,22 +174,17 @@ export async function syncSeason({ pool, cfbd, season, dryRun = false, log = con
   // change, a loss costs a fixed penalty (fcsGameImpact).
   async function applyFcsGame(g, { teamId, opponent, teamScore, oppScore }) {
     const team = market.get(teamId);
-    const prev = team.current_price;
-    const impact = fcsGameImpact(prev, teamScore, oppScore);
+    const impact = fcsGameImpact(team.current_price, teamScore, oppScore);
     log(
       `final (FCS): week ${g.week} ${teamId} ${teamScore}, ${opponent} ${oppScore} -> ` +
         `${teamId} ${impact.lastChangePct >= 0 ? "+" : ""}${impact.lastChangePct}%`
     );
     if (!dryRun) {
       const { rows } = await pool.query(
-        "select apply_fcs_result($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as applied",
-        [teamId, season, g.week, g.id, opponent, teamScore, oppScore, prev, impact.price, impact.lastChangePct, impact.summary]
+        "select apply_fcs_result($1, $2, $3, $4, $5, $6, $7, $8, $9) as applied",
+        [teamId, season, g.week, g.id, opponent, teamScore, oppScore, impact.pct, impact.summary]
       );
-      if (!rows[0].applied) {
-        const { rows: fresh } = await pool.query("select current_price from teams where id = $1", [teamId]);
-        team.current_price = fresh[0].current_price;
-        return;
-      }
+      if (!rows[0].applied) return;
     }
     team.current_price = impact.price;
     summary.fcsGames++;

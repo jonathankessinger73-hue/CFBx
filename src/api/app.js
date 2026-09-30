@@ -68,16 +68,19 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     if (!team) return res.status(404).json({ error: "unknown_team" });
     const season = req.query.season ? Number.parseInt(req.query.season, 10) : undefined;
     const { season: current } = await store.getMarketClock();
-    const [events, upcoming, records] = await Promise.all([
+    const [events, upcoming, records, news] = await Promise.all([
       store.getPriceEvents(id, Number.isFinite(season) ? season : undefined),
       store.getUpcomingGames(id),
       store.listRecords(Number.isFinite(season) ? season : current),
+      store.getMarketMoves(id),
     ]);
     res.json({
       team: { ...team, records: records.get(id) },
       // Chart series: IPO price, then the price after each game.
       price_history: [team.ipo_price, ...events.map((e) => e.price_after)],
       game_log: events.slice().reverse(),
+      // Price moves between games: line moves, polls and other news.
+      news,
       upcoming: upcoming.map((g) => ({
         ...g,
         // Team-perspective expected margin from the posted line (CFBD
@@ -161,6 +164,27 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
         before: Number.isFinite(before) ? before : undefined,
       }),
     });
+  });
+
+  // What an order would fill at right now: trades move the price as they
+  // fill, so bigger orders pay a higher average (or get a lower one).
+  app.get("/quote", async (req, res) => {
+    const teamId = typeof req.query.team_id === "string" ? req.query.team_id.toUpperCase() : "";
+    const side = req.query.side;
+    const shares = Number(req.query.shares);
+    if (!teamId) return res.status(400).json({ error: "invalid_team" });
+    if (side !== "buy" && side !== "sell") return res.status(400).json({ error: "invalid_side" });
+    if (!Number.isInteger(shares) || shares < 1 || shares > MAX_SHARES_PER_TRADE) {
+      return res.status(400).json({ error: "invalid_shares" });
+    }
+    try {
+      res.set("Cache-Control", "no-store").json(await store.quoteTrade(teamId, side, shares));
+    } catch (err) {
+      if (TRADE_ERRORS.has(err.message)) {
+        return res.status(err.message === "unknown_team" ? 404 : 400).json({ error: err.message });
+      }
+      throw err;
+    }
   });
 
   app.post("/trade", auth, async (req, res) => {

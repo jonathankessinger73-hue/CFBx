@@ -133,6 +133,17 @@ export function createStore(pool) {
       return rows;
     },
 
+    // Recent non-game price moves (line moves, polls, ...), newest first.
+    async getMarketMoves(teamId, limit = 15) {
+      const { rows } = await pool.query(
+        `select id, season, week, kind, pct_change, price_after, summary, created_at
+           from market_moves where team_id = $1
+          order by created_at desc, id desc limit $2`,
+        [teamId, limit]
+      );
+      return rows;
+    },
+
     // Upcoming (not yet completed) games for a team, from its perspective.
     async getUpcomingGames(teamId) {
       const { rows } = await pool.query(
@@ -161,12 +172,14 @@ export function createStore(pool) {
 
     async getHoldings(userId) {
       const { rows } = await pool.query(
-        `select h.team_id, t.name, t.mascot, h.shares, h.avg_cost, t.current_price,
-                round(h.shares * t.current_price, 2) as market_value,
-                round(h.shares * (t.current_price - h.avg_cost), 2) as unrealized_pl
-           from holdings h join teams t on t.id = h.team_id
-          where h.user_id = $1
-          order by market_value desc, h.team_id`,
+        `select team_id, name, mascot, shares, avg_cost, current_price, market_value,
+                round(market_value - shares * avg_cost, 2) as unrealized_pl
+           from (select h.team_id, t.name, t.mascot, h.shares, h.avg_cost, t.current_price,
+                        -- what selling the whole position now would bring in
+                        sell_value(h.team_id, h.shares) as market_value
+                   from holdings h join teams t on t.id = h.team_id
+                  where h.user_id = $1) x
+          order by market_value desc, team_id`,
         [userId]
       );
       return rows;
@@ -182,9 +195,15 @@ export function createStore(pool) {
       return rows[0].result;
     },
 
+    // What an order would fill at right now (the same math execute_trade uses).
+    async quoteTrade(teamId, side, shares) {
+      const { rows } = await pool.query("select quote_trade($1, $2, $3) as quote", [teamId, side, shares]);
+      return rows[0].quote;
+    },
+
     async listTransactions(userId, { limit = 100, before } = {}) {
       const { rows } = await pool.query(
-        `select id, team_id, side, shares, price, round(shares * price, 2) as amount, created_at
+        `select id, team_id, side, shares, price, coalesce(amount, round(shares * price, 2)) as amount, created_at
            from transactions
           where user_id = $1 and ($2::bigint is null or id < $2)
           order by id desc

@@ -119,8 +119,9 @@ test("prestige apply sets next season's opening prices and records the scores", 
   // Holdings carry over: same shares, cost basis, cash and history; only
   // their value moves to the new opening price.
   assert.deepEqual(await snapshot(), before);
+  // (valued at what selling all 10 would bring: a little under 10 x $15.50)
   const { rows: nw } = await pool.query("select holdings_value from user_net_worth where user_id = $1", [uid]);
-  assert.equal(nw[0].holdings_value, 10 * 15.5);
+  assert.ok(nw[0].holdings_value < 155 && nw[0].holdings_value > 154, `${nw[0].holdings_value}`);
 
   // Re-applying before any 2027 game overwrites cleanly.
   await applyPrestige(pool, prestigeResult(2027));

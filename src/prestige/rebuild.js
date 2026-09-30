@@ -99,7 +99,8 @@ export async function applyPrestige(pool, result) {
       }))
     );
     await client.query(
-      `update teams t set ipo_price = x.price, current_price = x.price, last_change_pct = 0,
+      `update teams t set ipo_price = x.price, current_price = x.price, fundamental_price = x.price,
+              hype = 0, hype_updated_at = now(), live_pct = 0, last_change_pct = 0,
               last_covered = null, last_expected = null, last_actual = null,
               last_line_is_real = null, updated_at = now()
          from jsonb_to_recordset($1::jsonb) as x(team_id text, price numeric)
