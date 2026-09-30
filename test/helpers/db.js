@@ -46,6 +46,7 @@ export async function freshDatabase(name = `cfbx_t_${process.pid}_${Date.now()}`
     if (file.endsWith(".sql")) await pool.query(fs.readFileSync(path.join(dir, file), "utf8"));
   }
 
+  pool.databaseName = name;
   pool.dropDatabase = async () => {
     await pool.end();
     const c = new pg.Client({ connectionString: TEST_DATABASE_URL });

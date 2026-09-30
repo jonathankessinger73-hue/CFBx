@@ -129,18 +129,26 @@ test("POST /trade ignores client-supplied prices and updates /me", { skip }, asy
   const { auth } = await login();
   const { body: team } = await request(app).get("/teams/TEX");
   const price = team.team.current_price;
+  const { body: quote } = await request(app).get("/quote?team_id=tex&side=buy&shares=10").expect(200);
 
   const res = await request(app)
     .post("/trade")
     .set("Authorization", auth)
     .send({ team_id: "tex", side: "buy", shares: 10, price: 0.01 })
     .expect(200);
-  assert.equal(res.body.price, price);
-  assert.equal(res.body.cash, Math.round((10000 - price * 10) * 100) / 100);
+  // Fills at the quoted price: a bit above the listed price (the order walks
+  // the price up as it fills, plus the spread), never the client's price.
+  assert.equal(res.body.amount, quote.amount);
+  assert.equal(res.body.price, quote.avg_price);
+  assert.ok(res.body.price > price && res.body.price < price * 1.02, `${res.body.price} vs ${price}`);
+  assert.equal(res.body.cash, Math.round((10000 - res.body.amount) * 100) / 100);
+  assert.ok(res.body.price_after > price);
 
   const me = await request(app).get("/me").set("Authorization", auth).expect(200);
   assert.equal(me.body.cash, res.body.cash);
-  assert.equal(me.body.net_worth, 10000);
+  // Net worth values the shares at what selling them now would bring, so a
+  // buy never inflates it: it dips by the spread, it doesn't jump.
+  assert.ok(me.body.net_worth < 10000 && me.body.net_worth > 10000 - res.body.amount * 0.01, `${me.body.net_worth}`);
 
   const holdings = await request(app).get("/me/holdings").set("Authorization", auth).expect(200);
   assert.equal(holdings.body.holdings.length, 1);
@@ -148,6 +156,37 @@ test("POST /trade ignores client-supplied prices and updates /me", { skip }, asy
 
   const txs = await request(app).get("/me/transactions").set("Authorization", auth).expect(200);
   assert.equal(txs.body.transactions.length, 1);
+});
+
+test("GET /quote prices an order without placing it, and validates input", { skip }, async () => {
+  const q = (qs) => request(app).get(`/quote?${qs}`);
+  const small = (await q("team_id=UGA&side=buy&shares=1").expect(200)).body;
+  const big = (await q("team_id=UGA&side=buy&shares=500").expect(200)).body;
+  assert.equal(small.team_id, "UGA");
+  assert.ok(big.avg_price > small.avg_price, "bigger orders pay a higher average");
+  assert.ok(big.price_after > big.price_before);
+  const sell = (await q("team_id=UGA&side=sell&shares=1").expect(200)).body;
+  assert.ok(sell.avg_price < small.avg_price, "the spread: selling gets less than buying costs");
+  assert.equal((await q("team_id=UGA&side=hold&shares=1").expect(400)).body.error, "invalid_side");
+  assert.equal((await q("team_id=UGA&side=buy&shares=0").expect(400)).body.error, "invalid_shares");
+  assert.equal((await q("team_id=NOPE&side=buy&shares=1").expect(404)).body.error, "unknown_team");
+});
+
+test("GET /me/payouts lists the season payouts a player received", { skip }, async () => {
+  const me = await login();
+  await request(app).get("/me").set("Authorization", me.auth).expect(200); // creates the account
+  await pool.query("insert into holdings (user_id, team_id, shares, avg_cost) values ($1, 'CLEM', 20, 30)", [me.id]);
+  const { rows } = await pool.query("select pay_dividend('CLEM', 2026, 'bowl_eligible', 2, 'Bowl eligible: 6 wins') as d");
+  const paid = rows[0].d;
+  const res = await request(app).get("/me/payouts").set("Authorization", me.auth).expect(200);
+  assert.equal(res.body.payouts.length, 1);
+  assert.deepEqual(
+    (({ team_id, kind, shares, amount, per_share }) => ({ team_id, kind, shares, amount, per_share }))(res.body.payouts[0]),
+    { team_id: "CLEM", kind: "bowl_eligible", shares: 20, amount: Math.round(20 * paid.per_share * 100) / 100, per_share: paid.per_share }
+  );
+  const acct = await request(app).get("/me").set("Authorization", me.auth).expect(200);
+  assert.equal(acct.body.cash, Math.round((10000 + 20 * paid.per_share) * 100) / 100);
+  await request(app).get("/me/payouts").expect(401);
 });
 
 test("POST /trade validates input and maps domain errors", { skip }, async () => {
@@ -204,19 +243,24 @@ test("GET /leaderboard ranks opted-in players by net worth", { skip }, async () 
   await name(tiedA, "Alpha Tie");
   await name(tiedB, "beta tie");
 
-  // rich buys 10 TEX, then TEX rises $5: net worth 10,050. hidden (no name) buys too.
-  const { rows } = await pool.query("select current_price from teams where id = 'TEX'");
-  const texPrice = rows[0].current_price;
-  await request(app).post("/trade").set("Authorization", rich.auth).send({ team_id: "TEX", side: "buy", shares: 10 }).expect(200);
+  // rich buys 10 TEX, then TEX's price rises $5. hidden (no name) buys too.
+  const { body: bought } = await request(app)
+    .post("/trade").set("Authorization", rich.auth).send({ team_id: "TEX", side: "buy", shares: 10 }).expect(200);
   await request(app).post("/trade").set("Authorization", hidden.auth).send({ team_id: "TEX", side: "buy", shares: 100 }).expect(200);
-  await pool.query("update teams set current_price = $1 where id = 'TEX'", [texPrice + 5]);
+  const { rows: saved } = await pool.query("select fundamental_price, hype, current_price from teams where id = 'TEX'");
+  await pool.query(
+    "update teams set fundamental_price = fundamental_price + 5, current_price = market_price(fundamental_price + 5, hype, live_pct) where id = 'TEX'"
+  );
+  const { rows: sv } = await pool.query("select sell_value('TEX', 10) as v");
+  const richWorth = Math.round((bought.cash + sv[0].v) * 100) / 100;
+  assert.ok(richWorth > 10000);
   try {
     const pub = await request(app).get("/leaderboard").expect(200);
     assert.equal(pub.body.players, 3);
     assert.deepEqual(
       pub.body.leaderboard.map((r) => [r.rank, r.display_name, r.net_worth, r.is_me]),
       [
-        [1, "Rich Rival", 10050, false],
+        [1, "Rich Rival", richWorth, false],
         [2, "Alpha Tie", 10000, false],
         [2, "beta tie", 10000, false],
       ]
@@ -238,7 +282,11 @@ test("GET /leaderboard ranks opted-in players by net worth", { skip }, async () 
     const anon = await request(app).get("/leaderboard").set("Authorization", "Bearer junk").expect(200);
     assert.equal(anon.body.me, undefined);
   } finally {
-    await pool.query("update teams set current_price = $1 where id = 'TEX'", [texPrice]);
+    await pool.query("update teams set fundamental_price = $1, hype = $2, current_price = $3 where id = 'TEX'", [
+      saved[0].fundamental_price,
+      saved[0].hype,
+      saved[0].current_price,
+    ]);
   }
 });
 

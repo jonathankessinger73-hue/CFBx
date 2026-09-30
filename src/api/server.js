@@ -35,3 +35,23 @@ const app = createApp({
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`cfbx api listening on :${port}`));
+
+// Trading hype fades back toward zero; apply that every few minutes so prices
+// drift back even when nobody trades. Safe to run from several places.
+const DECAY_EVERY_MS = 5 * 60 * 1000;
+setInterval(() => {
+  store.pool.query("select decay_hype()").catch((err) => console.error("hype decay failed:", err.message));
+}, DECAY_EVERY_MS).unref();
+
+// Live in-game prices (LIVE_GAMES=true, needs CFBD_API_KEY): polls the
+// scoreboard only while games are on. Run it on one server only.
+if (process.env.LIVE_GAMES === "true") {
+  try {
+    const { startLiveGames } = await import("../live/liveGames.js");
+    const { createCfbdClient } = await import("../cfbd/client.js");
+    const seconds = Math.max(60, Number(process.env.LIVE_POLL_SECONDS) || 180);
+    startLiveGames({ pool: store.pool, cfbd: createCfbdClient(), intervalMs: seconds * 1000 });
+  } catch (err) {
+    console.error(`live games not started: ${err.message}`);
+  }
+}

@@ -107,6 +107,83 @@ workflow uses `staging` until the repo variable `CFBX_JOB_ENVIRONMENT` is set to
 `production`. For a manual run with the "dry run" box checked, open
 Actions → CFBD sync → Run workflow. Locally, run `npm run job:daily -- --dry-run`.
 
+## How prices move
+
+Every team has one displayed price, built from three parts (migration 008):
+
+```
+price = fundamental x (1 + hype) x (1 + live move)
+```
+
+- **Fundamental:** moved by football. Final scores against the spread, FCS losses, and
+  news moves such as line movement and polls (`apply_game_result`, `apply_fcs_result`,
+  `apply_news_move`). Jobs send each move as a percentage, and the database applies it
+  to the price at that moment, so trades happening at the same time never make a
+  result stale.
+- **Hype:** moved by trading. Each share bought pushes it up and each share sold
+  pushes it down, by `price / depth`.
+  - **Filling:** orders fill along that curve, so a big order pays a rising average
+    (`trade_fill`). Buyers pay 0.25% on top and sellers give up 0.25%, a 0.5% spread,
+    so pumping a price and selling into it loses money.
+  - **Limits:** hype is capped at ±15%, and it halves every 24 hours. The API server
+    runs `decay_hype()` every 5 minutes, and the daily job runs it too.
+  - **Depth:** $40,000 per active player (anyone who traded in the last 14 days),
+    counting at least 5. A small group can't swing prices as far as a crowd.
+- **Live move:** the in-game move while a game is being played, 0 otherwise.
+
+**Live in-game prices** (`src/live/liveGames.js`, migration 010): with `LIVE_GAMES=true`,
+the API server checks every `LIVE_POLL_SECONDS` (default 180) whether any game kicked off
+in the last 5 hours; the daily sync stores kickoff times in `schedule.start_date`.
+- **During a game:** it reads CFBD's `/scoreboard` and sets each team's live move. That's
+  the move the final would make if the game ended now (margin vs the spread, no noise),
+  scaled by the share of the game played. Cards and team pages show **LIVE** with the
+  score.
+- **At the final:** the result applies within one check, through `syncSeason`, and
+  replaces the live move.
+- **Outside game windows:** it makes no CFBD calls. A busy Saturday is about 250 calls at
+  the default interval. If your CFBD plan's monthly limit is tight, raise
+  `LIVE_POLL_SECONDS` (300 roughly halves it).
+
+**Full schedule:** the daily job also pulls bowl and playoff games, and it adds any game
+between two market teams that's missing from the schedule, such as conference title
+games. Every game gets priced (migration 011: `schedule.season_type`, `notes`). Game logs
+label these games with CFBD's name for them, such as "SEC Championship".
+
+**Season payouts** (`pay_dividend`, `dividends`, `dividend_payments`): these are cash
+payments to shareholders when their team hits a milestone, as a % of the share price at
+that moment. The table below shows each one, and each pays once per team per season.
+Shares bought in the 24 hours before a payout don't count. Players see theirs under
+"payouts received" on the Portfolio page (`GET /me/payouts`).
+
+| Milestone | Payout | Detected from |
+|---|---|---|
+| Bowl eligible | 2% | 6 wins in CFBD's official record |
+| Conference champion | 8% | a completed regular-season game labelled "... Championship" between two teams of the same conference |
+| Playoff berth | 8% | a postseason game labelled as a playoff round, paid as soon as it's scheduled |
+| National champion | 20% | the national championship game's winner |
+
+**News moves** (daily job, logged in `market_moves`, shown under "market news"):
+- **Line movement:** when a game's consensus spread moves before kickoff, both teams
+  move by 0.5% per point of expected margin, capped at 3% per move. Moves under half
+  a point are ignored. The first line seen is the baseline (`schedule.line_priced`),
+  and `apply_line_move` applies each change once.
+- **Recruiting (November–February):** a weekly snapshot of CFBD's team recruiting
+  rankings for next year's class. Each snapshot after the first moves teams 0.15% per
+  spot their class rose or fell, capped at 3% (`recruiting_ranks`, migration 012). There
+  are no CFBD calls outside those months or within a week of the last snapshot.
+- **Manual news:** `npm run news -- --team UGA --pct -5 --summary "Head coach leaves"`,
+  or **Actions → Market news → Run workflow** from GitHub. It covers coaching changes,
+  suspensions and anything else with no data feed. Moves are capped at ±15%.
+- **Polls:** each new AP poll or CFP ranking release moves teams by 0.25% per spot
+  (0.35% for CFP), counting unranked as No. 30, capped at 4%. Entering, leaving and
+  moving within the poll all count. Releases are stored in `poll_ranks`. The first
+  run of a season records the releases so far without moving prices.
+
+All the constants are in `market_param()`. `GET /quote` prices an order without placing
+it; the trade box uses it to show the real total. Net worth and the leaderboard value
+holdings at what selling them now would bring (`sell_value`), so pushing up a team you
+hold doesn't raise your own net worth.
+
 ## Scheduled and seasonal jobs
 
 | Job | When | Command | Workflow |
@@ -186,13 +263,15 @@ aren't in the source as plain text. Maintenance commands:
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/teams` | — | All teams with price, colors, mascot, last-game cover info |
-| GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected) |
+| GET | `/teams/:id` | — | `team`, `price_history` (IPO then after each game), `game_log`, `upcoming` (`line_is_real: false` = projected), `news` (recent non-game moves) |
+| GET | `/quote?team_id=&side=&shares=` | — | What an order would fill at now: `amount`, `avg_price`, `price_before`, `price_after` |
 | GET | `/leaderboard` | optional | `players`, and `leaderboard` rows of `rank`, `display_name`, `net_worth`, `is_me`. Only players with a display name are listed. With a token, `me` is your own entry (or `null` if you haven't joined). User ids are never exposed. |
 | GET | `/me` | ✓ | Cash, holdings value, net worth. Creates the account with $10,000 on first call. |
 | PATCH | `/me` | ✓ | `{display_name}` joins the leaderboard or renames you; `null` leaves it. 3–24 characters (letters, digits, space, `_ . -`), unique ignoring case. Errors: `invalid_display_name` (400), `display_name_not_allowed` (400, offensive or reserved), `display_name_taken` (409). |
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
-| POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. |
+| GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
+| POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. Returns the fill (`price` = average, `amount`) and `price_after`. |
 
 Auth: `Authorization: Bearer <Supabase access token>`. Trade errors return
 `{error}` with one of these codes: `invalid_team`, `invalid_side`, `invalid_shares`,

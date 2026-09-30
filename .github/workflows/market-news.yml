@@ -1,0 +1,49 @@
+name: Market news
+
+# Post a news move by hand (a coaching change, a suspension, anything with no
+# data feed): moves the team's price and shows under "market news".
+# Actions -> Market news -> Run workflow, then fill in the three boxes.
+on:
+  workflow_dispatch:
+    inputs:
+      team:
+        description: "Team ticker, e.g. UGA"
+        required: true
+        type: string
+      pct:
+        description: "Price move in percent, e.g. -5 or 3 (max 15 either way)"
+        required: true
+        type: string
+      summary:
+        description: "What happened (shown on the team page)"
+        required: true
+        type: string
+      dry_run:
+        description: "Check it without posting"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cfbd-sync # shared with the other market jobs
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      # Inputs go through env, never straight into the shell command.
+      NEWS_TEAM: ${{ inputs.team }}
+      NEWS_PCT: ${{ inputs.pct }}
+      NEWS_SUMMARY: ${{ inputs.summary }}
+      NEWS_DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+      - run: node scripts/news.js

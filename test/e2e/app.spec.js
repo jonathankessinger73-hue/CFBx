@@ -55,16 +55,22 @@ test.describe("with fake auth", () => {
     await expect(chart.locator("text.axis-label", { hasText: "W3" })).toBeVisible();
     const current = (await page.locator(".detail-price .px").innerText()).trim();
     await expect(chart.locator("text.chart-value").last()).toHaveText(current);
-    await chart.locator(".chart-hit").last().hover();
+    // UGA has a news move after its last game (e2e data), so the chart ends
+    // on a "Now" point after week 3.
+    const hits = chart.locator(".chart-hit");
     const tip = page.locator(".chart-tip");
+    await hits.last().hover();
     await expect(tip).toBeVisible();
+    await expect(tip).toContainText("Now");
+    await expect(tip).toContainText(current);
+    await hits.nth((await hits.count()) - 2).hover();
     await expect(tip).toContainText("Week 3");
     await expect(tip).toContainText("vs Arkansas");
-    await expect(tip).toContainText(current);
-    await chart.locator(".chart-hit").first().focus();
+    // The game log lists each week's resulting price too, matching the chart.
+    const week3 = (await page.locator(".log-item").first().locator(".log-price").innerText()).replace("\u2192", "").trim();
+    await expect(tip).toContainText(week3);
+    await hits.first().focus();
     await expect(tip).toContainText("Opening price");
-    // The game log lists each week's resulting price too.
-    await expect(page.locator(".log-item").first()).toContainText(`\u2192 ${current}`);
 
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.getByText("Sign in to see your portfolio")).toBeVisible();
@@ -82,6 +88,17 @@ test.describe("with fake auth", () => {
 
     await page.goto("/#/team/UGA");
     await expect(page.locator(".detail-head img.team-logo")).toBeVisible();
+    // Price moves between games show under "market news".
+    await expect(page.getByRole("heading", { name: "market news" })).toBeVisible();
+    await expect(page.getByText("Up 3 spots to No. 2 in the AP poll")).toBeVisible();
+  });
+
+  test("a team playing right now shows LIVE with the score", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('a.card[href="#/team/TEX"] .live-tag')).toHaveText("LIVE");
+    await expect(page.locator('a.card[href="#/team/UGA"] .live-tag')).toHaveCount(0);
+    await page.goto("/#/team/TEX");
+    await expect(page.locator(".live-line")).toContainText("Q3 7:32 · TENN 10, TEX 21");
   });
 
   test("privacy and terms pages are linked from every page", async ({ page }) => {
@@ -122,16 +139,23 @@ test.describe("with fake auth", () => {
     await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
 
     await page.goto("/#/team/UGA");
-    const priceText = await page.locator(".detail-price .px").innerText();
-    const price = Number(priceText.replace("$", ""));
+    const money = (text) => Number(text.replace(/[$,]/g, ""));
+    const price = money(await page.locator(".detail-price .px").innerText());
     await page.getByLabel("Shares").fill("3");
+    // The live quote: 3 shares cost a little more than 3 x price (the order
+    // nudges the price up as it fills, plus the spread).
+    const cost = async () => money(await page.locator("#trade-cost").innerText());
+    await expect.poll(cost).toBeGreaterThan(price * 3);
+    const total = await cost();
+    expect(total).toBeLessThan(price * 3 * 1.01);
     await page.getByRole("button", { name: "Buy" }).click();
-    await expect(page.locator("#toast")).toContainText(`Bought 3 UGA @ $${price.toFixed(2)}`);
-    const cashAfter = 10000 - Math.round(price * 3 * 100) / 100;
+    await expect(page.locator("#toast")).toContainText("Bought 3 UGA @ $");
     await expect(page.locator("#hdr-cash")).toHaveText(
-      "$" + cashAfter.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      "$" + (10000 - total).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     );
     await expect(page.getByText(/^3 shares @ avg/)).toBeVisible();
+    // Buying moved the price up.
+    await expect.poll(async () => money(await page.locator(".detail-price .px").innerText())).toBeGreaterThan(price);
 
     // Can't buy more than cash allows; can't sell more than held.
     await page.getByLabel("Shares").fill("100000");
@@ -144,7 +168,7 @@ test.describe("with fake auth", () => {
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.locator("table.holdings tbody tr")).toHaveCount(1);
     await expect(page.locator("table.holdings")).toContainText("Georgia");
-    await expect(page.locator(".log-list .log-item").first()).toContainText(`Bought 3 UGA @ $${price.toFixed(2)}`);
+    await expect(page.locator(".log-list .log-item").first()).toContainText("Bought 3 UGA @ $");
     // Team logos (UGA has one in the e2e data) next to the holding and the trade.
     await expect(page.locator("table.holdings tbody tr img.team-logo")).toBeVisible();
     await expect(page.locator(".log-list .log-item").first().locator("img.team-logo")).toBeVisible();
@@ -153,7 +177,11 @@ test.describe("with fake auth", () => {
     await page.getByLabel("Shares").fill("3");
     await page.getByRole("button", { name: "Sell" }).click();
     await expect(page.locator("#toast")).toContainText("Sold 3 UGA");
-    await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
+    // Selling straight back costs only the 0.5% spread.
+    await expect
+      .poll(async () => money(await page.locator("#hdr-cash").innerText()))
+      .toBeGreaterThan(10000 - price * 3 * 0.01);
+    expect(money(await page.locator("#hdr-cash").innerText())).toBeLessThan(10000);
     await expect(page.getByText("No position yet.")).toBeVisible();
 
     await page.getByRole("button", { name: "Sign out" }).click();

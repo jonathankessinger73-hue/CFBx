@@ -15,7 +15,7 @@ export const TRADE_ERRORS = new Set([
 
 const TEAM_COLUMNS = `id, name, mascot, conference, strength, primary_color, secondary_color,
   ipo_price, current_price, last_change_pct, last_covered, last_expected, last_actual,
-  last_line_is_real, logo_url, logo_dark_url`;
+  last_line_is_real, logo_url, logo_dark_url, live_status`;
 
 export function createStore(pool) {
   return {
@@ -31,10 +31,11 @@ export function createStore(pool) {
     async listPriceHistories(season) {
       const { rows } = await pool.query(
         `select t.id, t.ipo_price,
-                coalesce(array_agg(e.price_after order by e.week, e.id)
+                coalesce(array_agg(e.price_after order by s.season_type = 'postseason', e.week, e.id)
                            filter (where e.id is not null), '{}') as prices
            from teams t
            left join price_events e on e.team_id = t.id and e.season = $1
+           left join schedule s on s.id = e.schedule_id
           group by t.id`,
         [season]
       );
@@ -123,12 +124,25 @@ export function createStore(pool) {
       const { rows } = await pool.query(
         `select e.id, e.season, e.week, e.opponent_id, coalesce(o.name, e.opponent_name) as opponent_name, e.vs_fcs,
                 e.team_score, e.opp_score, e.pct_change, e.price_after,
-                e.expected_margin, e.actual_margin, e.is_real_line, e.summary, e.created_at
+                e.expected_margin, e.actual_margin, e.is_real_line, e.summary, e.created_at,
+                coalesce(s.season_type, 'regular') as season_type, s.notes
            from price_events e
            left join teams o on o.id = e.opponent_id
+           left join schedule s on s.id = e.schedule_id
           where e.team_id = $1 and ($2::int is null or e.season = $2)
-          order by e.season, e.week, e.id`,
+          order by e.season, s.season_type = 'postseason', e.week, e.id`,
         [teamId, season ?? null]
+      );
+      return rows;
+    },
+
+    // Recent non-game price moves (line moves, polls, ...), newest first.
+    async getMarketMoves(teamId, limit = 15) {
+      const { rows } = await pool.query(
+        `select id, season, week, kind, pct_change, price_after, summary, created_at
+           from market_moves where team_id = $1
+          order by created_at desc, id desc limit $2`,
+        [teamId, limit]
       );
       return rows;
     },
@@ -139,10 +153,10 @@ export function createStore(pool) {
         `select s.id, s.season, s.week,
                 (s.home_team_id = $1) as is_home,
                 case when s.home_team_id = $1 then s.away_team_id else s.home_team_id end as opponent_id,
-                s.line
+                s.line, s.season_type, s.notes
            from schedule s
           where not s.completed and $1 in (s.home_team_id, s.away_team_id)
-          order by s.season, s.week, s.id`,
+          order by s.season, s.season_type = 'postseason', s.week, s.id`,
         [teamId]
       );
       return rows;
@@ -161,12 +175,14 @@ export function createStore(pool) {
 
     async getHoldings(userId) {
       const { rows } = await pool.query(
-        `select h.team_id, t.name, t.mascot, h.shares, h.avg_cost, t.current_price,
-                round(h.shares * t.current_price, 2) as market_value,
-                round(h.shares * (t.current_price - h.avg_cost), 2) as unrealized_pl
-           from holdings h join teams t on t.id = h.team_id
-          where h.user_id = $1
-          order by market_value desc, h.team_id`,
+        `select team_id, name, mascot, shares, avg_cost, current_price, market_value,
+                round(market_value - shares * avg_cost, 2) as unrealized_pl
+           from (select h.team_id, t.name, t.mascot, h.shares, h.avg_cost, t.current_price,
+                        -- what selling the whole position now would bring in
+                        sell_value(h.team_id, h.shares) as market_value
+                   from holdings h join teams t on t.id = h.team_id
+                  where h.user_id = $1) x
+          order by market_value desc, team_id`,
         [userId]
       );
       return rows;
@@ -182,9 +198,27 @@ export function createStore(pool) {
       return rows[0].result;
     },
 
+    // Season payouts this player received, newest first.
+    async listPayouts(userId) {
+      const { rows } = await pool.query(
+        `select d.team_id, d.season, d.kind, d.summary, d.per_share, p.shares, p.amount, d.paid_at
+           from dividend_payments p join dividends d on d.id = p.dividend_id
+          where p.user_id = $1
+          order by d.paid_at desc, d.id desc`,
+        [userId]
+      );
+      return rows;
+    },
+
+    // What an order would fill at right now (the same math execute_trade uses).
+    async quoteTrade(teamId, side, shares) {
+      const { rows } = await pool.query("select quote_trade($1, $2, $3) as quote", [teamId, side, shares]);
+      return rows[0].quote;
+    },
+
     async listTransactions(userId, { limit = 100, before } = {}) {
       const { rows } = await pool.query(
-        `select id, team_id, side, shares, price, round(shares * price, 2) as amount, created_at
+        `select id, team_id, side, shares, price, coalesce(amount, round(shares * price, 2)) as amount, created_at
            from transactions
           where user_id = $1 and ($2::bigint is null or id < $2)
           order by id desc

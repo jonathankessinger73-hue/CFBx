@@ -28,11 +28,13 @@ const state = {
   me: null, // { cash, holdings_value, net_worth, ... }
   holdings: new Map(), // team_id -> holding row
   transactions: [],
+  payouts: [], // season payouts received
   detail: null, // { id, data, error } for the team detail view
   leaderboard: null, // { data, error } from GET /leaderboard
   editingName: false,
   view: { conf: "all", q: "", priceMode: "week", ...loadPrefs() },
   tradePending: false,
+  tradeQty: {}, // ticker -> share count being typed in the trade box
 };
 
 function loadPrefs() {
@@ -236,17 +238,20 @@ async function loadAccount() {
     state.me = null;
     state.holdings = new Map();
     state.transactions = [];
+    state.payouts = [];
     return;
   }
   try {
-    const [me, holdings, txs] = await Promise.all([
+    const [me, holdings, txs, payouts] = await Promise.all([
       api("/me", { auth: true }),
       api("/me/holdings", { auth: true }),
       api("/me/transactions?limit=25", { auth: true }),
+      api("/me/payouts", { auth: true }),
     ]);
     state.me = me;
     state.holdings = new Map(holdings.holdings.map((h) => [h.team_id, h]));
     state.transactions = txs.transactions;
+    state.payouts = payouts.payouts;
   } catch (err) {
     if (err.status === 401) {
       await supabase?.auth.signOut();
@@ -384,7 +389,7 @@ function renderMarket() {
   const weekLabel = state.week ? `Week ${state.week}` : "Preseason";
   $("main").innerHTML =
     `<div class="section-head"><div><h1>Market — ${weekLabel}</h1>` +
-    `<p>${all.length} programs, ranked by current price. Prices move after each final score. Tap a card to trade.</p></div></div>` +
+    `<p>${all.length} programs, ranked by current price. Prices move on final scores, football news and every trade. Tap a card to trade.</p></div></div>` +
     `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">` +
     `<input type="search" id="mkt-search" aria-label="Search programs" placeholder="Search team, mascot, or ticker…" value="${esc(state.view.q)}" style="flex:1;min-width:180px;background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px">` +
     `<select id="mkt-conf" aria-label="Conference" style="background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;padding:9px 10px">${confOptions}</select>` +
@@ -441,7 +446,8 @@ function renderGrid() {
         `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
         teamMark(t, 44) +
-        `<div><div class="tk">${esc(t.id)}</div><div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
+        `<div><div class="tk">${esc(t.id)}${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}</div>` +
+        `<div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
         `<div style="text-align:right"><div class="ch ${dirClass(pct)}">${fmtPct(pct)}</div>${coverTag(t)}</div></div>` +
@@ -473,13 +479,23 @@ function niceTicks(min, max, count = 4) {
   return ticks;
 }
 
+// Week labels. Postseason games restart at week 1, so they get a name instead.
+const isPostseason = (g) => g.season_type === "postseason";
+const isPlayoff = (g) => /playoff|cfp|national championship/i.test(g.notes || "");
+const weekLong = (g) => (isPostseason(g) ? (isPlayoff(g) ? "Playoff" : "Bowl") : `Week ${g.week}`);
+const weekShort = (g) => (isPostseason(g) ? (isPlayoff(g) ? "CFP" : "Bowl") : `W${g.week}`);
+
 // One point per price: the opening price, then the price after each game.
 function chartPoints(d) {
   const games = d.game_log.slice().reverse(); // oldest first
-  return [
+  const points = [
     { label: "Open", price: d.price_history[0], event: null },
-    ...games.map((e) => ({ label: `W${e.week}`, price: e.price_after, event: e })),
+    ...games.map((e) => ({ label: weekShort(e), price: e.price_after, event: e })),
   ];
+  // Trading and news move the price between games: end on where it is now.
+  const now = state.teams.get(d.team.id)?.current_price ?? d.team.current_price;
+  if (Math.abs(now - points[points.length - 1].price) >= 0.005) points.push({ label: "Now", price: now, event: null, now: true });
+  return points;
 }
 
 const fmtAxis = (v) => "$" + (Number.isInteger(v) ? v : v.toFixed(2));
@@ -550,13 +566,17 @@ function priceChart(points) {
 
 // Plain-text version of a point, for screen readers.
 function pointText(p) {
+  if (p.now) return `Now $${p.price.toFixed(2)}`;
   if (!p.event) return `Opening price $${p.price.toFixed(2)}`;
   const e = p.event;
   const result = e.team_score > e.opp_score ? "won" : e.team_score < e.opp_score ? "lost" : "tied";
-  return `Week ${e.week}, ${result} ${e.team_score}-${e.opp_score} vs ${e.opponent_name || e.opponent_id}: $${p.price.toFixed(2)}, ${fmtPct(e.pct_change)}`;
+  return `${weekLong(e)}, ${result} ${e.team_score}-${e.opp_score} vs ${e.opponent_name || e.opponent_id}: $${p.price.toFixed(2)}, ${fmtPct(e.pct_change)}`;
 }
 
 function tipHtml(p) {
+  if (p.now) {
+    return `<div class="tip-head">Now</div><div class="tip-price">$${p.price.toFixed(2)}</div><div class="tip-note">After trading and news since the last game</div>`;
+  }
   if (!p.event) {
     return `<div class="tip-head">Opening price</div><div class="tip-price">$${p.price.toFixed(2)}</div><div class="tip-note">Program Prestige Score</div>`;
   }
@@ -564,7 +584,8 @@ function tipHtml(p) {
   const opp = esc(e.opponent_name || e.opponent_id);
   const res = e.team_score > e.opp_score ? "W" : e.team_score < e.opp_score ? "L" : "T";
   return (
-    `<div class="tip-head">Week ${e.week} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
+    `<div class="tip-head">${weekLong(e)} &middot; ${res} ${e.team_score}-${e.opp_score} vs ${opp}</div>` +
+    (e.notes ? `<div class="tip-note">${esc(e.notes)}</div>` : "") +
     `<div class="tip-price">$${p.price.toFixed(2)} <span class="txt-${dirClass(e.pct_change)}">${fmtPct(e.pct_change)}</span></div>` +
     (e.summary ? `<div class="tip-note">${esc(e.summary)}${e.is_real_line || e.vs_fcs ? "" : " (SP+ line)"}</div>` : "")
   );
@@ -622,9 +643,19 @@ function gameLogItem(e) {
       ? ""
       : ` <span class="proj-tag">SP+ LINE</span>`;
   return (
-    `<div class="log-item"><span class="lw">Week ${e.week}</span> &middot; ${text}${summary}${proj} ` +
+    `<div class="log-item"><span class="lw">${weekLong(e)}</span> &middot; ${e.notes ? `<strong>${esc(e.notes)}</strong>: ` : ""}${text}${summary}${proj} ` +
     `<span class="ld ch ${e.pct_change >= 0 ? "up" : "down"}">${fmtPct(e.pct_change)}</span> ` +
     `<span class="log-price">&rarr; $${e.price_after.toFixed(2)}</span></div>`
+  );
+}
+
+// A price move between games: a line move, a poll, and so on.
+function newsItem(m) {
+  const when = new Date(m.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return (
+    `<div class="log-item"><span class="lw">${esc(when)}</span> &middot; ${esc(m.summary)} ` +
+    `<span class="ld ch ${m.pct_change >= 0 ? "up" : "down"}">${fmtPct(m.pct_change)}</span> ` +
+    `<span class="log-price">&rarr; $${m.price_after.toFixed(2)}</span></div>`
   );
 }
 
@@ -649,8 +680,9 @@ function upcomingItem(team, g) {
           ? `favored by ${Math.abs(margin).toFixed(1)}`
           : `underdog by ${Math.abs(margin).toFixed(1)}`;
   return (
-    `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">Wk ${g.week}</span> ` +
-    `${g.is_home ? "vs" : "@"} <a class="opp" href="#/team/${encodeURIComponent(g.opponent_id)}">${esc(oppName)}</a></span>` +
+    `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">${isPostseason(g) ? weekShort(g) : `Wk ${g.week}`}</span> ` +
+    `${g.is_home ? "vs" : "@"} <a class="opp" href="#/team/${encodeURIComponent(g.opponent_id)}">${esc(oppName)}</a>` +
+    `${g.notes ? ` <span class="up-note">${esc(g.notes)}</span>` : ""}</span>` +
     `<span>${lineText} ${tag}</span></div>`
   );
 }
@@ -694,18 +726,20 @@ function renderDetail(ticker) {
       `<a class="btn-primary" href="#/signin" style="text-decoration:none;display:inline-block">Sign in</a>`;
   } else {
     const positionNote = held
-      ? `${held.shares} shares @ avg $${held.avg_cost.toFixed(2)} &middot; current value $${(held.shares * t.current_price).toFixed(2)}`
+      ? `${held.shares} shares @ avg $${held.avg_cost.toFixed(2)} &middot; worth ${fmtMoney(held.market_value)} if sold now`
       : "No position yet.";
     tradePanel =
       `<div class="trade-form">` +
-      `<div class="trade-row"><input type="number" id="trade-qty" aria-label="Shares" min="1" step="1" inputmode="numeric" placeholder="Shares" value="1"></div>` +
-      `<div class="trade-summary"><span>Est. total at $${t.current_price.toFixed(2)}</span><strong id="trade-cost">$${t.current_price.toFixed(2)}</strong></div>` +
+      `<div class="trade-row"><input type="number" id="trade-qty" aria-label="Shares" min="1" step="1" inputmode="numeric" placeholder="Shares" value="${esc(state.tradeQty[ticker] ?? "1")}"></div>` +
+      `<div class="trade-summary"><span>Buy total</span><strong id="trade-cost">…</strong></div>` +
+      `<div class="trade-quote" id="trade-quote"></div>` +
       `<div class="trade-buttons">` +
       `<button class="btn-buy" id="btn-buy">Buy</button>` +
       `<button class="btn-sell" id="btn-sell"${heldShares < 1 ? " disabled" : ""}>Sell</button></div>` +
       `<div class="position-note">${positionNote}</div>` +
       `<div class="position-note">Buying power: ${fmtMoney(cash)} (~${Math.floor(cash / t.current_price)} sh)</div>` +
-      `<div class="stale-note">Orders fill at the server's current price when received.</div>` +
+      `<div class="stale-note">Every trade moves the price: buying nudges it up and selling nudges it down, ` +
+      `so a big order fills at a slightly higher (or lower) average. Buy and sell prices differ by 0.5%.</div>` +
       `</div>`;
   }
 
@@ -721,7 +755,10 @@ function renderDetail(ticker) {
     `<button data-mode="season" class="${mode === "season" ? "active" : ""}" style="padding:5px 11px;font-size:12px">Season</button></nav>` +
     `<div class="px">$${t.current_price.toFixed(2)}</div>` +
     `<div class="ch ${dirClass(pct)}">${fmtPct(pct)}${mode === "season" ? ` since IPO ($${t.ipo_price.toFixed(2)})` : " last game"}</div>` +
-    lastGame +
+    (t.live_status
+      ? `<div class="live-line"><span class="live-tag">LIVE</span> ${esc(t.live_status)}</div>` +
+        `<div class="position-note" style="margin-top:4px">Price is moving with the score. The final result settles it.</div>`
+      : lastGame) +
     `</div></div>` +
     `<div class="detail-body">` +
     `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(chartPoints(d)))}</div></div>` +
@@ -736,7 +773,10 @@ function renderDetail(ticker) {
         ? d.upcoming.slice(0, 5).map((g) => upcomingItem(t, g)).join("")
         : `<div class="log-item">No more games scheduled.</div>`
     )}</div></div>` +
-    `</div>`;
+    `</div>` +
+    (data?.news?.length
+      ? `<div class="panel" style="margin-top:16px"><h2>market news</h2><div class="log-list">${data.news.map(newsItem).join("")}</div></div>`
+      : "");
 
   if (data) bindPriceChart($("main"), chartPoints(data));
 
@@ -754,14 +794,40 @@ function renderDetail(ticker) {
     const v = qtyInput.value.trim();
     return /^\d+$/.test(v) ? parseInt(v, 10) : 0;
   };
-  function refreshCost() {
+  // Live quotes: what this many shares would actually fill at right now.
+  let quoteSeq = 0;
+  let quoteTimer = null;
+  async function refreshQuote() {
     const q = qty();
-    $("trade-cost").textContent = fmtMoney(q * t.current_price);
-    $("btn-buy").disabled = state.tradePending || q < 1 || q * t.current_price > cash;
+    const seq = ++quoteSeq;
+    $("btn-buy").disabled = true;
     $("btn-sell").disabled = state.tradePending || q < 1 || q > heldShares;
+    if (q < 1) {
+      $("trade-cost").textContent = "—";
+      $("trade-quote").textContent = "";
+      return;
+    }
+    try {
+      const path = (side) => `/quote?team_id=${encodeURIComponent(ticker)}&side=${side}&shares=${q}`;
+      const [buy, sell] = await Promise.all([api(path("buy")), q <= heldShares ? api(path("sell")) : null]);
+      if (seq !== quoteSeq || !$("trade-cost")) return; // superseded, or the page changed
+      $("trade-cost").textContent = fmtMoney(buy.amount);
+      $("trade-quote").innerHTML =
+        `Avg $${buy.avg_price.toFixed(2)}/share &middot; price after: $${buy.price_after.toFixed(2)}` +
+        (sell ? `<br>Sell ${q}: ${fmtMoney(sell.amount)} (avg $${sell.avg_price.toFixed(2)})` : "");
+      $("btn-buy").disabled = state.tradePending || buy.amount > cash;
+    } catch (err) {
+      if (seq !== quoteSeq || !$("trade-cost")) return;
+      $("trade-cost").textContent = "—";
+      $("trade-quote").textContent = errorText(err);
+    }
   }
-  qtyInput.addEventListener("input", refreshCost);
-  refreshCost();
+  qtyInput.addEventListener("input", () => {
+    state.tradeQty[ticker] = qtyInput.value; // survives the periodic re-render
+    clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(refreshQuote, 200);
+  });
+  refreshQuote();
   $("btn-buy").addEventListener("click", () => trade(ticker, "buy", qty()));
   $("btn-sell").addEventListener("click", () => trade(ticker, "sell", qty()));
 }
@@ -774,8 +840,8 @@ async function trade(ticker, side, shares) {
   try {
     const r = await api("/trade", { method: "POST", auth: true, body: { team_id: ticker, side, shares } });
     toast(`${side === "buy" ? "Bought" : "Sold"} ${r.shares} ${r.team_id} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
-    // Pull fresh account numbers: the server is the authority.
-    await loadAccount();
+    // Pull fresh numbers: the server is the authority, and the trade moved the price.
+    await Promise.all([loadAccount(), loadTeams()]);
   } catch (err) {
     toast(errorText(err), true);
     if (err.status === 401) await loadAccount();
@@ -819,7 +885,7 @@ function renderPortfolio() {
   const body = !holdings.length
     ? `<div class="panel"><div class="empty-state"><div class="big">No positions yet</div>Head to the market and buy your first shares.</div></div>`
     : `<div class="panel table-scroll"><table class="holdings">` +
-      `<thead><tr><th>program</th><th>shares</th><th>avg cost</th><th>price</th><th>value</th><th>gain / loss</th></tr></thead><tbody>` +
+      `<thead><tr><th>program</th><th>shares</th><th>avg cost</th><th>price</th><th>value if sold</th><th>gain / loss</th></tr></thead><tbody>` +
       holdings
         .map((h) => {
           const cost = h.shares * h.avg_cost;
@@ -849,7 +915,21 @@ function renderPortfolio() {
       `</div></div>`
     : "";
 
-  $("main").innerHTML = head + standing + summary + body + trades;
+  const payouts = state.payouts.length
+    ? `<div class="panel" style="margin-top:16px"><h2>payouts received</h2><div class="log-list">` +
+      state.payouts
+        .map(
+          (p) =>
+            `<div class="log-item"><span class="lw">${esc(new Date(p.paid_at).toLocaleDateString())}</span> &middot; ` +
+            `${miniMark(p.team_id, 18, { iconOnly: true })}<a href="#/team/${encodeURIComponent(p.team_id)}">${esc(p.team_id)}</a> ` +
+            `${esc(p.summary)}: ${p.shares} sh &times; $${p.per_share.toFixed(2)} ` +
+            `<span class="ld ch up">+${fmtMoney(p.amount)}</span></div>`
+        )
+        .join("") +
+      `</div></div>`
+    : "";
+
+  $("main").innerHTML = head + standing + summary + body + payouts + trades;
 }
 
 /* ---------- Rendering: leaderboard ---------- */
@@ -1170,6 +1250,16 @@ async function boot() {
 
   await Promise.all([loadTeams(), loadAccount()]);
   await onRouteChange();
+
+  // Prices move with every trade: refresh every 30s while the tab is open.
+  // Skipped while someone is typing (re-rendering would reset their input).
+  setInterval(async () => {
+    if (document.hidden || state.tradePending) return;
+    if (document.activeElement?.matches?.("input, textarea")) return;
+    await Promise.all([loadTeams(), state.session ? loadAccount() : null]);
+    if (document.activeElement?.matches?.("input, textarea")) return;
+    render();
+  }, 30000);
 
   // Prices only move when games finish, so refreshing on focus is enough.
   document.addEventListener("visibilitychange", async () => {

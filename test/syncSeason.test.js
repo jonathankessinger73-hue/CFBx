@@ -58,7 +58,8 @@ test("sync posts missing lines and applies completed games exactly once", { skip
       // Reported with home/away flipped relative to our schedule (TEX @ TENN).
       { id: 402, season: 2026, week: 4, completed: true, homeTeam: "Texas", awayTeam: "Tennessee", homePoints: 30, awayPoints: 10 },
       { id: 403, season: 2026, week: 4, completed: true, homeTeam: "Georgia", awayTeam: "Montana", homePoints: 70, awayPoints: 0 },
-      { id: 501, season: 2026, week: 5, completed: false, homeTeam: "Mississippi State", awayTeam: "Alabama" },
+      { id: 501, season: 2026, week: 5, completed: false, homeTeam: "Mississippi State", awayTeam: "Alabama",
+        startDate: "2026-10-03T23:30:00.000Z" },
     ],
   };
   const ugaBefore = await price("UGA");
@@ -76,6 +77,9 @@ test("sync posts missing lines and applies completed games exactly once", { skip
     "select line, cfbd_game_id from schedule where week = 5 and home_team_id = 'MSST' and away_team_id = 'ALA'"
   );
   assert.deepEqual(msst[0], { line: 10.5, cfbd_game_id: 501 });
+  // Kickoff times are stored for the live poller.
+  const { rows: kick } = await pool.query("select start_date from schedule where cfbd_game_id = 501");
+  assert.equal(kick[0].start_date.toISOString(), "2026-10-03T23:30:00.000Z");
 
   const { rows: tenn } = await pool.query(
     "select home_score, away_score, completed from schedule where week = 4 and home_team_id = 'TENN'"
@@ -95,6 +99,77 @@ test("sync posts missing lines and applies completed games exactly once", { skip
   assert.deepEqual(again.unmatched, []);
   assert.equal(again.linesPosted, 0);
   assert.equal(await price("UGA"), ugaAfter);
+});
+
+const fundamental = async (id) =>
+  (await pool.query("select fundamental_price from teams where id = $1", [id])).rows[0].fundamental_price;
+const moves = async (kind) =>
+  (await pool.query("select team_id, pct_change, summary from market_moves where kind = $1 order by id", [kind])).rows;
+
+test("line moves before kickoff move both teams, once per change", { skip }, async () => {
+  // The first test posted week 5 MSST (home) vs ALA at +10.5. It moves to +13.5:
+  // MSST is 3 points more of an underdog.
+  const base = { games: async () => [] };
+  const lines = (spread) => async () => [
+    { id: 501, week: 5, homeTeam: "Mississippi State", awayTeam: "Alabama", lines: [{ spread }] },
+  ];
+  const [msst, ala] = [await fundamental("MSST"), await fundamental("ALA")];
+
+  const dry = await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, dryRun: true, log: () => {} });
+  assert.equal(dry.lineMoves, 1);
+  assert.equal(await fundamental("MSST"), msst);
+
+  const r = await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, log: () => {} });
+  assert.equal(r.lineMoves, 1);
+  const near = (a, b) => assert.ok(Math.abs(a - b) < 0.0002, `${a} vs ${b}`); // seed prices vary run to run
+  near(await fundamental("MSST"), msst * 0.985);
+  near(await fundamental("ALA"), ala * 1.015);
+  assert.deepEqual(await moves("line"), [
+    { team_id: "MSST", pct_change: -1.5, summary: "Line moved vs Alabama: now underdog by 13.5 (was underdog by 10.5)" },
+    { team_id: "ALA", pct_change: 1.5, summary: "Line moved vs Mississippi State: now favored by 13.5 (was favored by 10.5)" },
+  ]);
+  const { rows } = await pool.query("select line, line_priced from schedule where cfbd_game_id = 501");
+  assert.deepEqual(rows[0], { line: 13.5, line_priced: 13.5 });
+
+  // Same line again, or a wobble under half a point: nothing.
+  assert.equal((await syncSeason({ pool, cfbd: { ...base, lines: lines(13.5) }, season: 2026, log: () => {} })).lineMoves, 0);
+  assert.equal((await syncSeason({ pool, cfbd: { ...base, lines: lines(13.8) }, season: 2026, log: () => {} })).lineMoves, 0);
+  assert.equal((await moves("line")).length, 2);
+});
+
+test("poll moves: first run is a baseline, then entries, exits and moves; each release once", { skip }, async () => {
+  const base = { lines: async () => [], games: async () => [] };
+  const release = (week, poll, schools) => ({
+    season: 2026, seasonType: "regular", week,
+    polls: [{ poll, ranks: schools.map((school, i) => ({ rank: i + 1, school })) }],
+  });
+  const week4 = release(4, "AP Top 25", ["Georgia", "Alabama", "Ohio State"]);
+  const week5 = release(5, "AP Top 25", ["Alabama", "Georgia", "Texas"]);
+  const cfp5 = release(5, "Playoff Committee Rankings", ["Georgia"]);
+  const run = (weeks) => syncSeason({ pool, cfbd: { ...base, rankings: async () => weeks }, season: 2026, log: () => {} });
+
+  const first = await run([week4]);
+  assert.equal(first.pollMoves, 0);
+  const { rows } = await pool.query("select count(*)::int as n from poll_ranks");
+  assert.equal(rows[0].n, 3);
+
+  const osu = await fundamental("OSU");
+  const second = await run([week4, week5, cfp5]);
+  assert.equal(second.pollMoves, 5);
+  assert.deepEqual(
+    (await moves("poll")).map((m) => [m.team_id, m.pct_change, m.summary]).sort(),
+    [
+      ["ALA", 0.25, "Up 1 spot to No. 1 in the AP poll"],
+      ["OSU", -4, "Dropped out of the AP poll (was No. 3)"],
+      ["TEX", 4, "Entered the AP poll at No. 3"],
+      ["UGA", -0.25, "Down 1 spot to No. 2 in the AP poll"],
+      ["UGA", 4, "Entered the CFP rankings at No. 1"],
+    ]
+  );
+  assert.ok(Math.abs((await fundamental("OSU")) - osu * 0.96) < 0.0002);
+
+  assert.equal((await run([week4, week5, cfp5])).pollMoves, 0);
+  assert.equal((await moves("poll")).length, 5);
 });
 
 test("FCS games are recorded: wins don't move the price, losses cost a penalty", { skip }, async () => {
@@ -130,7 +205,7 @@ test("FCS games are recorded: wins don't move the price, losses cost a penalty",
   assert.equal(r.fcsGames, 2);
   assert.deepEqual(r.unmatched, ["6: Some New FBS School @ LSU"]);
   const after = await price("LSU");
-  assert.equal(after, Math.round(lsu * 0.8 * 100) / 100); // lost by 10: -20%
+  assert.ok(Math.abs(after - lsu * 0.8) < 0.011, `${after} vs ${lsu * 0.8}`); // lost by 10: -20%
 
   const { rows: wk1 } = await pool.query(
     "select price_after from price_events where team_id = 'LSU' and week = 1 and not vs_fcs"
@@ -233,6 +308,93 @@ test("sync stores ESPN logo URLs from CFBD, preferring https", { skip }, async (
   assert.ok(logs.some((m) => m.includes("logos not updated")));
 });
 
+test("title games and playoff games get added and priced; milestones pay shareholders once", { skip }, async () => {
+  // A long-time UGA and OSU holder, and someone who bought OSU just now.
+  const holder = "33333333-3333-3333-3333-333333333333";
+  const latecomer = "44444444-4444-4444-4444-444444444444";
+  await pool.query("insert into auth.users (id) values ($1), ($2)", [holder, latecomer]);
+  await pool.query("insert into holdings (user_id, team_id, shares, avg_cost) values ($1, 'UGA', 10, 50), ($1, 'OSU', 4, 50)", [holder]);
+  await pool.query("select execute_trade($1, 'OSU', 'buy', 5)", [latecomer]);
+  const cash = async (id) => (await pool.query("select cash from users where id = $1", [id])).rows[0].cash;
+  const [holderCash, lateCash] = [await cash(holder), await cash(latecomer)];
+
+  const cfbd = {
+    lines: async () => [],
+    games: async () => [
+      // Not in the seeded schedule; UGA and ALA also meet in week 6 (still open).
+      { id: 1501, season: 2026, week: 15, completed: true, homeTeam: "Georgia", awayTeam: "Alabama",
+        homePoints: 31, awayPoints: 24, homeConference: "SEC", awayConference: "SEC", notes: "SEC Championship" },
+    ],
+    postseasonGames: async () => [
+      { id: 1601, season: 2026, week: 1, completed: false, homeTeam: "Georgia", awayTeam: "Ohio State",
+        notes: "College Football Playoff Quarterfinal at the Rose Bowl", startDate: "2027-01-01T21:00:00.000Z" },
+    ],
+  };
+  const r = await syncSeason({ pool, cfbd, season: 2026, log: () => {}, random: () => 0.5 });
+  assert.equal(r.gamesAdded, 2);
+  assert.equal(r.gamesApplied, 1);
+  assert.equal(r.dividendsPaid, 3); // UGA title, UGA berth, OSU berth
+
+  const { rows: added } = await pool.query(
+    "select week, season_type, home_team_id, away_team_id, completed, notes from schedule where cfbd_game_id in (1501, 1601) order by cfbd_game_id"
+  );
+  assert.deepEqual(added, [
+    { week: 15, season_type: "regular", home_team_id: "UGA", away_team_id: "ALA", completed: true, notes: "SEC Championship" },
+    { week: 1, season_type: "postseason", home_team_id: "UGA", away_team_id: "OSU", completed: false,
+      notes: "College Football Playoff Quarterfinal at the Rose Bowl" },
+  ]);
+  const { rows: week6 } = await pool.query(
+    "select completed from schedule where season_type = 'regular' and week = 6 and 'UGA' in (home_team_id, away_team_id) and 'ALA' in (home_team_id, away_team_id)"
+  );
+  assert.deepEqual(week6, [{ completed: false }], "the title game didn't overwrite the regular-season meeting");
+
+  const { rows: divs } = await pool.query("select team_id, kind, pct, per_share, shares_paid from dividends order by id");
+  assert.deepEqual(divs.map((d) => [d.team_id, d.kind, d.pct]), [
+    ["UGA", "conf_title", 8],
+    ["UGA", "playoff_berth", 8],
+    ["OSU", "playoff_berth", 8],
+  ]);
+  const osuBerth = divs[2];
+  assert.equal(osuBerth.shares_paid, 4, "shares bought in the last 24 hours don't count");
+  const expected = Math.round((holderCash + 10 * divs[0].per_share + 10 * divs[1].per_share + 4 * osuBerth.per_share) * 100) / 100;
+  assert.equal(await cash(holder), expected);
+  assert.equal(await cash(latecomer), lateCash);
+
+  // Idempotent.
+  const again = await syncSeason({ pool, cfbd, season: 2026, log: () => {} });
+  assert.deepEqual([again.gamesAdded, again.gamesApplied, again.dividendsPaid], [0, 0, 0]);
+  assert.equal(await cash(holder), expected);
+});
+
+test("recruiting: weekly snapshots in signing season; each moves teams by class rank change", { skip }, async () => {
+  let calls = 0;
+  let board = [];
+  const cfbd = {
+    lines: async () => [],
+    games: async () => [],
+    recruitingTeams: async (year) => (calls++, assert.equal(year, 2027), board),
+  };
+  const run = (date) => syncSeason({ pool, cfbd, season: 2026, now: new Date(date), log: () => {} });
+
+  assert.equal((await run("2026-10-01T12:00:00Z")).recruitingMoves, 0);
+  assert.equal(calls, 0, "no calls outside signing season");
+
+  board = [{ team: "Alabama", rank: 1 }, { team: "Georgia", rank: 3 }, { team: "Texas", rank: 10 }];
+  assert.equal((await run("2026-11-02T12:00:00Z")).recruitingMoves, 0); // baseline
+  assert.equal((await run("2026-11-05T12:00:00Z")).recruitingMoves, 0);
+  assert.equal(calls, 1, "no call within a week of the last snapshot");
+
+  board = [{ team: "Georgia", rank: 1 }, { team: "Alabama", rank: 4 }, { team: "Texas", rank: 10 }];
+  assert.equal((await run("2026-11-10T12:00:00Z")).recruitingMoves, 2);
+  assert.deepEqual(
+    (await moves("recruiting")).map((m) => [m.team_id, m.pct_change, m.summary]).sort(),
+    [
+      ["ALA", -0.45, "2027 recruiting class down 3 spots to No. 4"],
+      ["UGA", 0.3, "2027 recruiting class up 2 spots to No. 1"],
+    ]
+  );
+});
+
 test("dry run writes nothing", { skip }, async () => {
   const cfbd = {
     lines: async () => [],
@@ -260,4 +422,25 @@ test("CFBD keys are cleaned of quotes, spaces and a pasted Bearer prefix", async
   });
   await assert.rejects(cfbd.lines(2026), /rejected the API key \(401\).*6 characters/);
   assert.equal(sent, "Bearer abc123");
+});
+
+test("the news script posts a manual move, and validates its input", { skip }, async () => {
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const run = promisify(execFile);
+  const url = new URL(TEST_DATABASE_URL);
+  url.pathname = `/${pool.databaseName}`;
+  const env = { ...process.env, DATABASE_URL: url.toString(), DATABASE_CA_CERT: "", DATABASE_CA_CERT_FILE: "" };
+  const script = new URL("../scripts/news.js", import.meta.url).pathname;
+  const before = await fundamental("TCU");
+
+  await assert.rejects(run("node", [script, "--team", "TCU", "--pct", "40", "--summary", "Too big a move"], { env }), /between -15 and 15/);
+  const dry = await run("node", [script, "--team", "tcu", "--pct", "-5", "--summary", "Head coach leaves", "--dry-run"], { env });
+  assert.match(dry.stdout, /\[dry run\] TCU/);
+  assert.equal(await fundamental("TCU"), before);
+
+  const out = await run("node", [script, "--team", "tcu", "--pct", "-5", "--summary", "Head coach leaves"], { env });
+  assert.match(out.stdout, /^TCU -5%/);
+  assert.ok(Math.abs((await fundamental("TCU")) - before * 0.95) < 0.0002);
+  assert.deepEqual((await moves("news")).map((m) => [m.team_id, m.pct_change, m.summary]), [["TCU", -5, "Head coach leaves"]]);
 });

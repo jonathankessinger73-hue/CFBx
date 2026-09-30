@@ -106,6 +106,90 @@ export function fcsGameImpact(price, teamScore, oppScore) {
   };
 }
 
+// Line movement: when a game's spread moves before kickoff, the market has
+// changed its mind about both teams. 0.5% per point of expected margin, from
+// the team's side, capped at 3% per move. Moves under half a point are noise
+// (providers coming and going from the consensus) and are ignored.
+export const LINE_MOVE_PCT_PER_POINT = 0.5;
+export const LINE_MOVE_MAX = 3;
+export const LINE_MOVE_MIN_POINTS = 0.5;
+
+export function lineMovePct(marginChange) {
+  if (Math.abs(marginChange) < LINE_MOVE_MIN_POINTS) return 0;
+  return round2(Math.max(-LINE_MOVE_MAX, Math.min(LINE_MOVE_MAX, marginChange * LINE_MOVE_PCT_PER_POINT)));
+}
+
+// Poll moves: each spot gained or lost in a new poll release moves the price.
+// Unranked counts as No. 30, so entering the poll at No. 25 is a 5-spot jump.
+// The CFP committee's rankings count for more than the AP poll's. Capped at 4%.
+export const POLLS = {
+  "AP Top 25": { label: "AP poll", perSpot: 0.25 },
+  "Playoff Committee Rankings": { label: "CFP rankings", perSpot: 0.35 },
+};
+export const POLL_UNRANKED = 30;
+export const POLL_MOVE_MAX = 4;
+
+export function pollMovePct(poll, prevRank, newRank) {
+  const cfg = POLLS[poll];
+  if (!cfg) return 0;
+  const spots = (prevRank ?? POLL_UNRANKED) - (newRank ?? POLL_UNRANKED);
+  return round2(Math.max(-POLL_MOVE_MAX, Math.min(POLL_MOVE_MAX, spots * cfg.perSpot)));
+}
+
+export function pollMoveSummary(poll, prevRank, newRank) {
+  const label = POLLS[poll]?.label ?? poll;
+  if (prevRank == null) return `Entered the ${label} at No. ${newRank}`;
+  if (newRank == null) return `Dropped out of the ${label} (was No. ${prevRank})`;
+  const spots = prevRank - newRank;
+  return `${spots > 0 ? "Up" : "Down"} ${Math.abs(spots)} spot${Math.abs(spots) === 1 ? "" : "s"} to No. ${newRank} in the ${label}`;
+}
+
+// Live in-game move: the move the final would make if the game ended with
+// the current score (same formula as computePriceImpact, without the noise),
+// scaled by how much of the game has been played, so an early touchdown
+// nudges the price and a fourth-quarter lead nearly locks it in.
+export function liveMovePct(expectedMargin, actualMargin, elapsed) {
+  const edge = actualMargin - expectedMargin;
+  const move = (edge >= 0 ? 1 : -1) * Math.min(MAX_BASE_MOVE, 0.15 + Math.abs(edge) * 0.32);
+  return round2(move * Math.max(0, Math.min(1, elapsed))) || 0; // no "-0" at kickoff
+}
+
+// Seconds left in the quarter from a scoreboard clock ("7:32", "00:07:32").
+export function parseClock(clock) {
+  const parts = String(clock ?? "").split(":").map(Number);
+  if (parts.length < 2 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [m, sec] = parts.slice(-2);
+  return m * 60 + sec;
+}
+
+// Fraction of regulation played (0-1). Overtime counts as fully played.
+export function gameElapsed(period, clock) {
+  if (!period || period < 1) return 0;
+  if (period > 4) return 1;
+  const left = parseClock(clock);
+  const played = 900 - Math.min(900, Math.max(0, left ?? 450));
+  return ((period - 1) * 900 + played) / 3600;
+}
+
+// Recruiting: weekly during signing season, 0.15% per spot a team's class
+// moved in the national rankings since the last snapshot, capped at 3%.
+export const RECRUIT_PCT_PER_SPOT = 0.15;
+export const RECRUIT_MOVE_MAX = 3;
+
+export function recruitingMovePct(prevRank, newRank) {
+  if (prevRank == null || newRank == null) return 0;
+  return round2(Math.max(-RECRUIT_MOVE_MAX, Math.min(RECRUIT_MOVE_MAX, (prevRank - newRank) * RECRUIT_PCT_PER_SPOT)));
+}
+
+// Season payouts: cash to shareholders, as a % of the share price when the
+// milestone is reached. Each pays once per team per season.
+export const PAYOUTS = {
+  bowl_eligible: { pct: 2, summary: "Bowl eligible: 6 wins" },
+  conf_title: { pct: 8, summary: "Conference champions" },
+  playoff_berth: { pct: 8, summary: "Made the College Football Playoff" },
+  national_title: { pct: 20, summary: "National champions" },
+};
+
 // Human-readable line/result summary from one team's perspective.
 export function spreadPhrase(expectedMargin, actualMargin) {
   const lineText =

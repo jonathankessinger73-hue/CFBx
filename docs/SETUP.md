@@ -311,6 +311,9 @@ the error.
    | `SUPABASE_ANON_KEY` | same as your `.env` |
    | `AUTH_EMAIL_FROM` | the sender address from Part 6, e.g. `noreply@mail.cfbxchange.com` |
    | `AUTH_PROVIDERS` | `google`, once Part 7 is done |
+   | `CFBD_API_KEY` | your CollegeFootballData key (for live in-game prices) |
+   | `LIVE_GAMES` | `true` to move prices during games (needs an always-on plan, not Free) |
+   | `LIVE_POLL_SECONDS` | optional, default `180`; raise it if you get near your CFBD monthly call limit |
 
 4. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to the
    Render address and add `https://<your-app>.onrender.com/**` to **Redirect URLs**.
