@@ -406,6 +406,15 @@ gets the same account.
 
 ---
 
+## Updating the database after new code
+
+When a change adds files to `db/migrations/`, apply them by either:
+- running `npm run migrate` on your computer, or
+- on GitHub, clicking **Actions → Migrate database → Run workflow** (no setup needed;
+  it uses the same secrets as the daily job).
+
+It's safe to run either one any time, because migrations that already ran are skipped.
+
 ## Troubleshooting
 
 | Symptom | Likely cause / fix |
