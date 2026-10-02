@@ -37,11 +37,17 @@ const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`cfbx api listening on :${port}`));
 
 // Trading hype fades back toward zero; apply that every few minutes so prices
-// drift back even when nobody trades. Safe to run from several places.
+// drift back even when nobody trades.
 const DECAY_EVERY_MS = 5 * 60 * 1000;
-setInterval(() => {
-  store.pool.query("select decay_hype()").catch((err) => console.error("hype decay failed:", err.message));
-}, DECAY_EVERY_MS).unref();
+// Options: pay out expired ones and keep strikes listed near current prices.
+// Safe to run from several places.
+const marketTick = async () => {
+  for (const sql of ["select decay_hype()", "select settle_options()", "select ensure_option_series()"]) {
+    await store.pool.query(sql).catch((err) => console.error(`${sql} failed:`, err.message));
+  }
+};
+marketTick();
+setInterval(marketTick, DECAY_EVERY_MS).unref();
 
 // Live in-game prices (LIVE_GAMES=true, needs CFBD_API_KEY): polls the
 // scoreboard only while games are on. Run it on one server only.

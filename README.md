@@ -184,6 +184,37 @@ it; the trade box uses it to show the real total. Net worth and the leaderboard 
 holdings at what selling them now would bring (`sell_value`), so pushing up a team you
 hold doesn't raise your own net worth.
 
+## Options
+
+Players can buy calls and puts on every team, and sell them back to the house before
+they expire (migration 013). They can't write options, so the most they can lose is
+what they paid.
+
+- **Underlying:** the team's football price (`fundamental_price`): games, lines, polls
+  and news, without trading hype. Options settle on it, so nobody can move a settlement
+  price by buying shares.
+- **Expirations:**
+  - **Weekly:** every Monday at noon ET (`next_option_expiry`), covering the week's line
+    moves, Saturday's games and Sunday's poll.
+  - **Season-long:** settles the Monday at noon after the national title game, using
+    that game's payout as the signal, or early February at the latest.
+- **Strikes:** five per expiry: ±5% steps for weekly, ±10% for season. A fresh set is
+  listed whenever the price moves away from the existing strikes
+  (`ensure_option_series`).
+- **Pricing (`option_quote`):** Black-Scholes with no interest rate. The variance is the
+  games left before expiry × the team's own typical game move (RMS of its game moves,
+  clamped to 4–25%), plus 1.5% a week for news. A bye week makes weekly options cheap.
+  The house sells at fair value +5% +$0.01 and buys back at −5% −$0.01.
+- **Guardrails:**
+  - A team's options pause from kickoff until its final is applied.
+  - At most 1,000 options per team per player.
+  - Options cost basis is capped at 25% of net worth.
+  - Shares are capped at 1,000 per team per player too (a trigger on `holdings`).
+- **Settlement:** `settle_options()` runs every 5 minutes on the API server and in the
+  daily job. It pays (price − strike) for calls or (strike − price) for puts, in cash.
+  Worthless expirations are still recorded.
+- **Net worth:** includes options at their buy-back price.
+
 ## Scheduled and seasonal jobs
 
 | Job | When | Command | Workflow |
@@ -271,6 +302,9 @@ aren't in the source as plain text. Maintenance commands:
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
 | GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
+| GET | `/teams/:id/options` | — | Open calls and puts with house quotes (`bid`, `ask`), `football_price`, `paused` |
+| POST | `/options/trade` | ✓ | `{series_id, side: "buy"\|"sell", qty}` (1–1000). Errors include `options_paused`, `options_limit`, `position_limit`, `insufficient_options`, `option_expired`. |
+| GET | `/me/options` | ✓ | `positions` (valued at the buy-back price) and recent `activity` (buys, sells, settlements) |
 | POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. Returns the fill (`price` = average, `amount`) and `price_after`. |
 
 Auth: `Authorization: Bearer <Supabase access token>`. Trade errors return

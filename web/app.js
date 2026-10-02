@@ -35,6 +35,8 @@ const state = {
   view: { conf: "all", q: "", priceMode: "week", ...loadPrefs() },
   tradePending: false,
   tradeQty: {}, // ticker -> share count being typed in the trade box
+  options: { positions: [], activity: [] }, // the player's options
+  optView: { expiry: "weekly", kind: "call", seriesId: null, qty: "1" },
 };
 
 function loadPrefs() {
@@ -216,6 +218,12 @@ const ERROR_TEXT = {
   invalid_display_name: "Use 3–24 letters, numbers, spaces, dots, dashes or underscores, starting and ending with a letter or number.",
   display_name_taken: "That name is taken. Try another.",
   display_name_not_allowed: "That name isn't allowed. Please pick another.",
+  position_limit: "You can own at most 1,000 shares, and 1,000 options, of any one team.",
+  options_limit: "Options are capped at 25% of your net worth.",
+  options_paused: "This team's options are paused while its game is on. They reopen after the final.",
+  option_expired: "That option has expired.",
+  insufficient_options: "You don't own that many of this option.",
+  unknown_option: "That option isn't listed anymore.",
 };
 const errorText = (err) => ERROR_TEXT[err.code] || "Something went wrong. Please try again.";
 
@@ -239,15 +247,18 @@ async function loadAccount() {
     state.holdings = new Map();
     state.transactions = [];
     state.payouts = [];
+    state.options = { positions: [], activity: [] };
     return;
   }
   try {
-    const [me, holdings, txs, payouts] = await Promise.all([
+    const [me, holdings, txs, payouts, options] = await Promise.all([
       api("/me", { auth: true }),
       api("/me/holdings", { auth: true }),
       api("/me/transactions?limit=25", { auth: true }),
       api("/me/payouts", { auth: true }),
+      api("/me/options", { auth: true }),
     ]);
+    state.options = options;
     state.me = me;
     state.holdings = new Map(holdings.holdings.map((h) => [h.team_id, h]));
     state.transactions = txs.transactions;
@@ -272,11 +283,22 @@ async function loadLeaderboard() {
 }
 
 async function loadDetail(id) {
-  state.detail = { id, data: null, error: null };
+  state.detail = { id, data: null, error: null, options: null };
   try {
-    state.detail.data = await api(`/teams/${encodeURIComponent(id)}`);
+    const [data] = await Promise.all([api(`/teams/${encodeURIComponent(id)}`), loadOptions(id)]);
+    state.detail.data = data;
   } catch (err) {
     if (state.detail?.id === id) state.detail.error = err;
+  }
+}
+
+// A team's options board (house quotes); refreshed with prices.
+async function loadOptions(id) {
+  try {
+    const board = await api(`/teams/${encodeURIComponent(id)}/options`);
+    if (state.detail?.id === id) state.detail.options = board;
+  } catch {
+    if (state.detail?.id === id) state.detail.options = { error: true };
   }
 }
 
@@ -764,6 +786,7 @@ function renderDetail(ticker) {
     `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(chartPoints(d)))}</div></div>` +
     `<div class="panel"><h2>trade</h2>${tradePanel}</div>` +
     `</div>` +
+    `<div class="panel options-panel" style="margin-top:16px"><h2>options</h2>${optionsPanel(t)}</div>` +
     `<div class="detail-body" style="margin-top:16px">` +
     `<div class="panel"><h2>game log</h2><div class="log-list">${panelBody((d) =>
       d.game_log.length ? d.game_log.map(gameLogItem).join("") : `<div class="log-item">No games played yet this season.</div>`
@@ -779,6 +802,7 @@ function renderDetail(ticker) {
       : "");
 
   if (data) bindPriceChart($("main"), chartPoints(data));
+  bindOptionsPanel(t);
 
   document.querySelectorAll("#detail-pricemode button").forEach((btn) =>
     btn.addEventListener("click", () => {
@@ -830,6 +854,147 @@ function renderDetail(ticker) {
   refreshQuote();
   $("btn-buy").addEventListener("click", () => trade(ticker, "buy", qty()));
   $("btn-sell").addEventListener("click", () => trade(ticker, "sell", qty()));
+}
+
+/* ---------- Options ---------- */
+
+const fmtStrike = (n) => `$${Number(n).toFixed(n % 1 ? 2 : 0)}`;
+function expiryLabel(o) {
+  if (o.expiry_kind === "season") {
+    return o.expires_at ? `Season (settles ${fmtExpiry(o.expires_at)})` : "Season (settles after the national title game)";
+  }
+  return fmtExpiry(o.expires_at);
+}
+function fmtExpiry(ts) {
+  return (
+    new Date(ts).toLocaleString("en-US", {
+      weekday: "short", month: "short", day: "numeric", hour: "numeric", timeZone: "America/New_York",
+    }) + " ET"
+  );
+}
+const contractLabel = (o) => `${o.team_id ? o.team_id + " " : ""}${fmtStrike(o.strike)} ${o.kind}`;
+
+function optionsPanel(t) {
+  const board = state.detail?.id === t.id ? state.detail.options : null;
+  if (!board) return `<div class="loading" style="padding:20px">Loading…</div>`;
+  if (board.error) return `<div class="log-item">Couldn't load options. They'll retry shortly.</div>`;
+  if (!board.options.length) return `<div class="log-item">Options for ${esc(t.name)} will be listed shortly.</div>`;
+
+  const v = state.optView;
+  const weekly = board.options.find((o) => o.expiry_kind === "weekly");
+  const list = board.options.filter((o) => o.expiry_kind === v.expiry && o.kind === v.kind);
+  if (!list.some((o) => o.id === v.seriesId)) {
+    // Default to the strike nearest the football price.
+    const near = list.slice().sort((a, b) => Math.abs(a.strike - board.football_price) - Math.abs(b.strike - board.football_price))[0];
+    v.seriesId = near?.id ?? null;
+  }
+  const owned = new Map(state.options.positions.map((p) => [p.series_id, p.qty]));
+  const tab = (group, value, label) =>
+    `<button data-${group}="${value}" class="${v[group] === value ? "active" : ""}">${esc(label)}</button>`;
+
+  const rows = list
+    .map((o) => {
+      const sel = o.id === v.seriesId;
+      return (
+        `<tr class="opt-row${sel ? " selected" : ""}" data-series="${o.id}" tabindex="0" aria-selected="${sel}">` +
+        `<td>${fmtStrike(o.strike)}</td><td>$${o.ask.toFixed(2)}</td><td>$${o.bid.toFixed(2)}</td>` +
+        `<td>${owned.get(o.id) || ""}</td></tr>`
+      );
+    })
+    .join("");
+
+  const selected = list.find((o) => o.id === v.seriesId);
+  let order;
+  if (board.paused) {
+    order = `<div class="opt-paused"><span class="live-tag">LIVE</span> Options are paused while ${esc(t.name)} is playing. They reopen after the final.</div>`;
+  } else if (!state.session) {
+    order = `<div class="position-note">Sign in to trade options.</div>`;
+  } else {
+    order =
+      `<div class="trade-row" style="margin-top:12px"><input type="number" id="opt-qty" aria-label="Options" min="1" max="1000" step="1" inputmode="numeric" value="${esc(v.qty)}"></div>` +
+      `<div class="trade-quote" id="opt-summary"></div>` +
+      `<div class="trade-buttons"><button class="btn-buy" id="opt-buy">Buy options</button><button class="btn-sell" id="opt-sell">Sell options back</button></div>`;
+  }
+
+  return (
+    `<p class="opt-explain">A <strong>call</strong> pays if ${esc(t.name)}'s football price ends <em>above</em> the strike; ` +
+    `a <strong>put</strong> pays if it ends <em>below</em>. Each pays the difference per option, in cash, at expiry. ` +
+    `<span class="opt-fp">Football price now: <strong>$${board.football_price.toFixed(2)}</strong></span> ` +
+    `(the price from games, lines and polls, without trading hype). 1 option = 1 share.</p>` +
+    `<div class="opt-tabs"><nav class="tabs" id="opt-expiry">${tab("expiry", "weekly", weekly ? fmtExpiry(weekly.expires_at) : "This week")}${tab("expiry", "season", "Season")}</nav>` +
+    `<nav class="tabs" id="opt-kind">${tab("kind", "call", "Calls")}${tab("kind", "put", "Puts")}</nav></div>` +
+    (selected ? `<div class="stale-note" style="margin:8px 0">Expires ${esc(expiryLabel(selected))}</div>` : "") +
+    `<div class="table-scroll"><table class="holdings opt-table"><thead><tr><th>strike</th><th>buy</th><th>sell back</th><th>you own</th></tr></thead>` +
+    `<tbody>${rows}</tbody></table></div>` +
+    order
+  );
+}
+
+function bindOptionsPanel(t) {
+  const panel = document.querySelector(".options-panel");
+  if (!panel) return;
+  const v = state.optView;
+  panel.querySelectorAll("[data-expiry], [data-kind]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (b.dataset.expiry) v.expiry = b.dataset.expiry;
+      if (b.dataset.kind) v.kind = b.dataset.kind;
+      v.seriesId = null;
+      renderDetail(t.id);
+    })
+  );
+  panel.querySelectorAll(".opt-row").forEach((r) => {
+    const pick = () => {
+      v.seriesId = Number(r.dataset.series);
+      renderDetail(t.id);
+    };
+    r.addEventListener("click", pick);
+    r.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), pick()));
+  });
+
+  const qtyInput = $("opt-qty");
+  if (!qtyInput) return;
+  const board = state.detail.options;
+  const o = board.options.find((x) => x.id === v.seriesId);
+  const owned = state.options.positions.find((p) => p.series_id === v.seriesId)?.qty || 0;
+  const qty = () => (/^\d+$/.test(qtyInput.value.trim()) ? parseInt(qtyInput.value, 10) : 0);
+  const update = () => {
+    v.qty = qtyInput.value;
+    const n = qty();
+    const cash = state.me ? state.me.cash : 0;
+    $("opt-buy").disabled = state.tradePending || !o || n < 1 || n > 1000 || n * o.ask > cash;
+    $("opt-sell").disabled = state.tradePending || !o || n < 1 || n > owned;
+    if (!o || n < 1) {
+      $("opt-summary").textContent = "";
+      return;
+    }
+    const cost = n * o.ask;
+    const breakeven = o.kind === "call" ? o.strike + o.ask : o.strike - o.ask;
+    $("opt-summary").innerHTML =
+      `Buy ${n} ${fmtStrike(o.strike)} ${o.kind}${n === 1 ? "" : "s"}: <strong>${fmtMoney(cost)}</strong>. ` +
+      `Pays $1 per option for every $1 the football price ends ${o.kind === "call" ? "above" : "below"} ${fmtStrike(o.strike)}; ` +
+      `breaks even ${o.kind === "call" ? "above" : "below"} $${breakeven.toFixed(2)}. Most you can lose: ${fmtMoney(cost)}.` +
+      (owned ? `<br>You own ${owned}. Selling back pays $${o.bid.toFixed(2)} each.` : "");
+  };
+  qtyInput.addEventListener("input", update);
+  update();
+  $("opt-buy").addEventListener("click", () => optionTrade(t.id, v.seriesId, "buy", qty()));
+  $("opt-sell").addEventListener("click", () => optionTrade(t.id, v.seriesId, "sell", qty()));
+}
+
+async function optionTrade(ticker, seriesId, side, qty) {
+  if (state.tradePending || !seriesId || qty < 1) return;
+  state.tradePending = true;
+  try {
+    const r = await api("/options/trade", { method: "POST", auth: true, body: { series_id: seriesId, side, qty } });
+    toast(`${side === "buy" ? "Bought" : "Sold"} ${r.qty} ${r.team_id} ${fmtStrike(r.strike)} ${r.kind}${r.qty === 1 ? "" : "s"} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
+    await Promise.all([loadAccount(), loadOptions(ticker)]);
+  } catch (err) {
+    toast(errorText(err), true);
+    if (err.status === 401) await loadAccount();
+  } finally {
+    state.tradePending = false;
+    render();
+  }
 }
 
 async function trade(ticker, side, shares) {
@@ -929,7 +1094,42 @@ function renderPortfolio() {
       `</div></div>`
     : "";
 
-  $("main").innerHTML = head + standing + summary + body + payouts + trades;
+  const opt = state.options;
+  const optionsBody = opt.positions.length
+    ? `<div class="panel table-scroll" style="margin-top:16px"><h2>options</h2><table class="holdings">` +
+      `<thead><tr><th>contract</th><th>expires</th><th>qty</th><th>avg cost</th><th>value if sold</th><th>gain / loss</th></tr></thead><tbody>` +
+      opt.positions
+        .map(
+          (p) =>
+            `<tr><td class="nm-cell"><a href="#/team/${encodeURIComponent(p.team_id)}" style="text-decoration:none">${esc(contractLabel(p))}</a>` +
+            `${p.paused ? ` <span class="live-tag">LIVE</span>` : ""}</td>` +
+            `<td>${esc(expiryLabel(p))}</td><td>${p.qty}</td><td>$${p.avg_cost.toFixed(2)}</td><td>$${p.value.toFixed(2)}</td>` +
+            `<td class="ch ${p.unrealized_pl >= 0 ? "up" : "down"}" style="background:none;padding:12px 10px">${p.unrealized_pl >= 0 ? "+" : "-"}$${Math.abs(p.unrealized_pl).toFixed(2)}</td></tr>`
+        )
+        .join("") +
+      `</tbody></table></div>`
+    : "";
+  const optionsActivity = opt.activity.length
+    ? `<div class="panel" style="margin-top:16px"><h2>options activity</h2><div class="log-list">` +
+      opt.activity
+        .map((a) => {
+          const what =
+            a.side === "settle"
+              ? a.amount > 0
+                ? `${esc(contractLabel(a))} settled at $${a.settle_price.toFixed(2)}: paid $${a.price.toFixed(2)} &times; ${a.qty}`
+                : `${esc(contractLabel(a))} expired worthless (settled at $${a.settle_price.toFixed(2)})`
+              : `${a.side === "buy" ? "Bought" : "Sold"} ${a.qty} ${esc(contractLabel(a))} @ $${a.price.toFixed(2)}`;
+          const amount = a.side === "settle" ? (a.amount > 0 ? `+${fmtMoney(a.amount)}` : "$0.00") : fmtMoney(a.amount);
+          return (
+            `<div class="log-item"><span class="lw">${esc(new Date(a.created_at).toLocaleString())}</span> &middot; ${what} ` +
+            `<span class="ld${a.side === "settle" && a.amount > 0 ? " ch up" : ""}">${amount}</span></div>`
+          );
+        })
+        .join("") +
+      `</div></div>`
+    : "";
+
+  $("main").innerHTML = head + standing + summary + body + optionsBody + payouts + optionsActivity + trades;
 }
 
 /* ---------- Rendering: leaderboard ---------- */
@@ -1256,7 +1456,12 @@ async function boot() {
   setInterval(async () => {
     if (document.hidden || state.tradePending) return;
     if (document.activeElement?.matches?.("input, textarea")) return;
-    await Promise.all([loadTeams(), state.session ? loadAccount() : null]);
+    const route = parseRoute();
+    await Promise.all([
+      loadTeams(),
+      state.session ? loadAccount() : null,
+      route.page === "detail" ? loadOptions(route.ticker) : null,
+    ]);
     if (document.activeElement?.matches?.("input, textarea")) return;
     render();
   }, 30000);

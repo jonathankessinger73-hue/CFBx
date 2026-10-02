@@ -11,6 +11,20 @@ export const TRADE_ERRORS = new Set([
   "unknown_team",
   "insufficient_funds",
   "insufficient_shares",
+  "position_limit",
+]);
+
+// Errors raised by execute_option_trade that are the caller's fault.
+export const OPTION_ERRORS = new Set([
+  "invalid_side",
+  "invalid_shares",
+  "unknown_option",
+  "option_expired",
+  "options_paused",
+  "insufficient_funds",
+  "insufficient_options",
+  "position_limit",
+  "options_limit",
 ]);
 
 const TEAM_COLUMNS = `id, name, mascot, conference, strength, primary_color, secondary_color,
@@ -166,7 +180,7 @@ export function createStore(pool) {
     async getAccount(userId) {
       await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
       const { rows } = await pool.query(
-        `select user_id, display_name, cash, holdings_value, net_worth
+        `select user_id, display_name, cash, holdings_value, options_value, net_worth
            from user_net_worth where user_id = $1`,
         [userId]
       );
@@ -208,6 +222,53 @@ export function createStore(pool) {
         [userId]
       );
       return rows;
+    },
+
+    // A team's open options with live quotes, nearest expiry first.
+    async getOptionBoard(teamId) {
+      const { rows } = await pool.query(
+        `select s.id, s.kind, s.strike, s.expiry_kind, s.expires_at, q.bid, q.ask, q.underlying, q.paused, q.games_left
+           from option_series s cross join lateral option_quote(s.id) q
+          where s.team_id = $1 and not s.settled and (s.expires_at is null or s.expires_at > now())
+          order by s.expires_at nulls last, s.kind, s.strike`,
+        [teamId]
+      );
+      return rows;
+    },
+
+    async executeOptionTrade(userId, seriesId, side, qty) {
+      const { rows } = await pool.query("select execute_option_trade($1, $2, $3, $4) as result", [
+        userId,
+        seriesId,
+        side,
+        qty,
+      ]);
+      return rows[0].result;
+    },
+
+    // A player's open options (valued at the buy-back price) and recent
+    // option activity, including settlement payouts.
+    async getOptionAccount(userId) {
+      const { rows: positions } = await pool.query(
+        `select p.series_id, s.team_id, s.kind, s.strike, s.expiry_kind, s.expires_at, p.qty, p.avg_cost,
+                q.bid, q.paused, round(p.qty * q.bid, 2) as value,
+                round(p.qty * (q.bid - p.avg_cost), 2) as unrealized_pl
+           from option_positions p
+           join option_series s on s.id = p.series_id
+           cross join lateral option_quote(s.id) q
+          where p.user_id = $1
+          order by s.expires_at nulls last, s.team_id, s.kind, s.strike`,
+        [userId]
+      );
+      const { rows: activity } = await pool.query(
+        `select t.id, t.side, t.qty, t.price, t.amount, t.created_at,
+                s.team_id, s.kind, s.strike, s.expiry_kind, s.expires_at, s.settle_price
+           from option_trades t join option_series s on s.id = t.series_id
+          where t.user_id = $1
+          order by t.id desc limit 25`,
+        [userId]
+      );
+      return { positions, activity };
     },
 
     // What an order would fill at right now (the same math execute_trade uses).
