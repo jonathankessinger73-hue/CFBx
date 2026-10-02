@@ -114,14 +114,15 @@ test.describe("with fake auth", () => {
     await expect(page.locator("#opt-summary")).toContainText("Buy 4");
     await expect(page.locator("#opt-summary")).toContainText("breaks even above");
     await panel.getByRole("button", { name: "Buy options" }).click();
-    await expect(page.locator("#toast")).toContainText(/Bought 4 UGA \$\d+ calls @/);
+    // Strikes can be fractional (e.g. $56.50) depending on the seed prices.
+    await expect(page.locator("#toast")).toContainText(/Bought 4 UGA \$\d+(\.\d+)? calls @/);
     await expect(panel.locator(".opt-row.selected td").last()).toHaveText("4");
 
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.getByRole("heading", { name: "options", exact: true })).toBeVisible();
     await expect(page.locator("table.holdings").last()).toContainText("UGA");
     await expect(page.getByRole("heading", { name: "options activity" })).toBeVisible();
-    await expect(page.getByText(/Bought 4 UGA \$\d+ call @/)).toBeVisible();
+    await expect(page.getByText(/Bought 4 UGA \$\d+(\.\d+)? call @/)).toBeVisible();
 
     // TEX is mid-game in the e2e data: its options are paused.
     await page.goto("/#/team/TEX");
