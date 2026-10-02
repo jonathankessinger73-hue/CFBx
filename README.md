@@ -188,7 +188,7 @@ hold doesn't raise your own net worth.
 
 | Job | When | Command | Workflow |
 |---|---|---|---|
-| Results + lines | daily, plus game nights | `npm run job:daily` | `daily-sync.yml` |
+| Results + lines | daily, Saturday mornings (9–11am ET, for late line moves), plus game nights | `npm run job:daily` | `daily-sync.yml` |
 | Strength refresh | weekly (Tue, Aug–Jan) | `npm run job:strength` | `weekly-strength.yml` |
 | Prestige rebuild | once a season, before the first game | `npm run job:prestige -- --season 2027` | `prestige-rebuild.yml` (manual) |
 
