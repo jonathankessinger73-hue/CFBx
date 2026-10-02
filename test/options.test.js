@@ -122,8 +122,13 @@ test("limits: 25% of net worth in options, 1,000 options per team, 1,000 shares 
 
   // 1,000 options per team, across all of the team's series.
   await setPrice("NMSU", 4);
-  await pool.query("select ensure_option_series()");
-  const cheap = (await series("NMSU", "put")).find((s) => s.strike === 3.5).id; // far out of the money
+  // A cheap, far out-of-the-money put (listed here: automatic strikes depend on the seed price).
+  const cheap = (
+    await q(
+      `insert into option_series (team_id, kind, strike, expiry_kind, season, expires_at)
+       values ('NMSU', 'put', 3.5, 'weekly', 2026, next_option_expiry(now())) returning id`
+    )
+  ).id;
   const rich = await newUser();
   await pool.query("update users set cash = 1000000 where id = $1", [rich]);
   await trade(rich, cheap, "buy", 1000);
@@ -156,9 +161,18 @@ test("a team's options pause during its game and reopen after the final", { skip
 test("expired options settle in cash on the football price, then fresh ones are listed", { skip }, async () => {
   const user = await newUser();
   await setPrice("LSU", 40);
-  await pool.query("select ensure_option_series()");
-  const call38 = (await series("LSU", "call")).find((s) => s.strike === 38).id;
-  const put38 = (await series("LSU", "put")).find((s) => s.strike === 38).id;
+  // Our own $38 call and put: the automatic listing's strikes depend on the
+  // seed price, which varies from run to run.
+  const listed = async (kind) =>
+    (
+      await q(
+        `insert into option_series (team_id, kind, strike, expiry_kind, season, expires_at)
+         values ('LSU', $1, 38, 'weekly', 2026, next_option_expiry(now())) returning id`,
+        [kind]
+      )
+    ).id;
+  const call38 = await listed("call");
+  const put38 = await listed("put");
   await trade(user, call38, "buy", 10);
   await trade(user, put38, "buy", 10);
   const cashBefore = await cash(user);
