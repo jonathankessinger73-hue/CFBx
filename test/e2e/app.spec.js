@@ -104,6 +104,11 @@ test.describe("with fake auth", () => {
     await expect(panel).toContainText("Football price now");
     await expect(panel.locator(".opt-row")).toHaveCount(5);
     await expect(panel.locator(".opt-row.selected")).toHaveCount(1); // nearest strike preselected
+    // Each strike shows its prices on Buy / Sell buttons; tapping one picks that option.
+    await expect(panel.locator(".opt-row").first().locator(".opt-px-buy")).toHaveText(/^Buy \$\d+\.\d\d$/);
+    await panel.locator(".opt-row").first().locator(".opt-px-buy").click();
+    await expect(panel.locator(".opt-row").first()).toHaveClass(/selected/);
+    await expect(page.locator(".opt-contract")).toContainText("UGA");
     await panel.getByRole("button", { name: "Puts" }).click();
     await expect(panel.getByRole("button", { name: "Puts" })).toHaveClass(/active/);
     await panel.getByRole("button", { name: "Calls" }).click();
@@ -113,7 +118,8 @@ test.describe("with fake auth", () => {
     await panel.getByLabel("Options").fill("4");
     await expect(page.locator("#opt-summary")).toContainText("Buy 4");
     await expect(page.locator("#opt-summary")).toContainText("breaks even above");
-    await panel.getByRole("button", { name: "Buy options" }).click();
+    await expect(panel.getByRole("button", { name: /^Buy 4 @ \$\d+\.\d\d$/ })).toBeVisible();
+    await panel.getByRole("button", { name: /^Buy 4 @/ }).click();
     // Strikes can be fractional (e.g. $56.50) depending on the seed prices.
     await expect(page.locator("#toast")).toContainText(/Bought 4 UGA \$\d+(\.\d+)? calls @/);
     await expect(panel.locator(".opt-row.selected td").last()).toHaveText("4");
@@ -195,7 +201,8 @@ test.describe("with fake auth", () => {
     const position = page.locator(".position-box");
     await expect(position).toContainText("total return");
     await expect(position).toContainText(/-\$\d+\.\d\d/); // just bought: down by the spread
-    await expect(position.locator(".summary-card").nth(1)).toContainText("3 @");
+    await expect(position.locator(".summary-card").nth(1)).toContainText("3 shares @");
+    await expect(position.locator(".summary-card")).toHaveCount(2); // no options held: no options box
     await expect(page.getByRole("heading", { name: "your history" })).toBeVisible();
     await expect(page.getByText(/Bought 3 shares @ \$/)).toBeVisible();
     // Buying moved the price up.

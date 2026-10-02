@@ -882,7 +882,7 @@ function positionBox(t) {
     `<div class="summary-card"><div class="label">${label}</div><div class="val ${cls}">${val}</div></div>`;
   const held = m.shares_value + m.options_value;
   return (
-    `<div class="panel position-box"><h2>your position</h2><div class="summary-row">` +
+    `<div class="panel position-box"><h2>your position</h2><div class="summary-row${m.options_qty ? "" : " two"}">` +
     card(
       "total return",
       `${up ? "+" : "-"}${fmtMoney(Math.abs(m.total_return))}` +
@@ -890,13 +890,18 @@ function positionBox(t) {
       `ch ${up ? "up" : "down"}`
     ) +
     card(
-      "shares",
-      m.shares ? `${m.shares} <span class="sub">@ $${m.avg_cost.toFixed(2)} avg</span>` : `0 <span class="sub">sold out</span>`
+      "shares value",
+      m.shares
+        ? `${fmtMoney(m.shares_value)}<div class="sub">${m.shares} share${m.shares === 1 ? "" : "s"} @ $${m.avg_cost.toFixed(2)} avg</div>`
+        : `$0.00<div class="sub">no shares held</div>`
     ) +
-    card(
-      "value if sold now",
-      `${fmtMoney(held)}${m.options_qty ? ` <span class="sub">incl. ${m.options_qty} option${m.options_qty === 1 ? "" : "s"}</span>` : ""}`
-    ) +
+    // Only when you hold options on this team.
+    (m.options_qty
+      ? card(
+          "options value",
+          `${fmtMoney(m.options_value)}<div class="sub">${m.options_qty} option${m.options_qty === 1 ? "" : "s"} at the buy-back price</div>`
+        )
+      : "") +
     `</div><div class="stale-note" style="margin-top:8px">Put in ${fmtMoney(m.invested)} &middot; taken out ${fmtMoney(m.returned)} ` +
     `(sales, options and payouts) &middot; holding ${fmtMoney(held)}</div></div>`
   );
@@ -975,10 +980,14 @@ function optionsPanel(t) {
   const rows = list
     .map((o) => {
       const sel = o.id === v.seriesId;
+      const itm = o.kind === "call" ? board.football_price > o.strike : board.football_price < o.strike;
       return (
-        `<tr class="opt-row${sel ? " selected" : ""}" data-series="${o.id}" tabindex="0" aria-selected="${sel}">` +
-        `<td>${fmtStrike(o.strike)}</td><td>$${o.ask.toFixed(2)}</td><td>$${o.bid.toFixed(2)}</td>` +
-        `<td>${owned.get(o.id) || ""}</td></tr>`
+        `<tr class="opt-row${sel ? " selected" : ""}" data-series="${o.id}" aria-selected="${sel}">` +
+        `<td class="opt-strike">${fmtStrike(o.strike)}${itm ? ` <span class="itm" title="In the money: worth something if it expired now">ITM</span>` : ""}` +
+        `${owned.get(o.id) ? `<div class="own-mobile">${owned.get(o.id)} owned</div>` : ""}</td>` +
+        `<td><button type="button" class="opt-px opt-px-buy" data-pick="${o.id}" aria-label="Buy ${fmtStrike(o.strike)} ${o.kind} at $${o.ask.toFixed(2)}">Buy $${o.ask.toFixed(2)}</button></td>` +
+        `<td><button type="button" class="opt-px opt-px-sell" data-pick="${o.id}" aria-label="Sell ${fmtStrike(o.strike)} ${o.kind} at $${o.bid.toFixed(2)}">Sell $${o.bid.toFixed(2)}</button></td>` +
+        `<td class="opt-own">${owned.get(o.id) || ""}</td></tr>`
       );
     })
     .join("");
@@ -992,9 +1001,12 @@ function optionsPanel(t) {
   } else {
     order =
       `<div class="trade-form opt-order">` +
+      (selected
+        ? `<div class="opt-contract"><strong>${esc(t.id)} ${fmtStrike(selected.strike)} ${selected.kind}</strong> &middot; expires ${esc(expiryLabel(selected))}</div>`
+        : "") +
       `<div class="trade-row"><input type="number" id="opt-qty" aria-label="Options" min="1" max="1000" step="1" inputmode="numeric" value="${esc(v.qty)}"></div>` +
       `<div class="opt-summary" id="opt-summary"></div>` +
-      `<div class="trade-buttons"><button class="btn-buy" id="opt-buy">Buy options</button><button class="btn-sell" id="opt-sell">Sell options back</button></div>` +
+      `<div class="trade-buttons"><button class="btn-buy" id="opt-buy">Buy</button><button class="btn-sell" id="opt-sell">Sell</button></div>` +
       `</div>`;
   }
 
@@ -1005,8 +1017,8 @@ function optionsPanel(t) {
     `(the price from games, lines and polls, without trading hype). 1 option = 1 share.</p>` +
     `<div class="opt-tabs"><nav class="tabs" id="opt-expiry">${tab("expiry", "weekly", weekly ? fmtExpiry(weekly.expires_at) : "This week")}${tab("expiry", "season", "Season")}</nav>` +
     `<nav class="tabs" id="opt-kind">${tab("kind", "call", "Calls")}${tab("kind", "put", "Puts")}</nav></div>` +
-    (selected ? `<div class="stale-note" style="margin:8px 0">Expires ${esc(expiryLabel(selected))}</div>` : "") +
-    `<div class="table-scroll"><table class="holdings opt-table"><thead><tr><th>strike</th><th>buy</th><th>sell back</th><th>you own</th></tr></thead>` +
+    `<div class="stale-note" style="margin:10px 0 6px">Tap a price to pick an option. ITM = in the money: it would pay something if it expired now.</div>` +
+    `<div class="table-scroll"><table class="holdings opt-table"><thead><tr><th>strike</th><th>buy at</th><th>sell back at</th><th class="opt-own">you own</th></tr></thead>` +
     `<tbody>${rows}</tbody></table></div>` +
     order
   );
@@ -1024,14 +1036,19 @@ function bindOptionsPanel(t) {
       renderDetail(t.id);
     })
   );
-  panel.querySelectorAll(".opt-row").forEach((r) => {
-    const pick = () => {
+  // Tapping a row or its Buy/Sell price picks that option and jumps to the order box.
+  panel.querySelectorAll(".opt-row").forEach((r) =>
+    r.addEventListener("click", () => {
       v.seriesId = Number(r.dataset.series);
       renderDetail(t.id);
-    };
-    r.addEventListener("click", pick);
-    r.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), pick()));
-  });
+      const box = $("opt-qty");
+      if (box) {
+        box.focus({ preventScroll: true });
+        box.select();
+        box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    })
+  );
 
   const qtyInput = $("opt-qty");
   if (!qtyInput) return;
@@ -1045,6 +1062,9 @@ function bindOptionsPanel(t) {
     const cash = state.me ? state.me.cash : 0;
     $("opt-buy").disabled = state.tradePending || !o || n < 1 || n > 1000 || n * o.ask > cash;
     $("opt-sell").disabled = state.tradePending || !o || n < 1 || n > owned;
+    // The buttons say exactly what you'll pay or get: "Buy 6 @ $1.02".
+    $("opt-buy").textContent = o && n > 0 ? `Buy ${n} @ $${o.ask.toFixed(2)}` : "Buy";
+    $("opt-sell").textContent = o && n > 0 ? `Sell ${n} @ $${o.bid.toFixed(2)}` : "Sell";
     if (!o || n < 1) {
       $("opt-summary").textContent = "";
       return;
