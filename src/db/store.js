@@ -31,6 +31,8 @@ const TEAM_COLUMNS = `id, name, mascot, conference, strength, primary_color, sec
   ipo_price, current_price, last_change_pct, last_covered, last_expected, last_actual,
   last_line_is_real, logo_url, logo_dark_url, live_status`;
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
 export function createStore(pool) {
   return {
     pool,
@@ -269,6 +271,61 @@ export function createStore(pool) {
         [userId]
       );
       return { positions, activity };
+    },
+
+    // One player's stake in one team: current position, total return on
+    // everything they've done with the team (shares, options, payouts), and
+    // the history behind it, newest first.
+    async getTeamAccount(userId, teamId) {
+      const [{ rows: hold }, { rows: opts }, { rows: history }] = await Promise.all([
+        pool.query(
+          `select h.shares, h.avg_cost, sell_value(h.team_id, h.shares) as value
+             from holdings h where h.user_id = $1 and h.team_id = $2`,
+          [userId, teamId]
+        ),
+        pool.query(
+          `select coalesce(sum(p.qty * (option_quote(p.series_id)).bid), 0) as value, coalesce(sum(p.qty), 0)::int as qty
+             from option_positions p join option_series s on s.id = p.series_id
+            where p.user_id = $1 and s.team_id = $2`,
+          [userId, teamId]
+        ),
+        pool.query(
+          `select * from (
+             select 'shares' as kind, t.side, t.shares as qty, t.price,
+                    coalesce(t.amount, round(t.shares * t.price, 2)) as amount, t.created_at,
+                    null::text as option_kind, null::numeric as strike, null::text as summary
+               from transactions t where t.user_id = $1 and t.team_id = $2
+             union all
+             select 'option', o.side, o.qty, o.price, o.amount, o.created_at, s.kind, s.strike, null
+               from option_trades o join option_series s on s.id = o.series_id
+              where o.user_id = $1 and s.team_id = $2
+             union all
+             select 'payout', 'payout', p.shares, d.per_share, p.amount, d.paid_at, null, null, d.summary
+               from dividend_payments p join dividends d on d.id = p.dividend_id
+              where p.user_id = $1 and d.team_id = $2
+           ) x order by created_at desc`,
+          [userId, teamId]
+        ),
+      ]);
+      const sum = (pred) => history.filter(pred).reduce((n, h) => n + h.amount, 0);
+      const invested = sum((h) => h.side === "buy");
+      const returned = sum((h) => h.side !== "buy");
+      const sharesValue = hold[0]?.value ?? 0;
+      const optionsValue = opts[0].value;
+      const totalReturn = round2(returned + sharesValue + optionsValue - invested);
+      return {
+        team_id: teamId,
+        shares: hold[0]?.shares ?? 0,
+        avg_cost: hold[0]?.avg_cost ?? null,
+        shares_value: round2(sharesValue),
+        options_qty: opts[0].qty,
+        options_value: round2(optionsValue),
+        invested: round2(invested),
+        returned: round2(returned),
+        total_return: totalReturn,
+        total_return_pct: invested > 0 ? round2((totalReturn / invested) * 100) : null,
+        history,
+      };
     },
 
     // What an order would fill at right now (the same math execute_trade uses).

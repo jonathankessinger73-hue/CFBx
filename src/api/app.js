@@ -221,6 +221,13 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     }
   });
 
+  // Your position, total return and history for one team.
+  app.get("/me/teams/:id", auth, async (req, res) => {
+    const id = String(req.params.id).toUpperCase();
+    if (!(await store.getTeam(id))) return res.status(404).json({ error: "unknown_team" });
+    res.json(await store.getTeamAccount(req.userId, id));
+  });
+
   app.get("/me/options", auth, async (req, res) => {
     res.json(await store.getOptionAccount(req.userId));
   });

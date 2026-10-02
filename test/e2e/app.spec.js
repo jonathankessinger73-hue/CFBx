@@ -191,6 +191,13 @@ test.describe("with fake auth", () => {
       "$" + (10000 - total).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     );
     await expect(page.getByText(/^3 shares @ avg/)).toBeVisible();
+    // Your position (total return) and your history for this team.
+    const position = page.locator(".position-box");
+    await expect(position).toContainText("total return");
+    await expect(position).toContainText(/-\$\d+\.\d\d/); // just bought: down by the spread
+    await expect(position.locator(".summary-card").nth(1)).toContainText("3 @");
+    await expect(page.getByRole("heading", { name: "your history" })).toBeVisible();
+    await expect(page.getByText(/Bought 3 shares @ \$/)).toBeVisible();
     // Buying moved the price up.
     await expect.poll(async () => money(await page.locator(".detail-price .px").innerText())).toBeGreaterThan(price);
 

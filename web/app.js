@@ -283,12 +283,23 @@ async function loadLeaderboard() {
 }
 
 async function loadDetail(id) {
-  state.detail = { id, data: null, error: null, options: null };
+  state.detail = { id, data: null, error: null, options: null, mine: null };
   try {
-    const [data] = await Promise.all([api(`/teams/${encodeURIComponent(id)}`), loadOptions(id)]);
+    const [data] = await Promise.all([api(`/teams/${encodeURIComponent(id)}`), loadOptions(id), loadMine(id)]);
     state.detail.data = data;
   } catch (err) {
     if (state.detail?.id === id) state.detail.error = err;
+  }
+}
+
+// Your position, total return and history for this team (signed in only).
+async function loadMine(id) {
+  if (!state.session) return;
+  try {
+    const mine = await api(`/me/teams/${encodeURIComponent(id)}`, { auth: true });
+    if (state.detail?.id === id) state.detail.mine = mine;
+  } catch {
+    // Not critical: the page still works without it.
   }
 }
 
@@ -317,7 +328,7 @@ function parseRoute() {
 async function onRouteChange() {
   const route = parseRoute();
   if (route.page === "detail" && state.detail?.id !== route.ticker) {
-    state.detail = { id: route.ticker, data: null, error: null };
+    state.detail = { id: route.ticker, data: null, error: null, options: null, mine: null };
     render();
     await loadDetail(route.ticker);
   }
@@ -782,11 +793,13 @@ function renderDetail(ticker) {
         `<div class="position-note" style="margin-top:4px">Price is moving with the score. The final result settles it.</div>`
       : lastGame) +
     `</div></div>` +
+    positionBox(t) +
     `<div class="detail-body">` +
     `<div class="panel"><h2>price history</h2><div class="chart-wrap">${panelBody((d) => priceChart(chartPoints(d)))}</div></div>` +
     `<div class="panel"><h2>trade</h2>${tradePanel}</div>` +
     `</div>` +
     `<div class="panel options-panel" style="margin-top:16px"><h2>options</h2>${optionsPanel(t)}</div>` +
+    historyPanel(t) +
     `<div class="detail-body" style="margin-top:16px">` +
     `<div class="panel"><h2>game log</h2><div class="log-list">${panelBody((d) =>
       d.game_log.length ? d.game_log.map(gameLogItem).join("") : `<div class="log-item">No games played yet this season.</div>`
@@ -856,6 +869,73 @@ function renderDetail(ticker) {
   $("btn-sell").addEventListener("click", () => trade(ticker, "sell", qty()));
 }
 
+/* ---------- Your stake in a team ---------- */
+
+// Total return on everything you've done with this team: what you've taken
+// out (sales, option sales and payouts) plus what you hold now (at what it
+// would sell for), minus what you've put in.
+function positionBox(t) {
+  const m = state.detail?.id === t.id ? state.detail.mine : null;
+  if (!m || m.invested <= 0) return "";
+  const up = m.total_return >= 0;
+  const card = (label, val, cls = "") =>
+    `<div class="summary-card"><div class="label">${label}</div><div class="val ${cls}">${val}</div></div>`;
+  const held = m.shares_value + m.options_value;
+  return (
+    `<div class="panel position-box"><h2>your position</h2><div class="summary-row">` +
+    card(
+      "total return",
+      `${up ? "+" : "-"}${fmtMoney(Math.abs(m.total_return))}` +
+        (m.total_return_pct === null ? "" : ` <span class="pct">(${fmtPct(m.total_return_pct)})</span>`),
+      `ch ${up ? "up" : "down"}`
+    ) +
+    card(
+      "shares",
+      m.shares ? `${m.shares} <span class="sub">@ $${m.avg_cost.toFixed(2)} avg</span>` : `0 <span class="sub">sold out</span>`
+    ) +
+    card(
+      "value if sold now",
+      `${fmtMoney(held)}${m.options_qty ? ` <span class="sub">incl. ${m.options_qty} option${m.options_qty === 1 ? "" : "s"}</span>` : ""}`
+    ) +
+    `</div><div class="stale-note" style="margin-top:8px">Put in ${fmtMoney(m.invested)} &middot; taken out ${fmtMoney(m.returned)} ` +
+    `(sales, options and payouts) &middot; holding ${fmtMoney(held)}</div></div>`
+  );
+}
+
+function historyPanel(t) {
+  const m = state.detail?.id === t.id ? state.detail.mine : null;
+  if (!m || !m.history.length) return "";
+  const item = (h) => {
+    const when = new Date(h.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    let what;
+    let amount = fmtMoney(h.amount);
+    let cls = "";
+    if (h.kind === "shares") {
+      what = `${h.side === "buy" ? "Bought" : "Sold"} ${h.qty} share${h.qty === 1 ? "" : "s"} @ $${h.price.toFixed(2)}`;
+      if (h.side === "sell") cls = "ch up";
+    } else if (h.kind === "option") {
+      const contract = `${fmtStrike(h.strike)} ${h.option_kind}${h.qty === 1 ? "" : "s"}`;
+      if (h.side === "settle") {
+        what = h.amount > 0 ? `${h.qty} ${contract} settled: paid $${h.price.toFixed(2)} each` : `${h.qty} ${contract} expired worthless`;
+        amount = h.amount > 0 ? `+${fmtMoney(h.amount)}` : "$0.00";
+        if (h.amount > 0) cls = "ch up";
+      } else {
+        what = `${h.side === "buy" ? "Bought" : "Sold"} ${h.qty} ${contract} @ $${h.price.toFixed(2)}`;
+        if (h.side === "sell") cls = "ch up";
+      }
+    } else {
+      what = `Payout: ${esc(h.summary)} (${h.qty} sh &times; $${h.price.toFixed(2)})`;
+      amount = `+${fmtMoney(h.amount)}`;
+      cls = "ch up";
+    }
+    return `<div class="log-item"><span class="lw">${esc(when)}</span> &middot; ${what} <span class="ld ${cls}">${amount}</span></div>`;
+  };
+  return (
+    `<div class="panel" style="margin-top:16px"><h2>your history</h2>` +
+    `<div class="log-list">${m.history.map(item).join("")}</div></div>`
+  );
+}
+
 /* ---------- Options ---------- */
 
 const fmtStrike = (n) => `$${Number(n).toFixed(n % 1 ? 2 : 0)}`;
@@ -911,9 +991,11 @@ function optionsPanel(t) {
     order = `<div class="position-note">Sign in to trade options.</div>`;
   } else {
     order =
-      `<div class="trade-row" style="margin-top:12px"><input type="number" id="opt-qty" aria-label="Options" min="1" max="1000" step="1" inputmode="numeric" value="${esc(v.qty)}"></div>` +
-      `<div class="trade-quote" id="opt-summary"></div>` +
-      `<div class="trade-buttons"><button class="btn-buy" id="opt-buy">Buy options</button><button class="btn-sell" id="opt-sell">Sell options back</button></div>`;
+      `<div class="trade-form opt-order">` +
+      `<div class="trade-row"><input type="number" id="opt-qty" aria-label="Options" min="1" max="1000" step="1" inputmode="numeric" value="${esc(v.qty)}"></div>` +
+      `<div class="opt-summary" id="opt-summary"></div>` +
+      `<div class="trade-buttons"><button class="btn-buy" id="opt-buy">Buy options</button><button class="btn-sell" id="opt-sell">Sell options back</button></div>` +
+      `</div>`;
   }
 
   return (
@@ -987,7 +1069,7 @@ async function optionTrade(ticker, seriesId, side, qty) {
   try {
     const r = await api("/options/trade", { method: "POST", auth: true, body: { series_id: seriesId, side, qty } });
     toast(`${side === "buy" ? "Bought" : "Sold"} ${r.qty} ${r.team_id} ${fmtStrike(r.strike)} ${r.kind}${r.qty === 1 ? "" : "s"} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
-    await Promise.all([loadAccount(), loadOptions(ticker)]);
+    await Promise.all([loadAccount(), loadOptions(ticker), loadMine(ticker)]);
   } catch (err) {
     toast(errorText(err), true);
     if (err.status === 401) await loadAccount();
@@ -1006,7 +1088,7 @@ async function trade(ticker, side, shares) {
     const r = await api("/trade", { method: "POST", auth: true, body: { team_id: ticker, side, shares } });
     toast(`${side === "buy" ? "Bought" : "Sold"} ${r.shares} ${r.team_id} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
     // Pull fresh numbers: the server is the authority, and the trade moved the price.
-    await Promise.all([loadAccount(), loadTeams()]);
+    await Promise.all([loadAccount(), loadTeams(), loadMine(ticker)]);
   } catch (err) {
     toast(errorText(err), true);
     if (err.status === 401) await loadAccount();
@@ -1461,6 +1543,7 @@ async function boot() {
       loadTeams(),
       state.session ? loadAccount() : null,
       route.page === "detail" ? loadOptions(route.ticker) : null,
+      route.page === "detail" ? loadMine(route.ticker) : null,
     ]);
     if (document.activeElement?.matches?.("input, textarea")) return;
     render();
