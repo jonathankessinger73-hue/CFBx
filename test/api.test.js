@@ -229,6 +229,36 @@ test("options: board, buy and sell back, portfolio, and errors", { skip }, async
   await request(app).get("/teams/NOPE/options").expect(404);
 });
 
+test("GET /me/teams/:id: position, total return across shares, options and payouts, and history", { skip }, async () => {
+  const me = await login();
+  const auth = (r) => r.set("Authorization", me.auth);
+  const empty = (await auth(request(app).get("/me/teams/ole")).expect(200)).body;
+  assert.deepEqual([empty.team_id, empty.shares, empty.invested, empty.total_return, empty.history.length], ["OLE", 0, 0, 0, 0]);
+
+  const buy = (await auth(request(app).post("/trade")).send({ team_id: "OLE", side: "buy", shares: 10 }).expect(200)).body;
+  const sell = (await auth(request(app).post("/trade")).send({ team_id: "OLE", side: "sell", shares: 4 }).expect(200)).body;
+  await pool.query("select ensure_option_series()");
+  const { body: board } = await request(app).get("/teams/OLE/options").expect(200);
+  const call = board.options.find((o) => o.kind === "call" && o.expiry_kind === "season");
+  const opt = (await auth(request(app).post("/options/trade")).send({ series_id: call.id, side: "buy", qty: 2 }).expect(200)).body;
+  const { rows } = await pool.query("select pay_dividend('OLE', 2026, 'bowl_eligible', 2, 'Bowl eligible: 6 wins') as d");
+
+  const m = (await auth(request(app).get("/me/teams/OLE")).expect(200)).body;
+  assert.equal(m.shares, 6);
+  assert.equal(m.options_qty, 2);
+  const paid = rows[0].d;
+  // Shares bought just now don't earn the payout (24-hour rule).
+  assert.equal(paid.shares_paid, 0);
+  assert.equal(m.invested, Math.round((buy.amount + opt.amount) * 100) / 100);
+  assert.equal(m.returned, sell.amount);
+  const expected = Math.round((m.returned + m.shares_value + m.options_value - m.invested) * 100) / 100;
+  assert.equal(m.total_return, expected);
+  assert.ok(m.total_return < 0, "an immediate round trip costs the spreads");
+  assert.deepEqual(m.history.map((h) => `${h.kind}:${h.side}:${h.qty}`), ["option:buy:2", "shares:sell:4", "shares:buy:10"]);
+  await request(app).get("/me/teams/OLE").expect(401);
+  await auth(request(app).get("/me/teams/NOPE")).expect(404);
+});
+
 test("POST /trade validates input and maps domain errors", { skip }, async () => {
   const { auth } = await login();
   const post = (body) => request(app).post("/trade").set("Authorization", auth).send(body);

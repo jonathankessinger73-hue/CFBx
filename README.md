@@ -304,6 +304,7 @@ aren't in the source as plain text. Maintenance commands:
 | GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
 | GET | `/teams/:id/options` | — | Open calls and puts with house quotes (`bid`, `ask`), `football_price`, `paused` |
 | POST | `/options/trade` | ✓ | `{series_id, side: "buy"\|"sell", qty}` (1–1000). Errors include `options_paused`, `options_limit`, `position_limit`, `insufficient_options`, `option_expired`. |
+| GET | `/me/teams/:id` | ✓ | Your stake in one team: `shares`, `avg_cost`, `shares_value`, `options_value`, `invested`, `returned`, `total_return` (+ `_pct`), and `history` (share trades, option trades and settlements, payouts) |
 | GET | `/me/options` | ✓ | `positions` (valued at the buy-back price) and recent `activity` (buys, sells, settlements) |
 | POST | `/trade` | ✓ | `{team_id, side: "buy"\|"sell", shares: <int>}`. Any other field (like `price`) is ignored. Returns the fill (`price` = average, `amount`) and `price_after`. |
 
