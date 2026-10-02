@@ -438,6 +438,15 @@
     vertical-align: middle; animation: live-pulse 2s ease-in-out infinite; }
   @keyframes live-pulse{ 50%{ opacity: .6; } }
   @media (prefers-reduced-motion: reduce){ .live-tag{ animation: none; } }
+  .opt-explain{ font-size: 13px; color: var(--text-muted); line-height: 1.55; margin: 0 0 12px; }
+  .opt-explain strong{ color: var(--text); }
+  .opt-tabs{ display: flex; flex-wrap: wrap; gap: 10px; }
+  .opt-tabs nav.tabs button{ padding: 5px 11px; font-size: 12px; }
+  .opt-table tbody tr.opt-row{ cursor: pointer; }
+  .opt-table tbody tr.opt-row:hover td{ background: var(--bg-card-hover); }
+  .opt-table tbody tr.opt-row.selected td{ background: var(--accent-soft); }
+  .opt-table tbody tr.opt-row:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+  .opt-paused{ margin-top: 12px; font-size: 13px; color: var(--text); }
   .up-note{ font-size: 11.5px; color: var(--text-muted); }
   .live-line{ margin-top: 6px; font-size: 13px; color: var(--text); font-family: var(--font-mono); }
   .team-mark{ display: inline-flex; align-items: center; justify-content: center; flex: none; }

@@ -93,6 +93,42 @@ test.describe("with fake auth", () => {
     await expect(page.getByText("Up 3 spots to No. 2 in the AP poll")).toBeVisible();
   });
 
+  test("options: buy a call from the team page, see it in the portfolio; paused during a live game", async ({ page }) => {
+    await page.goto("/#/signin");
+    await page.getByLabel("Email").fill("options@example.com");
+    await page.getByRole("button", { name: "Email me a link" }).click();
+    await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
+
+    await page.goto("/#/team/UGA");
+    const panel = page.locator(".options-panel");
+    await expect(panel).toContainText("Football price now");
+    await expect(panel.locator(".opt-row")).toHaveCount(5);
+    await expect(panel.locator(".opt-row.selected")).toHaveCount(1); // nearest strike preselected
+    await panel.getByRole("button", { name: "Puts" }).click();
+    await expect(panel.getByRole("button", { name: "Puts" })).toHaveClass(/active/);
+    await panel.getByRole("button", { name: "Calls" }).click();
+    await panel.getByRole("button", { name: "Season" }).click();
+    await expect(panel).toContainText("settles after the national title game");
+
+    await panel.getByLabel("Options").fill("4");
+    await expect(page.locator("#opt-summary")).toContainText("Buy 4");
+    await expect(page.locator("#opt-summary")).toContainText("breaks even above");
+    await panel.getByRole("button", { name: "Buy options" }).click();
+    await expect(page.locator("#toast")).toContainText(/Bought 4 UGA \$\d+ calls @/);
+    await expect(panel.locator(".opt-row.selected td").last()).toHaveText("4");
+
+    await page.getByRole("link", { name: "Portfolio" }).click();
+    await expect(page.getByRole("heading", { name: "options", exact: true })).toBeVisible();
+    await expect(page.locator("table.holdings").last()).toContainText("UGA");
+    await expect(page.getByRole("heading", { name: "options activity" })).toBeVisible();
+    await expect(page.getByText(/Bought 4 UGA \$\d+ call @/)).toBeVisible();
+
+    // TEX is mid-game in the e2e data: its options are paused.
+    await page.goto("/#/team/TEX");
+    await expect(page.locator(".opt-paused")).toContainText("paused while");
+    await expect(page.locator("#opt-buy")).toHaveCount(0);
+  });
+
   test("a team playing right now shows LIVE with the score", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator('a.card[href="#/team/TEX"] .live-tag')).toHaveText("LIVE");
@@ -148,7 +184,7 @@ test.describe("with fake auth", () => {
     await expect.poll(cost).toBeGreaterThan(price * 3);
     const total = await cost();
     expect(total).toBeLessThan(price * 3 * 1.01);
-    await page.getByRole("button", { name: "Buy" }).click();
+    await page.getByRole("button", { name: "Buy", exact: true }).click();
     await expect(page.locator("#toast")).toContainText("Bought 3 UGA @ $");
     await expect(page.locator("#hdr-cash")).toHaveText(
       "$" + (10000 - total).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -159,8 +195,8 @@ test.describe("with fake auth", () => {
 
     // Can't buy more than cash allows; can't sell more than held.
     await page.getByLabel("Shares").fill("100000");
-    await expect(page.getByRole("button", { name: "Buy" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Sell" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Buy", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Sell", exact: true })).toBeDisabled();
 
     await page.getByRole("link", { name: "Back to market" }).click();
     await expect(page.locator('a.card[href="#/team/UGA"] .held-badge')).toHaveText("3 sh");
@@ -175,7 +211,7 @@ test.describe("with fake auth", () => {
 
     await page.goto("/#/team/UGA");
     await page.getByLabel("Shares").fill("3");
-    await page.getByRole("button", { name: "Sell" }).click();
+    await page.getByRole("button", { name: "Sell", exact: true }).click();
     await expect(page.locator("#toast")).toContainText("Sold 3 UGA");
     // Selling straight back costs only the 0.5% spread.
     await expect

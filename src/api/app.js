@@ -4,7 +4,7 @@
 import { createRequire } from "node:module";
 import express from "express";
 import { requireAuth, optionalAuth } from "./auth.js";
-import { TRADE_ERRORS } from "../db/store.js";
+import { OPTION_ERRORS, TRADE_ERRORS } from "../db/store.js";
 import { checkDisplayName } from "../moderation/names.js";
 
 const MAX_SHARES_PER_TRADE = 1_000_000;
@@ -125,6 +125,7 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
       display_name: acct.display_name,
       cash: acct.cash,
       holdings_value: acct.holdings_value,
+      options_value: acct.options_value,
       net_worth: acct.net_worth,
     });
   });
@@ -185,6 +186,43 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
       }
       throw err;
     }
+  });
+
+  // ---- options -----------------------------------------------------------------
+
+  // A team's open calls and puts with live house quotes.
+  app.get("/teams/:id/options", async (req, res) => {
+    const id = String(req.params.id).toUpperCase();
+    const team = await store.getTeam(id);
+    if (!team) return res.status(404).json({ error: "unknown_team" });
+    const options = await store.getOptionBoard(id);
+    res.set("Cache-Control", "no-store").json({
+      team_id: id,
+      // Options settle on this: the price from football, without trading hype.
+      football_price: options[0]?.underlying ?? null,
+      paused: options[0]?.paused ?? false,
+      options: options.map(({ underlying, paused, ...o }) => o),
+    });
+  });
+
+  app.post("/options/trade", auth, async (req, res) => {
+    // Only these three fields are read; the price comes from the database.
+    const { series_id, side, qty } = req.body || {};
+    if (!Number.isInteger(series_id) || series_id < 1) return res.status(400).json({ error: "unknown_option" });
+    if (side !== "buy" && side !== "sell") return res.status(400).json({ error: "invalid_side" });
+    if (!Number.isInteger(qty) || qty < 1 || qty > 1000) return res.status(400).json({ error: "invalid_shares" });
+    try {
+      res.json(await store.executeOptionTrade(req.userId, series_id, side, qty));
+    } catch (err) {
+      if (OPTION_ERRORS.has(err.message)) {
+        return res.status(err.message === "unknown_option" ? 404 : 400).json({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  app.get("/me/options", auth, async (req, res) => {
+    res.json(await store.getOptionAccount(req.userId));
   });
 
   app.get("/me/payouts", auth, async (req, res) => {

@@ -189,6 +189,46 @@ test("GET /me/payouts lists the season payouts a player received", { skip }, asy
   await request(app).get("/me/payouts").expect(401);
 });
 
+test("options: board, buy and sell back, portfolio, and errors", { skip }, async () => {
+  await pool.query("select ensure_option_series()");
+  const board = await request(app).get("/teams/uga/options").expect(200);
+  assert.equal(board.body.team_id, "UGA");
+  assert.equal(board.body.paused, false);
+  assert.ok(board.body.football_price > 0);
+  assert.equal(board.body.options.length, 20); // 5 strikes x call/put x weekly/season
+  const call = board.body.options.find((o) => o.kind === "call" && o.expiry_kind === "weekly");
+  assert.ok(call.ask > call.bid);
+
+  const me = await login();
+  const post = (body) => request(app).post("/options/trade").set("Authorization", me.auth).send(body);
+  const bought = (await post({ series_id: call.id, side: "buy", qty: 3, price: 0.01 }).expect(200)).body;
+  assert.equal(bought.price, call.ask, "the client's price is ignored");
+  assert.deepEqual(bought.position, { qty: 3, avg_cost: call.ask });
+
+  const account = (await request(app).get("/me/options").set("Authorization", me.auth).expect(200)).body;
+  assert.equal(account.positions.length, 1);
+  assert.equal(account.positions[0].team_id, "UGA");
+  assert.equal(account.activity[0].side, "buy");
+  const mine = (await request(app).get("/me").set("Authorization", me.auth).expect(200)).body;
+  assert.equal(mine.options_value, Math.round(3 * call.bid * 100) / 100);
+
+  assert.equal((await post({ series_id: call.id, side: "sell", qty: 4 }).expect(400)).body.error, "insufficient_options");
+  assert.equal((await post({ series_id: call.id, side: "hold", qty: 1 }).expect(400)).body.error, "invalid_side");
+  assert.equal((await post({ series_id: call.id, side: "buy", qty: 0 }).expect(400)).body.error, "invalid_shares");
+  assert.equal((await post({ series_id: 99999999, side: "buy", qty: 1 }).expect(404)).body.error, "unknown_option");
+  assert.equal((await post({ series_id: call.id, side: "buy", qty: 998 }).expect(400)).body.error, "position_limit");
+  // 25% of net worth: an in-the-money call costs a few dollars each.
+  const itm = board.body.options
+    .filter((o) => o.kind === "call" && o.expiry_kind === "season")
+    .sort((a, b) => a.strike - b.strike)[0];
+  const tooMany = Math.ceil(2600 / itm.ask);
+  assert.ok(tooMany <= 997, `${tooMany}`);
+  assert.equal((await post({ series_id: itm.id, side: "buy", qty: tooMany }).expect(400)).body.error, "options_limit");
+  await post({ series_id: call.id, side: "sell", qty: 3 }).expect(200);
+  await request(app).post("/options/trade").send({ series_id: call.id, side: "buy", qty: 1 }).expect(401);
+  await request(app).get("/teams/NOPE/options").expect(404);
+});
+
 test("POST /trade validates input and maps domain errors", { skip }, async () => {
   const { auth } = await login();
   const post = (body) => request(app).post("/trade").set("Authorization", auth).send(body);

@@ -15,8 +15,13 @@ const pool = createPool();
 try {
   // Also run by the API server every few minutes; here too so hype still fades
   // if the server is down.
-  if (!dryRun) await pool.query("select decay_hype()");
+  if (!dryRun) {
+    await pool.query("select decay_hype()");
+    await pool.query("select settle_options()");
+  }
   const summary = await syncSeason({ pool, cfbd: createCfbdClient(), season, dryRun });
+  // List options around the prices this run just moved.
+  if (!dryRun) await pool.query("select ensure_option_series()");
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ${summary.lineMoves} line moves, ` +
       `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +
