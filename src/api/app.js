@@ -27,6 +27,19 @@ function corsMiddleware(allowedOrigins) {
   };
 }
 
+// One address for the site: sign-ins are saved per address, so people
+// switching between the old and new one would look signed out. Only page
+// loads (GET/HEAD) move; anything else is served where it was sent.
+function canonicalRedirect(host) {
+  const target = host.toLowerCase();
+  return (req, res, next) => {
+    const from = String(req.headers.host || "").toLowerCase().replace(/:\d+$/, "");
+    const other = from === `www.${target}` || from.endsWith(".onrender.com");
+    if (!other || (req.method !== "GET" && req.method !== "HEAD") || req.path === "/health") return next();
+    res.redirect(301, `https://${target}${req.originalUrl}`);
+  };
+}
+
 /**
  * @param {object} opts
  * @param {ReturnType<import("../db/store.js").createStore>} opts.store
@@ -34,10 +47,13 @@ function corsMiddleware(allowedOrigins) {
  * @param {string[]} [opts.allowedOrigins]
  * @param {{dir: string, config: object}} [opts.web]  serve the frontend from
  *        `dir`, with `config` (public values only) exposed as /config.js
+ * @param {string} [opts.canonicalHost]  e.g. "cfbxchange.com": page visits to
+ *        www.<it> or the *.onrender.com address are sent there
  */
-export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
+export function createApp({ store, verifyToken, allowedOrigins = [], web, canonicalHost }) {
   const app = express();
   app.disable("x-powered-by");
+  if (canonicalHost) app.use(canonicalRedirect(canonicalHost));
   app.use(corsMiddleware(allowedOrigins));
   app.use(express.json({ limit: "16kb" }));
 
