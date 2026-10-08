@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 
 const fakeSupabase = fs.readFileSync(new URL("./fake-supabase.js", import.meta.url), "utf8");
+const fakeGsi = fs.readFileSync(new URL("./fake-gsi.js", import.meta.url), "utf8");
+const GSI = "https://accounts.google.com/gsi/client";
 
 test("the real Supabase bundle loads and boots the app", async ({ page }) => {
   const errors = [];
@@ -18,6 +20,8 @@ test.describe("with fake auth", () => {
     await page.route("**/vendor/supabase.js", (route) =>
       route.fulfill({ contentType: "application/javascript", body: fakeSupabase })
     );
+    // Google's script is never fetched for real; tests that want it fake it.
+    await page.route(GSI, (route) => route.abort());
     page.on("pageerror", (err) => {
       throw err;
     });
@@ -153,7 +157,26 @@ test.describe("with fake auth", () => {
     await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
   });
 
-  test("sign-in: Google button, and a code from the email when the link isn't handy", async ({ page }) => {
+  test("sign-in: Google's own button signs in with an ID token and a nonce", async ({ page }) => {
+    await page.route(GSI, (route) => route.fulfill({ contentType: "application/javascript", body: fakeGsi }));
+    await page.goto("/#/signin");
+    await page.getByRole("button", { name: "Sign in with Google" }).click();
+    await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
+    await expect(page).not.toHaveURL(/signin/);
+    const { config, idToken, hashed } = await page.evaluate(async () => {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(window.__idToken.nonce));
+      const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+      return { config: { client_id: window.__gsiConfig.client_id, nonce: window.__gsiConfig.nonce }, idToken: window.__idToken, hashed: hex };
+    });
+    expect(config.client_id).toBe("test-client.apps.googleusercontent.com");
+    expect(idToken.provider).toBe("google");
+    expect(idToken.token).toBe("fake-google-id-token");
+    // Google got the SHA-256 of the nonce Supabase checks against.
+    expect(config.nonce).toBe(hashed);
+    expect(await page.evaluate(() => window.__oauthProvider)).toBeUndefined();
+  });
+
+  test("sign-in: Google button (when Google's script can't load), and a code from the email", async ({ page }) => {
     await page.goto("/#/signin");
     await page.getByRole("button", { name: "Continue with Google" }).click();
     expect(await page.evaluate(() => window.__oauthProvider)).toBe("google");

@@ -311,6 +311,7 @@ the error.
    | `SUPABASE_ANON_KEY` | same as your `.env` |
    | `AUTH_EMAIL_FROM` | the sender address from Part 6, e.g. `noreply@mail.cfbxchange.com` |
    | `AUTH_PROVIDERS` | `google`, once Part 7 is done |
+   | `GOOGLE_CLIENT_ID` | the Google **Client ID** from Part 7 (public, not the secret) |
    | `CANONICAL_HOST` | your own domain, e.g. `cfbxchange.com`, once Part 6b is done |
    | `CFBD_API_KEY` | your CollegeFootballData key (for live in-game prices) |
    | `LIVE_GAMES` | `true` to move prices during games (needs an always-on plan, not Free) |
@@ -408,6 +409,12 @@ People who sign in with Google skip email entirely.
 5. On Render, add the environment variable `AUTH_PROVIDERS` = `google` and save.
    The **Continue with Google** button appears after the redeploy. For local use, add
    the same line to `.env` and add `http://localhost:3000` as another JavaScript origin.
+
+6. On Render, also add `GOOGLE_CLIENT_ID` = the same **Client ID** (it's public; the
+   secret stays only in Supabase). The site then shows Google's own button, and
+   Google's screen says "to continue to cfbxchange.com" instead of your
+   `….supabase.co` address. Without it, the button still works through Supabase.
+   This needs `https://cfbxchange.com` in the client's JavaScript origins (Part 6b).
 
 Someone who used an email link before and then picks Google with the same address
 gets the same account.
