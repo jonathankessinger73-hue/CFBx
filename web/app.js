@@ -39,6 +39,10 @@ const state = {
   transactions: [],
   payouts: [], // season payouts received
   returns: [], // gain or loss per period, from GET /me/returns
+  compete: null, // { data, error } from GET /competitions
+  competition: null, // { code, data, error } for one competition
+  fund: null, // { name, data, error } for a fund card
+  myFund: null, // GET /me/fund
   detail: null, // { id, data, error } for the team detail view
   leaderboard: null, // { data, error } from GET /leaderboard
   editingName: false,
@@ -250,6 +254,14 @@ const ERROR_TEXT = {
   option_expired: "That option has expired.",
   insufficient_options: "You don't own that many of this option.",
   unknown_option: "That option isn't listed anymore.",
+  unknown_competition: "That competition doesn't exist. Check the link.",
+  competition_closed: "This competition is closed to new entries.",
+  display_name_required: "Name your fund first. That's the name shown in standings.",
+  invalid_league_name: "League names are 3–40 characters.",
+  league_name_not_allowed: "That league name isn't allowed. Please pick another.",
+  invalid_league_length: "Pick how long the league runs.",
+  league_limit: "You can run at most 5 leagues at a time.",
+  unknown_fund: "No fund by that name.",
 };
 const errorText = (err) => ERROR_TEXT[err.code] || "Something went wrong. Please try again.";
 
@@ -275,18 +287,21 @@ async function loadAccount() {
     state.transactions = [];
     state.payouts = [];
     state.returns = [];
+    state.myFund = null;
     state.options = { positions: [], activity: [] };
     return;
   }
   try {
-    const [me, holdings, txs, payouts, options, returns] = await Promise.all([
+    const [me, holdings, txs, payouts, options, returns, fund] = await Promise.all([
       api("/me", { auth: true }),
       api("/me/holdings", { auth: true }),
       api("/me/transactions?limit=25", { auth: true }),
       api("/me/payouts", { auth: true }),
       api("/me/options", { auth: true }),
       api("/me/returns", { auth: true }),
+      api("/me/fund", { auth: true }).catch(() => null),
     ]);
+    state.myFund = fund;
     state.returns = returns.returns;
     state.options = options;
     state.me = me;
@@ -355,6 +370,9 @@ function parseRoute() {
   }
   if (page === "portfolio") return { page: "portfolio" };
   if (page === "leaderboard") return { page: "leaderboard" };
+  if (page === "compete" && arg) return { page: "competition", code: decodeURIComponent(arg).toLowerCase() };
+  if (page === "compete") return { page: "compete" };
+  if (page === "fund" && arg) return { page: "fund", name: decodeURIComponent(arg) };
   if (page === "signin") return { page: "signin" };
   return { page: "market" };
 }
@@ -371,8 +389,42 @@ async function onRouteChange() {
     if (!state.leaderboard) render(); // show the loading state on first visit
     await loadLeaderboard();
   }
+  if (route.page === "compete" || route.page === "competition" || route.page === "fund") {
+    state.editingName = false;
+    render(); // loading state
+    await loadRoutePage(route);
+  }
   render();
   window.scrollTo(0, 0);
+}
+
+// Data for the compete, competition and fund pages.
+async function loadRoutePage(route = parseRoute()) {
+  if (route.page === "compete") {
+    try {
+      state.compete = { data: await api("/competitions", { auth: "optional" }), error: null };
+    } catch (err) {
+      state.compete = { data: state.compete?.data || null, error: err };
+    }
+  } else if (route.page === "competition") {
+    const keep = state.competition?.code === route.code ? state.competition.data : null;
+    state.competition = { code: route.code, data: keep, error: null };
+    try {
+      const data = await api(`/competitions/${encodeURIComponent(route.code)}`, { auth: "optional" });
+      if (state.competition.code === route.code) state.competition.data = data;
+    } catch (err) {
+      if (state.competition.code === route.code) state.competition.error = err;
+    }
+  } else if (route.page === "fund") {
+    const keep = state.fund?.name === route.name ? state.fund.data : null;
+    state.fund = { name: route.name, data: keep, error: null };
+    try {
+      const data = await api(`/funds/${encodeURIComponent(route.name)}`);
+      if (state.fund.name === route.name) state.fund.data = data;
+    } catch (err) {
+      if (state.fund.name === route.name) state.fund.error = err;
+    }
+  }
 }
 
 /* ---------- Rendering: chrome ---------- */
@@ -422,7 +474,8 @@ function render() {
   renderAccount();
   $("tab-market").classList.toggle("active", route.page === "market" || route.page === "detail");
   $("tab-portfolio").classList.toggle("active", route.page === "portfolio");
-  $("tab-leaderboard").classList.toggle("active", route.page === "leaderboard");
+  $("tab-leaderboard").classList.toggle("active", route.page === "leaderboard" || route.page === "fund");
+  $("tab-compete").classList.toggle("active", route.page === "compete" || route.page === "competition");
 
   if (state.teamsError && !state.teams.size) {
     $("main").innerHTML =
@@ -438,6 +491,9 @@ function render() {
   else if (route.page === "detail") renderDetail(route.ticker);
   else if (route.page === "portfolio") renderPortfolio();
   else if (route.page === "leaderboard") renderLeaderboard();
+  else if (route.page === "compete") renderCompete();
+  else if (route.page === "competition") renderCompetition();
+  else if (route.page === "fund") renderFund();
   else if (route.page === "signin") renderSignIn();
 }
 
@@ -1276,7 +1332,15 @@ function renderPortfolio() {
       `</nav></div><div id="returns-body">${returnsBody()}</div></div>`
     : "";
 
-  $("main").innerHTML = head + standing + summary + returns + body + optionsBody + payouts + optionsActivity + trades;
+  const fund =
+    state.myFund && state.me.display_name
+      ? `<div class="panel" style="margin-bottom:16px"><div class="returns-head"><h2>your fund</h2>` +
+        `<a class="btn-secondary" style="text-decoration:none;padding:5px 11px;font-size:12px" href="${fundHref(state.me.display_name)}">Public fund card</a></div>` +
+        fundStatsHtml(state.myFund) +
+        `</div>`
+      : "";
+
+  $("main").innerHTML = head + standing + summary + returns + fund + body + optionsBody + payouts + optionsActivity + trades;
   document.querySelectorAll("#returns-tabs button").forEach((btn) =>
     btn.addEventListener("click", () => {
       state.view.returnsPeriod = btn.dataset.period;
@@ -1310,12 +1374,12 @@ function returnsBody() {
 
 /* ---------- Rendering: leaderboard ---------- */
 
-function nameForm(current) {
+function nameForm(current, submitLabel = "Join leaderboard") {
   return (
     `<form id="name-form" novalidate style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">` +
     `<input class="field" id="name-input" aria-label="Display name" maxlength="24" autocomplete="nickname" ` +
     `placeholder="Display name" value="${esc(current || "")}" style="flex:1;min-width:180px;margin:0">` +
-    `<button class="btn-primary" type="submit" id="name-save">${current ? "Save" : "Join leaderboard"}</button>` +
+    `<button class="btn-primary" type="submit" id="name-save">${current ? "Save" : esc(submitLabel)}</button>` +
     (current ? `<button class="btn-secondary" type="button" id="name-cancel">Cancel</button>` : "") +
     `</form>` +
     `<div class="form-msg" id="name-msg" role="status" aria-live="polite"></div>`
@@ -1327,7 +1391,7 @@ function bindNameForm() {
   if (!form) return;
   $("name-cancel")?.addEventListener("click", () => {
     state.editingName = false;
-    renderLeaderboard();
+    render();
   });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1338,8 +1402,13 @@ function bindNameForm() {
       const r = await api("/me", { method: "PATCH", auth: true, body: { display_name: name } });
       if (state.me) state.me.display_name = r.display_name;
       state.editingName = false;
-      await loadLeaderboard();
-      toast(`You're on the leaderboard as ${r.display_name}.`);
+      const route = parseRoute();
+      await Promise.all([
+        route.page === "leaderboard" ? loadLeaderboard() : null,
+        ["compete", "competition"].includes(route.page) ? loadRoutePage(route) : null,
+        loadAccount(),
+      ]);
+      toast(`Your fund is ${r.display_name}. That's the name on leaderboards and in competitions.`);
       render();
     } catch (err) {
       msg.className = "form-msg err";
@@ -1403,7 +1472,7 @@ function renderLeaderboard() {
           return (
             `<tr${r.is_me ? ' class="me-row"' : ""}>` +
             `<td>${r.rank <= 3 ? `<span class="medal medal-${r.rank}">${r.rank}</span>` : r.rank}</td>` +
-            `<td class="nm-cell">${esc(r.display_name)}${r.is_me ? ' <span class="you-badge">you</span>' : ""}</td>` +
+            `<td class="nm-cell"><a href="${fundHref(r.display_name)}">${esc(r.display_name)}</a>${r.is_me ? ' <span class="you-badge">you</span>' : ""}</td>` +
             `<td>${fmtMoney(r.net_worth)}</td>` +
             `<td class="txt-${dirClass(ret)}">${fmtPct(retPct)}</td></tr>`
           );
@@ -1421,6 +1490,296 @@ function renderLeaderboard() {
     $("name-input")?.focus();
   });
   bindNameForm();
+}
+
+/* ---------- Rendering: competitions ---------- */
+
+const KIND_LABEL = {
+  week: "Weekly sprint",
+  month: "Monthly",
+  season: "Season",
+  event: "Special event",
+  league: "Private league",
+};
+const fmtWhen = (ts) =>
+  new Date(ts).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmtDay = (ts) => new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const fundHref = (name) => `#/fund/${encodeURIComponent(name)}`;
+
+function untilText(ts) {
+  const ms = new Date(ts) - Date.now();
+  if (ms <= 0) return "now";
+  const h = Math.floor(ms / 3600000);
+  if (h >= 48) return `in ${Math.round(h / 24)} days`;
+  if (h >= 1) return `in ${h}h ${Math.floor((ms % 3600000) / 60000)}m`;
+  return `in ${Math.max(1, Math.round(ms / 60000))}m`;
+}
+
+function compStatus(c) {
+  if (c.finished) return { cls: "final", text: "Final" };
+  if (c.started) return { cls: "live", text: `Live · ends ${fmtWhen(c.ends_at)}` };
+  return { cls: "open", text: `Starts ${untilText(c.starts_at)}` };
+}
+
+// Name your fund: shown wherever a display name is needed to play.
+function fundNamePanel(why) {
+  if (!supabase) return "";
+  if (!state.session) {
+    return `<div class="panel" style="margin-bottom:16px"><div class="position-note"><a href="#/signin">Sign in</a> ${esc(why)}</div></div>`;
+  }
+  if (state.me?.display_name && !state.editingName) return "";
+  return (
+    `<div class="panel" style="margin-bottom:16px"><h2>name your fund</h2>` +
+    `<p class="position-note" style="margin:0 0 12px">Your fund name is how you show up in standings and on the leaderboard. Your email is never shown.</p>` +
+    nameForm(state.me?.display_name || "", "Save fund name") +
+    `</div>`
+  );
+}
+
+function compCard(c) {
+  const st = compStatus(c);
+  const me = c.me;
+  const mine = c.joined
+    ? me?.rank
+      ? `<span class="comp-me">#${me.rank} · <span class="txt-${dirClass(me.return_pct)}">${fmtPct(me.return_pct)}</span></span>`
+      : `<span class="comp-me">${c.started ? (me && !me.qualified ? "needs trades to rank" : "entered") : "entered"}</span>`
+    : "";
+  return (
+    `<a class="comp-card" href="#/compete/${encodeURIComponent(c.code)}">` +
+    `<div class="comp-top"><span class="comp-kind">${esc(KIND_LABEL[c.kind] || c.kind)}</span>` +
+    `<span class="comp-status ${st.cls}">${esc(st.text)}</span></div>` +
+    `<div class="comp-name">${esc(c.name)}</div>` +
+    (c.sponsor_name ? `<div class="comp-sponsor">presented by ${esc(c.sponsor_name)}</div>` : "") +
+    (c.prize ? `<div class="comp-prize">Prize: ${esc(c.prize)}</div>` : "") +
+    `<div class="comp-foot"><span>${c.entrants} ${c.entrants === 1 ? "fund" : "funds"}` +
+    `${c.finished && c.winner ? ` · won by ${esc(c.winner)}` : ""}` +
+    `${!c.finished && c.min_trades ? ` · ${c.min_trades}+ trade${c.min_trades === 1 ? "" : "s"} to rank` : ""}</span>${mine}</div>` +
+    `</a>`
+  );
+}
+
+function renderCompete() {
+  const head =
+    `<div class="section-head"><div><h1>Compete</h1>` +
+    `<p>Same market, same prices. Competitions rank funds by percent return over a set window, so every fund starts even.</p></div></div>`;
+  const cs = state.compete;
+  if (!cs?.data) {
+    $("main").innerHTML =
+      head +
+      (cs?.error
+        ? `<div class="panel"><div class="empty-state">${esc(errorText(cs.error))}</div></div>`
+        : `<div class="loading">Loading competitions…</div>`);
+    return;
+  }
+  const all = cs.data.competitions;
+  const section = (title, list, empty) =>
+    `<h2 class="comp-section">${esc(title)}</h2>` +
+    (list.length ? `<div class="comp-grid">${list.map(compCard).join("")}</div>` : `<div class="panel comp-empty">${empty}</div>`);
+
+  const yours = all.filter((c) => c.joined && !c.finished);
+  const open = all.filter((c) => !c.joined && !c.started && !c.is_private);
+  const live = all.filter((c) => !c.joined && c.started && !c.finished && !c.is_private);
+  const done = all.filter((c) => c.finished);
+
+  const league =
+    `<h2 class="comp-section">private leagues</h2>` +
+    `<div class="panel league-panel">` +
+    (state.session
+      ? `<p class="position-note" style="margin:0 0 12px">Start a league, send friends the link, and see who runs the best fund. Everyone is scored from when they join.</p>` +
+        `<form id="league-form" class="league-form" novalidate>` +
+        `<input class="field" id="league-name" maxlength="40" placeholder="League name" aria-label="League name" style="margin:0">` +
+        `<select id="league-length" aria-label="How long it runs" class="field" style="margin:0">` +
+        `<option value="week">1 week</option><option value="month">1 month</option><option value="season" selected>Rest of the season</option></select>` +
+        `<button class="btn-primary" type="submit" id="league-create">Create league</button></form>` +
+        `<div class="form-msg" id="league-msg" role="status" aria-live="polite"></div>`
+      : `<div class="position-note"><a href="#/signin">Sign in</a> to start a league with friends.</div>`) +
+    `</div>`;
+
+  $("main").innerHTML =
+    head +
+    fundNamePanel("to enter competitions and start leagues.") +
+    (yours.length ? section("your competitions", yours, "") : "") +
+    section("open for entry", open, "Nothing open right now. New weekly sprints open before each slate of games.") +
+    (live.length ? section("live now", live, "") : "") +
+    league +
+    (done.length ? section("recently finished", done, "") : "");
+
+  bindNameForm();
+  $("league-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("league-msg");
+    $("league-create").disabled = true;
+    try {
+      const c = await api("/leagues", {
+        method: "POST",
+        auth: true,
+        body: { name: $("league-name").value.trim(), length: $("league-length").value },
+      });
+      state.competition = { code: c.code, data: c, error: null };
+      location.hash = `#/compete/${encodeURIComponent(c.code)}`;
+      toast(`League created. Share the link to invite friends.`);
+    } catch (err) {
+      msg.className = "form-msg err";
+      msg.textContent = errorText(err);
+      $("league-create").disabled = false;
+    }
+  });
+}
+
+function renderCompetition() {
+  const back = `<a class="detail-back" href="#/compete">&larr; All competitions</a>`;
+  const cs = state.competition;
+  if (!cs?.data) {
+    $("main").innerHTML =
+      back +
+      (cs?.error
+        ? `<div class="panel"><div class="empty-state"><div class="big">Competition not found</div>${esc(errorText(cs.error))}</div></div>`
+        : `<div class="loading">Loading…</div>`);
+    return;
+  }
+  const c = cs.data;
+  const st = compStatus(c);
+  const league = c.kind === "league";
+  const link = `${location.origin}${location.pathname}#/compete/${encodeURIComponent(c.code)}`;
+  const rules = league
+    ? `Private league${c.created_by_name ? ` started by ${esc(c.created_by_name)}` : ""}. Ranked by percent return, and members are scored from when they join. Runs until ${esc(fmtWhen(c.ends_at))}.`
+    : `Ranked by percent return from ${esc(fmtWhen(c.starts_at))} to ${esc(fmtWhen(c.ends_at))}. Entries close when it starts.` +
+      (c.min_trades ? ` Make at least ${c.min_trades} trade${c.min_trades === 1 ? "" : "s"} during it to be ranked.` : "");
+
+  // Your entry: join, leave, or where you stand.
+  let mine = "";
+  const canJoin = !c.finished && (!c.started || c.late_join);
+  const canLeave = !c.finished && (!c.started || league);
+  if (c.joined && c.me && c.started) {
+    mine =
+      `<div class="summary-row">` +
+      `<div class="summary-card"><div class="label">your rank</div><div class="val">${c.me.rank ? `#${c.me.rank}` : "–"}` +
+      ` <span style="font-size:14px;color:var(--text-muted)">of ${c.standings.filter((r) => r.rank).length}</span></div>` +
+      (c.me.rank ? "" : `<div class="sub">${c.me.trades}/${c.min_trades} trades to rank</div>`) +
+      `</div>` +
+      `<div class="summary-card"><div class="label">your return</div><div class="val txt-${dirClass(c.me.return_pct ?? 0)}">${c.me.return_pct === null ? "–" : fmtPct(c.me.return_pct)}</div></div>` +
+      `<div class="summary-card"><div class="label">trades during it</div><div class="val">${c.me.trades}</div></div>` +
+      `</div>`;
+  } else if (c.joined) {
+    mine = `<div class="panel comp-entry"><div class="position-note">You're in. Scoring starts ${esc(untilText(c.starts_at))}, from your fund's value then.</div></div>`;
+  } else if (canJoin) {
+    mine = state.session && state.me?.display_name
+      ? `<div class="panel comp-entry"><button class="btn-primary" id="comp-join">Join as ${esc(state.me.display_name)}</button>` +
+        `<div class="form-msg" id="comp-msg" role="status" aria-live="polite"></div></div>`
+      : fundNamePanel("to join.");
+  }
+  const actions =
+    (c.joined && canLeave ? `<button class="btn-secondary" id="comp-leave">Leave</button>` : "") +
+    (league || !c.finished ? `<button class="btn-secondary" id="comp-share">Copy invite link</button>` : "");
+
+  const ranked = c.started;
+  const rows = c.standings;
+  const table = rows.length
+    ? `<div class="panel table-scroll"><table class="holdings comp-table">` +
+      `<thead><tr><th>rank</th><th>fund</th>${ranked ? "<th>return</th><th>trades</th>" : ""}</tr></thead><tbody>` +
+      rows
+        .map(
+          (r) =>
+            `<tr${r.is_me ? ' class="me-row"' : ""}>` +
+            `<td>${r.rank ? (r.rank <= 3 ? `<span class="medal medal-${r.rank}">${r.rank}</span>` : r.rank) : "–"}</td>` +
+            `<td class="nm-cell"><a href="${fundHref(r.display_name)}">${esc(r.display_name)}</a>${r.is_me ? ' <span class="you-badge">you</span>' : ""}</td>` +
+            (ranked
+              ? `<td class="txt-${dirClass(r.return_pct ?? 0)}">${r.return_pct === null ? "–" : fmtPct(r.return_pct)}</td>` +
+                `<td>${r.trades}${r.qualified ? "" : ` <span class="unranked" title="Needs ${c.min_trades} trades to rank">needs ${c.min_trades}</span>`}</td>`
+              : "") +
+            `</tr>`
+        )
+        .join("") +
+      `</tbody></table></div>`
+    : `<div class="panel"><div class="empty-state">No funds yet. Be the first to join.</div></div>`;
+
+  $("main").innerHTML =
+    back +
+    `<div class="comp-head"><div>` +
+    `<div class="comp-kind">${esc(KIND_LABEL[c.kind] || c.kind)} · <span class="comp-status ${st.cls}">${esc(st.text)}</span></div>` +
+    `<h1>${esc(c.name)}</h1>` +
+    (c.sponsor_name
+      ? `<div class="comp-sponsor">presented by ${c.sponsor_url ? `<a href="${esc(c.sponsor_url)}" target="_blank" rel="sponsored noopener">${esc(c.sponsor_name)}</a>` : esc(c.sponsor_name)}</div>`
+      : "") +
+    (c.prize ? `<div class="comp-prize">Prize: ${esc(c.prize)}</div>` : "") +
+    `<p class="comp-rules">${rules}</p></div>` +
+    (actions ? `<div class="comp-actions">${actions}</div>` : "") +
+    `</div>` +
+    mine +
+    `<h2 class="comp-section">${ranked ? "standings" : "entered"} <span class="comp-count">${c.entrants}</span></h2>` +
+    table;
+
+  bindNameForm();
+  $("comp-join")?.addEventListener("click", async () => {
+    $("comp-join").disabled = true;
+    try {
+      state.competition.data = await api(`/competitions/${encodeURIComponent(c.code)}/join`, { method: "POST", auth: true });
+      toast(`You're in ${c.name}.`);
+      renderCompetition();
+    } catch (err) {
+      const msg = $("comp-msg");
+      msg.className = "form-msg err";
+      msg.textContent = errorText(err);
+      $("comp-join").disabled = false;
+    }
+  });
+  $("comp-leave")?.addEventListener("click", async () => {
+    try {
+      state.competition.data = await api(`/competitions/${encodeURIComponent(c.code)}/leave`, { method: "POST", auth: true });
+      toast(`You left ${c.name}.`);
+      renderCompetition();
+    } catch (err) {
+      toast(errorText(err), true);
+    }
+  });
+  $("comp-share")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast("Invite link copied.");
+    } catch {
+      toast(link);
+    }
+  });
+}
+
+// Fund card: returns and trading record. Used on fund pages and the portfolio.
+function fundStatsHtml(f) {
+  const best = f.best_trade
+    ? `${teamLabel(f.best_trade.team_id)} <span class="txt-${dirClass(f.best_trade.gain)}">${f.best_trade.gain >= 0 ? "+" : "-"}${fmtMoney(Math.abs(f.best_trade.gain))}</span>`
+    : "–";
+  const stat = (label, value, sub = "") =>
+    `<div class="fund-stat"><div class="label">${label}</div><div class="val">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+  return (
+    `<div class="fund-grid">` +
+    stat("total return", `<span class="txt-${dirClass(f.total_return)}">${fmtPct(f.total_return_pct)}</span>`, `${f.total_return >= 0 ? "+" : "-"}${fmtMoney(Math.abs(f.total_return))}`) +
+    stat("net worth", fmtMoney(f.net_worth)) +
+    stat("trades", String(f.trades), f.closed_trades ? `${f.closed_trades} closed` : "") +
+    stat("win rate", f.win_rate === null ? "–" : `${f.win_rate.toFixed(0)}%`, "of closed trades") +
+    stat("best trade", best) +
+    stat("biggest drop", f.max_drawdown_pct ? `-${f.max_drawdown_pct.toFixed(1)}%` : "0%", "from a high") +
+    stat("most traded", f.favorite_team ? teamLabel(f.favorite_team) : "–") +
+    stat("competitions", f.competition_wins ? `${f.competition_wins} win${f.competition_wins === 1 ? "" : "s"}` : f.best_finish ? `best #${f.best_finish}` : "–", f.competitions_finished ? `${f.competitions_finished} finished` : "") +
+    `</div>`
+  );
+}
+
+function renderFund() {
+  const back = `<a class="detail-back" href="#/leaderboard">&larr; Leaderboard</a>`;
+  const fs = state.fund;
+  if (!fs?.data) {
+    $("main").innerHTML =
+      back +
+      (fs?.error
+        ? `<div class="panel"><div class="empty-state"><div class="big">Fund not found</div>${esc(errorText(fs.error))}</div></div>`
+        : `<div class="loading">Loading…</div>`);
+    return;
+  }
+  const f = fs.data;
+  $("main").innerHTML =
+    back +
+    `<div class="section-head"><div><h1>${esc(f.display_name)}</h1>` +
+    `<p>Fund since ${esc(fmtDay(f.member_since))}. Holdings stay private.</p></div></div>` +
+    `<div class="panel">${fundStatsHtml(f)}</div>`;
 }
 
 /* ---------- Rendering: sign in ---------- */
@@ -1678,6 +2037,7 @@ async function boot() {
         setTimeout(async () => {
           await loadAccount();
           if (parseRoute().page === "leaderboard") await loadLeaderboard();
+          if (["compete", "competition", "fund"].includes(parseRoute().page)) await loadRoutePage();
           if (session) signInState.email = null;
           if (session && parseRoute().page === "signin") location.hash = "#/";
           else render();
@@ -1700,6 +2060,7 @@ async function boot() {
       state.session ? loadAccount() : null,
       route.page === "detail" ? loadOptions(route.ticker) : null,
       route.page === "detail" ? loadMine(route.ticker) : null,
+      ["compete", "competition", "fund"].includes(route.page) ? loadRoutePage(route) : null,
     ]);
     if (document.activeElement?.matches?.("input, textarea")) return;
     render();
@@ -1712,6 +2073,7 @@ async function boot() {
     const route = parseRoute();
     if (route.page === "detail") await loadDetail(route.ticker);
     if (route.page === "leaderboard") await loadLeaderboard();
+    if (["compete", "competition", "fund"].includes(route.page)) await loadRoutePage(route);
     render();
   });
 }

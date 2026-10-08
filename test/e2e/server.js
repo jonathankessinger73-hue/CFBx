@@ -37,6 +37,14 @@ await pool.query("select ensure_option_series()");
 await pool.query("select set_live_moves($1)", [JSON.stringify([{ id: "TEX", pct: 2.5, status: "Q3 7:32 · TENN 10, TEX 21" }])]);
 // A news move (as the line-move / poll jobs record them) for the news panel.
 await pool.query("select apply_news_move('UGA', 2026, 4, 'poll', 'e2e-poll', 1.5, 'Up 3 spots to No. 2 in the AP poll')");
+// Competitions: one open for entry (with a sponsor and prize), one live.
+await pool.query(
+  `insert into competitions (code, kind, name, starts_at, ends_at, min_trades, prize, sponsor_name, sponsor_url) values
+     ('rivalry-cup', 'event', 'Rivalry Cup', now() + interval '2 days', now() + interval '5 days', 1,
+      '$100 gift card', 'Acme Tailgate', 'https://example.com'),
+     ('live-cup', 'event', 'Live Cup', now() - interval '1 day', now() + interval '3 days', 1, null, null, null)`
+);
+await pool.query("update competitions set started = true where code = 'live-cup'");
 
 const app = createApp({
   store: createStore(pool),

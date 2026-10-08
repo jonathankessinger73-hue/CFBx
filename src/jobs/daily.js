@@ -24,6 +24,7 @@ try {
   if (!dryRun) {
     await pool.query("select ensure_option_series()");
     await pool.query("select record_net_worth()");
+    await pool.query("select run_competitions()");
   }
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ${summary.lineMoves} line moves, ` +

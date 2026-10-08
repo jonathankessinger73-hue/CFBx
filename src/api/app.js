@@ -4,7 +4,7 @@
 import { createRequire } from "node:module";
 import express from "express";
 import { requireAuth, optionalAuth } from "./auth.js";
-import { OPTION_ERRORS, TRADE_ERRORS } from "../db/store.js";
+import { COMPETITION_ERRORS, OPTION_ERRORS, TRADE_ERRORS } from "../db/store.js";
 import { checkDisplayName } from "../moderation/names.js";
 
 const MAX_SHARES_PER_TRADE = 1_000_000;
@@ -132,6 +132,69 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web, canoni
     res.json(body);
   });
 
+  // ---- competitions ------------------------------------------------------
+
+  const competitionError = (res, err) => {
+    if (!COMPETITION_ERRORS.has(err.message)) throw err;
+    res.status(COMPETITION_ERRORS.get(err.message)).json({ error: err.message });
+  };
+  const validCode = (code) => /^[a-z0-9-]{3,40}$/.test(code);
+
+  app.get("/competitions", maybeAuth, async (req, res) => {
+    res.json({ competitions: await store.listCompetitions(req.userId || null) });
+  });
+
+  app.get("/competitions/:code", maybeAuth, async (req, res) => {
+    const code = String(req.params.code).toLowerCase();
+    const c = validCode(code) ? await store.getCompetition(code, req.userId || null) : null;
+    if (!c) return res.status(404).json({ error: "unknown_competition" });
+    res.json(c);
+  });
+
+  app.post("/competitions/:code/join", auth, async (req, res) => {
+    const code = String(req.params.code).toLowerCase();
+    if (!validCode(code)) return res.status(404).json({ error: "unknown_competition" });
+    try {
+      await store.joinCompetition(req.userId, code);
+      res.json(await store.getCompetition(code, req.userId));
+    } catch (err) {
+      competitionError(res, err);
+    }
+  });
+
+  app.post("/competitions/:code/leave", auth, async (req, res) => {
+    const code = String(req.params.code).toLowerCase();
+    if (!validCode(code)) return res.status(404).json({ error: "unknown_competition" });
+    try {
+      await store.leaveCompetition(req.userId, code);
+      res.json(await store.getCompetition(code, req.userId));
+    } catch (err) {
+      competitionError(res, err);
+    }
+  });
+
+  // Body: { name: string, length: "week" | "month" | "season" }
+  app.post("/leagues", auth, async (req, res) => {
+    const { name, length } = req.body || {};
+    if (typeof name !== "string") return res.status(400).json({ error: "invalid_league_name" });
+    if (!["week", "month", "season"].includes(length)) return res.status(400).json({ error: "invalid_league_length" });
+    if (!checkDisplayName(name).ok) return res.status(400).json({ error: "league_name_not_allowed" });
+    try {
+      const { code } = await store.createLeague(req.userId, name, length);
+      res.status(201).json(await store.getCompetition(code, req.userId));
+    } catch (err) {
+      competitionError(res, err);
+    }
+  });
+
+  // A player's fund card, by display name. Players without one aren't listed.
+  app.get("/funds/:name", async (req, res) => {
+    const name = String(req.params.name);
+    const fund = DISPLAY_NAME_RE.test(name) ? await store.fundByName(name) : null;
+    if (!fund) return res.status(404).json({ error: "unknown_fund" });
+    res.json(fund);
+  });
+
   // ---- authenticated -----------------------------------------------------
 
   app.get("/me", auth, async (req, res) => {
@@ -250,6 +313,11 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web, canoni
 
   app.get("/me/returns", auth, async (req, res) => {
     res.json({ returns: await store.getReturns(req.userId) });
+  });
+
+  app.get("/me/fund", auth, async (req, res) => {
+    await store.getAccount(req.userId);
+    res.json(await store.fundStats(req.userId));
   });
 
   app.get("/me/payouts", auth, async (req, res) => {

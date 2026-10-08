@@ -1,0 +1,75 @@
+name: Competition
+
+# Manage public competitions by hand: set a prize and sponsor, create a
+# one-off event, or list them all. Weekly sprints, monthlies and the season
+# championship are created automatically.
+# Actions -> Competition -> Run workflow, pick an action, fill in what applies.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        required: true
+        type: choice
+        options: [list, update, create]
+        default: list
+      code:
+        description: "update: the competition's code from the list, e.g. season-2026"
+        type: string
+      prize:
+        description: "Prize text, e.g. $250 gift card (type none to clear)"
+        type: string
+      sponsor_name:
+        description: "Sponsor, shown as 'presented by ...' (type none to clear)"
+        type: string
+      sponsor_url:
+        description: "Sponsor link, https://... (type none to clear)"
+        type: string
+      name:
+        description: "create: name, e.g. Rivalry Week"
+        type: string
+      starts:
+        description: "create: start, Eastern time, e.g. 2026-11-26T12:00"
+        type: string
+      ends:
+        description: "create: end, Eastern time, e.g. 2026-11-30T12:00"
+        type: string
+      min_trades:
+        description: "create: trades needed to qualify for prizes"
+        type: string
+        default: "1"
+      dry_run:
+        description: "Check it without saving"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cfbd-sync # shared with the other market jobs
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.CFBX_JOB_ENVIRONMENT || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      # Inputs go through env, never straight into the shell command.
+      COMP_ACTION: ${{ inputs.action }}
+      COMP_CODE: ${{ inputs.code }}
+      COMP_PRIZE: ${{ inputs.prize }}
+      COMP_SPONSOR_NAME: ${{ inputs.sponsor_name }}
+      COMP_SPONSOR_URL: ${{ inputs.sponsor_url }}
+      COMP_NAME: ${{ inputs.name }}
+      COMP_STARTS: ${{ inputs.starts }}
+      COMP_ENDS: ${{ inputs.ends }}
+      COMP_MIN_TRADES: ${{ inputs.min_trades }}
+      COMP_DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+      - run: node scripts/competition.js
