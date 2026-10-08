@@ -229,11 +229,13 @@ export async function syncSeason({
   // ---- 2. completed games ---------------------------------------------------
   // Kickoff times and labels for open games (kickoffs tell the live poller
   // when games are on; labels like "SEC Championship" show in game logs).
+  // Finished games get their kickoff filled in once if it was never saved
+  // (the portfolio's "this season" return starts from Week 0's date).
   const kickoffs = [];
   for (const g of allCfbdGames) {
-    if (g.completed) continue;
     const m = match(g);
     if (!m || m.row.id === null) continue;
+    if (g.completed && m.row.start_date) continue;
     const start = g.startDate ? new Date(g.startDate) : null;
     const validStart = start && !Number.isNaN(start.getTime()) ? start : null;
     const startChanged = validStart && m.row.start_date?.getTime() !== validStart.getTime();

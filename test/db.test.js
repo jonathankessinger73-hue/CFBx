@@ -298,3 +298,22 @@ test("portfolio returns: saved daily values, rebuilt history, and players who jo
   );
   assert.equal(today.net_worth, Math.round(now * 100) / 100);
 });
+
+test("this season starts at Week 0, even when early kickoff times weren't saved", { skip }, async () => {
+  const day = async () => (await q("select to_char(season_start_day(2026), 'YYYY-MM-DD') as d")).d;
+  // Only a later game has a kickoff time: fall back to the last Saturday of August.
+  await pool.query("update schedule set start_date = null where season = 2026");
+  await pool.query(
+    "update schedule set start_date = '2026-10-02T23:00:00Z' where id = (select max(id) from schedule where season = 2026 and season_type = 'regular')"
+  );
+  assert.equal(await day(), "2026-08-29");
+  assert.equal((await q("select to_char(season_start_day(2027), 'YYYY-MM-DD') as d")).d, "2027-08-28");
+  // A known first-week kickoff wins (7pm ET on Aug 28).
+  await pool.query(
+    `update schedule set start_date = '2026-08-28T23:00:00Z'
+      where id = (select min(id) from schedule where season = 2026 and season_type = 'regular'
+                    and week = (select min(week) from schedule where season = 2026 and season_type = 'regular'))`
+  );
+  assert.equal(await day(), "2026-08-28");
+  await pool.query("update schedule set start_date = null where season = 2026");
+});

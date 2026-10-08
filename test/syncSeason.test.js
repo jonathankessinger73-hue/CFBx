@@ -54,7 +54,8 @@ test("sync posts missing lines and applies completed games exactly once", { skip
     ],
     games: async () => [
       // UGA favored by 14, wins by 3: misses, should drop.
-      { id: 401, season: 2026, week: 4, completed: true, homeTeam: "Georgia", awayTeam: "Oklahoma", homePoints: 24, awayPoints: 21 },
+      { id: 401, season: 2026, week: 4, completed: true, homeTeam: "Georgia", awayTeam: "Oklahoma", homePoints: 24, awayPoints: 21,
+        startDate: "2026-09-26T19:30:00.000Z" },
       // Reported with home/away flipped relative to our schedule (TEX @ TENN).
       { id: 402, season: 2026, week: 4, completed: true, homeTeam: "Texas", awayTeam: "Tennessee", homePoints: 30, awayPoints: 10 },
       { id: 403, season: 2026, week: 4, completed: true, homeTeam: "Georgia", awayTeam: "Montana", homePoints: 70, awayPoints: 0 },
@@ -80,6 +81,9 @@ test("sync posts missing lines and applies completed games exactly once", { skip
   // Kickoff times are stored for the live poller.
   const { rows: kick } = await pool.query("select start_date from schedule where cfbd_game_id = 501");
   assert.equal(kick[0].start_date.toISOString(), "2026-10-03T23:30:00.000Z");
+  // ...and filled in for finished games that never had one.
+  const { rows: done } = await pool.query("select start_date from schedule where cfbd_game_id = 401");
+  assert.equal(done[0].start_date.toISOString(), "2026-09-26T19:30:00.000Z");
 
   const { rows: tenn } = await pool.query(
     "select home_score, away_score, completed from schedule where week = 4 and home_team_id = 'TENN'"
