@@ -201,7 +201,7 @@ so a big account has no head start (`db/migrations/017_competitions.sql`).
 - **Entries close at the start** for public competitions. Each fund is scored from its net worth at the start.
 - **Ranking needs a minimum number of trades** during the window: 1 for weekly, 3 for monthly, 5 for the season. Funds below the minimum are listed but not ranked.
 - **When a competition ends**, final values and ranks are recorded, and later price moves don't change them.
-- **Private leagues** are created by players (1 week, 1 month or the rest of the season) and shared by link.
+- **Private leagues** are created by players and shared by link. They run 1 week, until a chosen week ("Until Week 9", through championship weekend; finished weeks drop off and return with next season's schedule), or the rest of the season.
   - Members can join any time and are scored from when they join.
   - There's no trade minimum.
   - A player can run at most 5 leagues at once.
@@ -343,7 +343,8 @@ aren't in the source as plain text. Maintenance commands:
 | GET | `/competitions/:code` | optional | One competition with its standings (top 100 plus you). |
 | POST | `/competitions/:code/join` | ✓ | Join. Needs a fund (display) name. Public competitions close when they start. |
 | POST | `/competitions/:code/leave` | ✓ | Leave before the start (leagues: any time). |
-| POST | `/leagues` | ✓ | `{name, length}`, length `week`, `month` or `season`: start a private league. |
+| GET | `/leagues/options` | | League lengths on offer: `week`, `w<N>` (until week N) and `season`. |
+| POST | `/leagues` | ✓ | `{name, length}`, length from `/leagues/options`: start a private league. |
 | GET | `/funds/:name` | | A named player's public fund card. |
 | GET | `/teams/:id/options` | — | Open calls and puts with house quotes (`bid`, `ask`), `football_price`, `paused` |
 | POST | `/options/trade` | ✓ | `{series_id, side: "buy"\|"sell", qty}` (1–1000). Errors include `options_paused`, `options_limit`, `position_limit`, `insufficient_options`, `option_expired`. |

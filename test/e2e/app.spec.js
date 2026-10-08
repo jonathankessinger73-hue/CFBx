@@ -375,7 +375,7 @@ test.describe("with fake auth", () => {
     await page.getByRole("link", { name: "All competitions" }).click();
     await expect(page.locator('a.comp-card[href="#/compete/rivalry-cup"]')).toContainText("entered");
     await page.getByLabel("League name").fill("Office Pool");
-    await page.getByLabel("How long it runs").selectOption("month");
+    await page.getByLabel("How long it runs").selectOption("week");
     await page.getByRole("button", { name: "Create league" }).click();
     await expect(page.getByRole("heading", { name: "Office Pool" })).toBeVisible();
     await expect(page.locator(".comp-rules")).toContainText("started by Saturday Capital");

@@ -471,6 +471,17 @@ export function createStore(pool) {
       await pool.query("select leave_competition($1, $2)", [userId, code]);
     },
 
+    // How long a new league can run: a week, until a given week of the
+    // season (through championship weekend), or the rest of the season.
+    async leagueOptions() {
+      const { rows } = await pool.query("select week, label, ends_at from league_week_options()");
+      return [
+        { value: "week", label: "1 week" },
+        ...rows.map((r) => ({ value: `w${r.week}`, label: r.label, ends_at: r.ends_at })),
+        { value: "season", label: "Rest of the season" },
+      ];
+    },
+
     async createLeague(userId, name, length) {
       await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
       const { rows } = await pool.query("select create_league($1, $2, $3) as r", [userId, name, length]);

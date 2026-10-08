@@ -105,7 +105,7 @@ test("leaving before the start", { skip }, async () => {
 
 test("private leagues: start now, members join any time and are scored from joining", { skip }, async () => {
   const owner = await player("League Boss");
-  const { code } = (await q("select create_league($1, '  Saturday   Crew ', 'month') as r", [owner]))[0].r;
+  const { code } = (await q("select create_league($1, '  Saturday   Crew ', 'season') as r", [owner]))[0].r;
   const [league] = await q("select * from competitions where code = $1", [code]);
   assert.equal(league.name, "Saturday Crew");
   assert.equal(league.is_private, true);
@@ -193,4 +193,44 @@ test("fund card: realized gains against average cost, win rate, drawdown, favori
   assert.equal(f.favorite_team, "ALA");
   assert.equal(f.max_drawdown_pct, 25); // 12,000 -> 9,000
   assert.equal(f.competition_wins, 0);
+});
+
+test("league lengths: until each week through championship weekend; finished weeks drop off", { skip }, async () => {
+  // Put weeks 11-13 of the schedule on upcoming Saturdays, week 13 holding the
+  // conference title games, and week 4 in the past. Week 15 (after the
+  // championships) shouldn't be offered.
+  await q("update schedule set start_date = null");
+  const sat = `(date_trunc('week', (now() at time zone 'America/New_York')::date)::date + 5)`;
+  for (const [week, offset] of [[4, -21], [11, 7], [12, 14], [13, 21], [15, 28]]) {
+    await q(
+      `update schedule set start_date = ((${sat} + ${offset}) + time '15:30') at time zone 'America/New_York'
+        where season = 2026 and season_type = 'regular' and week = $1`,
+      [week]
+    );
+  }
+  await q(
+    `update schedule set notes = 'SEC Championship'
+      where id = (select min(id) from schedule where season = 2026 and season_type = 'regular' and week = 13)`
+  );
+  // A week-11 game moved weeks later doesn't stretch week 11.
+  await q(
+    `update schedule set start_date = start_date + interval '35 days'
+      where id = (select max(id) from schedule where season = 2026 and season_type = 'regular' and week = 11)`
+  );
+  const opts = await store.leagueOptions();
+  assert.deepEqual(opts.map((o) => o.value), ["week", "w11", "w12", "w13", "season"]);
+  assert.deepEqual(opts.map((o) => o.label), ["1 week", "Until Week 11", "Until Week 12", "Until Championship Weekend", "Rest of the season"]);
+  const et = (d) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", hourCycle: "h23" }).format(d);
+  const w11 = opts.find((o) => o.value === "w11");
+  assert.equal(et(w11.ends_at).replace(",", ""), "Sun 12", "ends the Sunday noon after the week's games");
+  assert.ok(opts.find((o) => o.value === "w12").ends_at - w11.ends_at === 7 * 24 * 3600 * 1000, "the moved game didn't stretch week 11");
+
+  const owner = await player("Week Picker");
+  const { code } = (await q("select create_league($1, 'Thru Week 12', 'w12') as r", [owner]))[0].r;
+  const [league] = await q("select ends_at from competitions where code = $1", [code]);
+  assert.equal(+league.ends_at, +opts.find((o) => o.value === "w12").ends_at);
+  await assert.rejects(q("select create_league($1, 'Past Week', 'w4')", [owner]), /invalid_league_length/);
+  await assert.rejects(q("select create_league($1, 'After Champs', 'w15')", [owner]), /invalid_league_length/);
+  await assert.rejects(q("select create_league($1, 'Old Option', 'month')", [owner]), /invalid_league_length/);
+  await q("update schedule set start_date = null, notes = null");
 });

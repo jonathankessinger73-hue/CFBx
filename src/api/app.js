@@ -173,11 +173,17 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web, canoni
     }
   });
 
-  // Body: { name: string, length: "week" | "month" | "season" }
+  app.get("/leagues/options", async (req, res) => {
+    res.json({ options: await store.leagueOptions() });
+  });
+
+  // Body: { name: string, length: "week" | "w<N>" (until week N) | "season" }
   app.post("/leagues", auth, async (req, res) => {
     const { name, length } = req.body || {};
     if (typeof name !== "string") return res.status(400).json({ error: "invalid_league_name" });
-    if (!["week", "month", "season"].includes(length)) return res.status(400).json({ error: "invalid_league_length" });
+    if (typeof length !== "string" || !/^(week|season|w\d{1,2})$/.test(length)) {
+      return res.status(400).json({ error: "invalid_league_length" });
+    }
     if (!checkDisplayName(name).ok) return res.status(400).json({ error: "league_name_not_allowed" });
     try {
       const { code } = await store.createLeague(req.userId, name, length);
