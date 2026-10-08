@@ -160,7 +160,10 @@ test("upcoming public competitions are listed automatically", { skip }, async ()
   assert.equal(etHour(week.starts_at), 12);
   const season = rows.find((r) => r.kind === "season");
   assert.equal(season?.code, "season-2026");
-  assert.equal(season.min_trades, 5);
+  assert.equal(season.min_trades, 10);
+  assert.equal(week.min_trades, 3);
+  const monthly = rows.find((r) => r.kind === "month");
+  if (monthly) assert.equal(monthly.min_trades, 5);
   const month = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" })).getMonth() + 1; // this month
   if ([8, 9, 10, 11, 12].includes(month)) assert.ok(rows.some((r) => r.kind === "month"), "next month's monthly");
   // Running again doesn't duplicate.

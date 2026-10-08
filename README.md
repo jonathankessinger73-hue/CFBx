@@ -199,7 +199,7 @@ so a big account has no head start (`db/migrations/017_competitions.sql`).
   - **Monthly**: September to January.
   - **Season championship**: from Week 0, or from the next Thursday if the season is underway, until February 1.
 - **Entries close at the start** for public competitions. Each fund is scored from its net worth at the start.
-- **Ranking needs a minimum number of trades** during the window: 1 for weekly, 3 for monthly, 5 for the season. Funds below the minimum are listed but not ranked.
+- **Ranking needs a minimum number of trades** during the window: 3 for a weekly sprint, 5 for a monthly, 10 for the season. Funds below the minimum are listed but not ranked.
 - **When a competition ends**, final values and ranks are recorded, and later price moves don't change them.
 - **Private leagues** are created by players and shared by link. They run 1 week, until a chosen week ("Until Week 9", through championship weekend; finished weeks drop off and return with next season's schedule), or the rest of the season.
   - Members can join any time and are scored from when they join.
