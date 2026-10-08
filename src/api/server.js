@@ -29,6 +29,8 @@ const app = createApp({
               .split(",")
               .map((s) => s.trim().toLowerCase())
               .filter(Boolean),
+            // Google's sign-in button runs on this site when set (public value).
+            googleClientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
             // Shown on the "check your email" screen so people know what to look for.
             authEmailFrom: process.env.AUTH_EMAIL_FROM || "",
           },

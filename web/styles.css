@@ -544,6 +544,7 @@
   }
   .btn-google:hover{ background: #f2f2f2; }
   .btn-google:disabled{ opacity: .6; cursor: default; }
+  .gsi-wrap{ display: flex; justify-content: center; min-height: 44px; }
   .auth-or{ display: flex; align-items: center; gap: 10px; margin: 16px 0;
     color: var(--text-faint); font-size: 12px; }
   .auth-or::before, .auth-or::after{ content: ""; flex: 1; border-top: 1px solid var(--border); }

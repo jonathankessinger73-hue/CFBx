@@ -1,7 +1,8 @@
 // Stand-in for the Supabase Auth browser bundle. signInWithOtp signs in
 // immediately with a token the e2e server's fake verifier accepts, except for
 // addresses containing "+code": those wait for verifyOtp with code 123456.
-// signInWithOAuth records the provider instead of leaving the page.
+// signInWithOAuth records the provider instead of leaving the page;
+// signInWithIdToken records what it was given and signs in.
 window.supabase = {
   createClient() {
     const KEY = "fake-supabase-session";
@@ -31,6 +32,10 @@ window.supabase = {
         async verifyOtp({ token, email }) {
           if (token !== "123456") return { data: {}, error: { message: "Token has expired or is invalid" } };
           return signIn(email);
+        },
+        async signInWithIdToken({ provider, token, nonce }) {
+          window.__idToken = { provider, token, nonce };
+          return signIn("google-user@example.com");
         },
         async signInWithOAuth({ provider }) {
           window.__oauthProvider = provider;

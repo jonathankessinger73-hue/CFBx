@@ -53,6 +53,7 @@ const app = createApp({
       supabaseUrl: "http://supabase.test",
       supabaseAnonKey: "test-anon-key",
       authProviders: ["google"],
+      googleClientId: "test-client.apps.googleusercontent.com",
       authEmailFrom: "noreply@mail.example.test",
     },
   },

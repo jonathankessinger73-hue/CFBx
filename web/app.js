@@ -1419,6 +1419,67 @@ const GOOGLE_G =
   `<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>` +
   `</svg>`;
 
+// Google's own sign-in button (Google Identity Services), when GOOGLE_CLIENT_ID
+// is set. Google's screen then names this site ("to continue to
+// cfbxchange.com") instead of the Supabase address the redirect flow goes
+// through. If Google's script can't load, the redirect button stays.
+let gsiLoading = null;
+function loadGoogleIdentity() {
+  if (window.google?.accounts?.id) return Promise.resolve();
+  gsiLoading ??= new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.onload = () => (window.google?.accounts?.id ? resolve() : reject(new Error("gsi_unavailable")));
+    s.onerror = () => reject(new Error("gsi_unavailable"));
+    document.head.appendChild(s);
+  }).catch((err) => {
+    gsiLoading = null; // try again next time the page is shown
+    throw err;
+  });
+  return gsiLoading;
+}
+
+async function mountGoogleButton() {
+  // Supabase checks the token against a nonce only this page knows; Google
+  // signs the token with its SHA-256.
+  const nonce = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nonce));
+  const hashedNonce = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  try {
+    await loadGoogleIdentity();
+  } catch {
+    return;
+  }
+  const wrap = $("signin-google-wrap");
+  if (!wrap || parseRoute().page !== "signin") return; // left the page meanwhile
+  window.google.accounts.id.initialize({
+    client_id: cfg.googleClientId,
+    nonce: hashedNonce,
+    callback: async ({ credential }) => {
+      const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: credential, nonce });
+      // On success onAuthStateChange takes over and leaves this page.
+      if (error) {
+        const msg = $("signin-msg");
+        if (!msg) return;
+        msg.className = "form-msg err";
+        msg.textContent = error.message || "Google sign-in didn't work. Try again.";
+      }
+    },
+  });
+  wrap.innerHTML = "";
+  wrap.className = "gsi-wrap";
+  window.google.accounts.id.renderButton(wrap, {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    text: "continue_with",
+    shape: "rectangular",
+    logo_alignment: "center",
+    width: Math.max(200, Math.min(400, wrap.clientWidth || 320)),
+  });
+}
+
 const RESEND_WAIT_S = 60; // Supabase allows one email per address per minute
 const signInState = { email: null, sentAt: 0 };
 
@@ -1438,7 +1499,7 @@ function renderSignIn() {
     `<div class="panel auth-panel"><h2>sign in</h2>` +
     `<p>New here? Signing in creates your account with ${fmtMoney(STARTING_CASH)} in play money.</p>` +
     (google
-      ? `<button class="btn-google" type="button" id="signin-google">${GOOGLE_G}<span>Continue with Google</span></button>` +
+      ? `<div id="signin-google-wrap"><button class="btn-google" type="button" id="signin-google">${GOOGLE_G}<span>Continue with Google</span></button></div>` +
         `<div class="auth-or"><span>or use your email</span></div>`
       : `<p>Enter your email and we'll send you a sign-in link.</p>`) +
     `<form id="signin-form" novalidate>` +
@@ -1446,6 +1507,7 @@ function renderSignIn() {
     `<button class="btn-primary" type="submit" id="signin-submit" style="width:100%">Email me a link</button>` +
     `<div class="form-msg" id="signin-msg" role="status" aria-live="polite"></div></form></div>`;
 
+  if (google && cfg.googleClientId) mountGoogleButton();
   if (google) {
     $("signin-google").addEventListener("click", async () => {
       $("signin-google").disabled = true;
