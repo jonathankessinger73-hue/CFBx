@@ -1,6 +1,7 @@
 [
   {
     "id": "BC",
+    "ticker": "BOSC",
     "name": "Boston College",
     "mascot": "Eagles",
     "conference": "ACC",
@@ -11,6 +12,7 @@
   },
   {
     "id": "CAL",
+    "ticker": "CAL",
     "name": "California",
     "mascot": "Golden Bears",
     "conference": "ACC",
@@ -21,6 +23,7 @@
   },
   {
     "id": "CLEM",
+    "ticker": "CLEM",
     "name": "Clemson",
     "mascot": "Tigers",
     "conference": "ACC",
@@ -31,6 +34,7 @@
   },
   {
     "id": "DUKE",
+    "ticker": "DUKE",
     "name": "Duke",
     "mascot": "Blue Devils",
     "conference": "ACC",
@@ -41,6 +45,7 @@
   },
   {
     "id": "FSU",
+    "ticker": "FLST",
     "name": "Florida State",
     "mascot": "Seminoles",
     "conference": "ACC",
@@ -51,6 +56,7 @@
   },
   {
     "id": "GT",
+    "ticker": "GATC",
     "name": "Georgia Tech",
     "mascot": "Yellow Jackets",
     "conference": "ACC",
@@ -61,6 +67,7 @@
   },
   {
     "id": "LOU",
+    "ticker": "LOUV",
     "name": "Louisville",
     "mascot": "Cardinals",
     "conference": "ACC",
@@ -71,6 +78,7 @@
   },
   {
     "id": "MIA",
+    "ticker": "MIA",
     "name": "Miami",
     "mascot": "Hurricanes",
     "conference": "ACC",
@@ -81,6 +89,7 @@
   },
   {
     "id": "NCST",
+    "ticker": "NCST",
     "name": "NC State",
     "mascot": "Wolfpack",
     "conference": "ACC",
@@ -91,6 +100,7 @@
   },
   {
     "id": "UNC",
+    "ticker": "NC",
     "name": "North Carolina",
     "mascot": "Tar Heels",
     "conference": "ACC",
@@ -101,6 +111,7 @@
   },
   {
     "id": "PITT",
+    "ticker": "PITT",
     "name": "Pittsburgh",
     "mascot": "Panthers",
     "conference": "ACC",
@@ -111,6 +122,7 @@
   },
   {
     "id": "SMU",
+    "ticker": "DAL",
     "name": "SMU",
     "mascot": "Mustangs",
     "conference": "ACC",
@@ -121,6 +133,7 @@
   },
   {
     "id": "STAN",
+    "ticker": "STAN",
     "name": "Stanford",
     "mascot": "Cardinal",
     "conference": "ACC",
@@ -131,6 +144,7 @@
   },
   {
     "id": "SYR",
+    "ticker": "SYR",
     "name": "Syracuse",
     "mascot": "Orange",
     "conference": "ACC",
@@ -141,6 +155,7 @@
   },
   {
     "id": "UVA",
+    "ticker": "VA",
     "name": "Virginia",
     "mascot": "Cavaliers",
     "conference": "ACC",
@@ -151,6 +166,7 @@
   },
   {
     "id": "VT",
+    "ticker": "VATC",
     "name": "Virginia Tech",
     "mascot": "Hokies",
     "conference": "ACC",
@@ -161,6 +177,7 @@
   },
   {
     "id": "WAKE",
+    "ticker": "WAKE",
     "name": "Wake Forest",
     "mascot": "Demon Deacons",
     "conference": "ACC",
@@ -171,6 +188,7 @@
   },
   {
     "id": "ARMY",
+    "ticker": "ARMY",
     "name": "Army",
     "mascot": "Black Knights",
     "conference": "American Athletic",
@@ -181,6 +199,7 @@
   },
   {
     "id": "CLT",
+    "ticker": "CLT",
     "name": "Charlotte",
     "mascot": "49ers",
     "conference": "American Athletic",
@@ -191,6 +210,7 @@
   },
   {
     "id": "ECU",
+    "ticker": "ECAR",
     "name": "East Carolina",
     "mascot": "Pirates",
     "conference": "American Athletic",
@@ -201,6 +221,7 @@
   },
   {
     "id": "FAU",
+    "ticker": "FLAT",
     "name": "Florida Atlantic",
     "mascot": "Owls",
     "conference": "American Athletic",
@@ -211,6 +232,7 @@
   },
   {
     "id": "MEM",
+    "ticker": "MEM",
     "name": "Memphis",
     "mascot": "Tigers",
     "conference": "American Athletic",
@@ -221,6 +243,7 @@
   },
   {
     "id": "NAVY",
+    "ticker": "NAVY",
     "name": "Navy",
     "mascot": "Midshipmen",
     "conference": "American Athletic",
@@ -231,6 +254,7 @@
   },
   {
     "id": "UNT",
+    "ticker": "NTX",
     "name": "North Texas",
     "mascot": "Mean Green",
     "conference": "American Athletic",
@@ -241,6 +265,7 @@
   },
   {
     "id": "RICE",
+    "ticker": "RICE",
     "name": "Rice",
     "mascot": "Owls",
     "conference": "American Athletic",
@@ -251,6 +276,7 @@
   },
   {
     "id": "USF",
+    "ticker": "SOFL",
     "name": "South Florida",
     "mascot": "Bulls",
     "conference": "American Athletic",
@@ -261,6 +287,7 @@
   },
   {
     "id": "TEM",
+    "ticker": "TEM",
     "name": "Temple",
     "mascot": "Owls",
     "conference": "American Athletic",
@@ -271,6 +298,7 @@
   },
   {
     "id": "TUL",
+    "ticker": "TUL",
     "name": "Tulane",
     "mascot": "Green Wave",
     "conference": "American Athletic",
@@ -281,6 +309,7 @@
   },
   {
     "id": "TLSA",
+    "ticker": "TLSA",
     "name": "Tulsa",
     "mascot": "Golden Hurricane",
     "conference": "American Athletic",
@@ -291,6 +320,7 @@
   },
   {
     "id": "UAB",
+    "ticker": "BHAM",
     "name": "UAB",
     "mascot": "Blazers",
     "conference": "American Athletic",
@@ -301,6 +331,7 @@
   },
   {
     "id": "UTSA",
+    "ticker": "SATX",
     "name": "UTSA",
     "mascot": "Roadrunners",
     "conference": "American Athletic",
@@ -311,6 +342,7 @@
   },
   {
     "id": "ARIZ",
+    "ticker": "AZ",
     "name": "Arizona",
     "mascot": "Wildcats",
     "conference": "Big 12",
@@ -321,6 +353,7 @@
   },
   {
     "id": "ASU",
+    "ticker": "AZST",
     "name": "Arizona State",
     "mascot": "Sun Devils",
     "conference": "Big 12",
@@ -331,6 +364,7 @@
   },
   {
     "id": "BYU",
+    "ticker": "PROVO",
     "name": "BYU",
     "mascot": "Cougars",
     "conference": "Big 12",
@@ -341,6 +375,7 @@
   },
   {
     "id": "BAY",
+    "ticker": "BAY",
     "name": "Baylor",
     "mascot": "Bears",
     "conference": "Big 12",
@@ -351,6 +386,7 @@
   },
   {
     "id": "CIN",
+    "ticker": "CIN",
     "name": "Cincinnati",
     "mascot": "Bearcats",
     "conference": "Big 12",
@@ -361,6 +397,7 @@
   },
   {
     "id": "COL",
+    "ticker": "COLO",
     "name": "Colorado",
     "mascot": "Buffaloes",
     "conference": "Big 12",
@@ -371,6 +408,7 @@
   },
   {
     "id": "HOU",
+    "ticker": "HOU",
     "name": "Houston",
     "mascot": "Cougars",
     "conference": "Big 12",
@@ -381,6 +419,7 @@
   },
   {
     "id": "ISU",
+    "ticker": "IAST",
     "name": "Iowa State",
     "mascot": "Cyclones",
     "conference": "Big 12",
@@ -391,6 +430,7 @@
   },
   {
     "id": "KU",
+    "ticker": "KAN",
     "name": "Kansas",
     "mascot": "Jayhawks",
     "conference": "Big 12",
@@ -401,6 +441,7 @@
   },
   {
     "id": "KSU",
+    "ticker": "KSST",
     "name": "Kansas State",
     "mascot": "Wildcats",
     "conference": "Big 12",
@@ -411,6 +452,7 @@
   },
   {
     "id": "OKST",
+    "ticker": "OKST",
     "name": "Oklahoma State",
     "mascot": "Cowboys",
     "conference": "Big 12",
@@ -421,6 +463,7 @@
   },
   {
     "id": "TCU",
+    "ticker": "FTW",
     "name": "TCU",
     "mascot": "Horned Frogs",
     "conference": "Big 12",
@@ -431,6 +474,7 @@
   },
   {
     "id": "TTU",
+    "ticker": "TXTC",
     "name": "Texas Tech",
     "mascot": "Red Raiders",
     "conference": "Big 12",
@@ -441,6 +485,7 @@
   },
   {
     "id": "UCF",
+    "ticker": "ORL",
     "name": "UCF",
     "mascot": "Knights",
     "conference": "Big 12",
@@ -451,6 +496,7 @@
   },
   {
     "id": "UTAH",
+    "ticker": "UTAH",
     "name": "Utah",
     "mascot": "Utes",
     "conference": "Big 12",
@@ -461,6 +507,7 @@
   },
   {
     "id": "WVU",
+    "ticker": "WV",
     "name": "West Virginia",
     "mascot": "Mountaineers",
     "conference": "Big 12",
@@ -471,6 +518,7 @@
   },
   {
     "id": "ILL",
+    "ticker": "ILL",
     "name": "Illinois",
     "mascot": "Fighting Illini",
     "conference": "Big Ten",
@@ -481,6 +529,7 @@
   },
   {
     "id": "IND",
+    "ticker": "IND",
     "name": "Indiana",
     "mascot": "Hoosiers",
     "conference": "Big Ten",
@@ -491,6 +540,7 @@
   },
   {
     "id": "IOWA",
+    "ticker": "IOWA",
     "name": "Iowa",
     "mascot": "Hawkeyes",
     "conference": "Big Ten",
@@ -501,6 +551,7 @@
   },
   {
     "id": "MD",
+    "ticker": "MD",
     "name": "Maryland",
     "mascot": "Terrapins",
     "conference": "Big Ten",
@@ -511,6 +562,7 @@
   },
   {
     "id": "MICH",
+    "ticker": "MICH",
     "name": "Michigan",
     "mascot": "Wolverines",
     "conference": "Big Ten",
@@ -521,6 +573,7 @@
   },
   {
     "id": "MSU",
+    "ticker": "MIST",
     "name": "Michigan State",
     "mascot": "Spartans",
     "conference": "Big Ten",
@@ -531,6 +584,7 @@
   },
   {
     "id": "MINN",
+    "ticker": "MINN",
     "name": "Minnesota",
     "mascot": "Golden Gophers",
     "conference": "Big Ten",
@@ -541,6 +595,7 @@
   },
   {
     "id": "NEB",
+    "ticker": "NEB",
     "name": "Nebraska",
     "mascot": "Cornhuskers",
     "conference": "Big Ten",
@@ -551,6 +606,7 @@
   },
   {
     "id": "NW",
+    "ticker": "NWU",
     "name": "Northwestern",
     "mascot": "Wildcats",
     "conference": "Big Ten",
@@ -561,6 +617,7 @@
   },
   {
     "id": "OSU",
+    "ticker": "OHST",
     "name": "Ohio State",
     "mascot": "Buckeyes",
     "conference": "Big Ten",
@@ -571,6 +628,7 @@
   },
   {
     "id": "ORE",
+    "ticker": "ORE",
     "name": "Oregon",
     "mascot": "Ducks",
     "conference": "Big Ten",
@@ -581,6 +639,7 @@
   },
   {
     "id": "PSU",
+    "ticker": "PNST",
     "name": "Penn State",
     "mascot": "Nittany Lions",
     "conference": "Big Ten",
@@ -591,6 +650,7 @@
   },
   {
     "id": "PUR",
+    "ticker": "PUR",
     "name": "Purdue",
     "mascot": "Boilermakers",
     "conference": "Big Ten",
@@ -601,6 +661,7 @@
   },
   {
     "id": "RUTG",
+    "ticker": "RUTG",
     "name": "Rutgers",
     "mascot": "Scarlet Knights",
     "conference": "Big Ten",
@@ -611,6 +672,7 @@
   },
   {
     "id": "UCLA",
+    "ticker": "WSTWD",
     "name": "UCLA",
     "mascot": "Bruins",
     "conference": "Big Ten",
@@ -621,6 +683,7 @@
   },
   {
     "id": "USC",
+    "ticker": "SOCAL",
     "name": "USC",
     "mascot": "Trojans",
     "conference": "Big Ten",
@@ -631,6 +694,7 @@
   },
   {
     "id": "WASH",
+    "ticker": "WASH",
     "name": "Washington",
     "mascot": "Huskies",
     "conference": "Big Ten",
@@ -641,6 +705,7 @@
   },
   {
     "id": "WIS",
+    "ticker": "WIS",
     "name": "Wisconsin",
     "mascot": "Badgers",
     "conference": "Big Ten",
@@ -651,6 +716,7 @@
   },
   {
     "id": "DEL",
+    "ticker": "DEL",
     "name": "Delaware",
     "mascot": "Blue Hens",
     "conference": "Conference USA",
@@ -661,6 +727,7 @@
   },
   {
     "id": "FIU",
+    "ticker": "FLIN",
     "name": "Florida International",
     "mascot": "Panthers",
     "conference": "Conference USA",
@@ -671,6 +738,7 @@
   },
   {
     "id": "JVST",
+    "ticker": "JXST",
     "name": "Jacksonville State",
     "mascot": "Gamecocks",
     "conference": "Conference USA",
@@ -681,6 +749,7 @@
   },
   {
     "id": "KENN",
+    "ticker": "KNST",
     "name": "Kennesaw State",
     "mascot": "Owls",
     "conference": "Conference USA",
@@ -691,6 +760,7 @@
   },
   {
     "id": "LIB",
+    "ticker": "LIB",
     "name": "Liberty",
     "mascot": "Flames",
     "conference": "Conference USA",
@@ -701,6 +771,7 @@
   },
   {
     "id": "MTSU",
+    "ticker": "MTEN",
     "name": "Middle Tennessee",
     "mascot": "Blue Raiders",
     "conference": "Conference USA",
@@ -711,6 +782,7 @@
   },
   {
     "id": "MOST",
+    "ticker": "MOST",
     "name": "Missouri State",
     "mascot": "Bears",
     "conference": "Conference USA",
@@ -721,6 +793,7 @@
   },
   {
     "id": "NMSU",
+    "ticker": "NMST",
     "name": "New Mexico State",
     "mascot": "Aggies",
     "conference": "Conference USA",
@@ -731,6 +804,7 @@
   },
   {
     "id": "SHSU",
+    "ticker": "SHST",
     "name": "Sam Houston",
     "mascot": "Bearkats",
     "conference": "Conference USA",
@@ -741,6 +815,7 @@
   },
   {
     "id": "WKU",
+    "ticker": "WKY",
     "name": "Western Kentucky",
     "mascot": "Hilltoppers",
     "conference": "Conference USA",
@@ -751,6 +826,7 @@
   },
   {
     "id": "ND",
+    "ticker": "NDAM",
     "name": "Notre Dame",
     "mascot": "Fighting Irish",
     "conference": "FBS Independents",
@@ -761,6 +837,7 @@
   },
   {
     "id": "CONN",
+    "ticker": "CONN",
     "name": "UConn",
     "mascot": "Huskies",
     "conference": "FBS Independents",
@@ -771,6 +848,7 @@
   },
   {
     "id": "AKR",
+    "ticker": "AKR",
     "name": "Akron",
     "mascot": "Zips",
     "conference": "Mid-American",
@@ -781,6 +859,7 @@
   },
   {
     "id": "BALL",
+    "ticker": "BALL",
     "name": "Ball State",
     "mascot": "Cardinals",
     "conference": "Mid-American",
@@ -791,6 +870,7 @@
   },
   {
     "id": "BGSU",
+    "ticker": "BGRN",
     "name": "Bowling Green",
     "mascot": "Falcons",
     "conference": "Mid-American",
@@ -801,6 +881,7 @@
   },
   {
     "id": "BUFF",
+    "ticker": "BUFF",
     "name": "Buffalo",
     "mascot": "Bulls",
     "conference": "Mid-American",
@@ -811,6 +892,7 @@
   },
   {
     "id": "CMU",
+    "ticker": "CMICH",
     "name": "Central Michigan",
     "mascot": "Chippewas",
     "conference": "Mid-American",
@@ -821,6 +903,7 @@
   },
   {
     "id": "EMU",
+    "ticker": "EMICH",
     "name": "Eastern Michigan",
     "mascot": "Eagles",
     "conference": "Mid-American",
@@ -831,6 +914,7 @@
   },
   {
     "id": "KENT",
+    "ticker": "KENT",
     "name": "Kent State",
     "mascot": "Golden Flashes",
     "conference": "Mid-American",
@@ -841,6 +925,7 @@
   },
   {
     "id": "UMASS",
+    "ticker": "MASS",
     "name": "Massachusetts",
     "mascot": "Minutemen",
     "conference": "Mid-American",
@@ -851,6 +936,7 @@
   },
   {
     "id": "MIAOH",
+    "ticker": "MIOH",
     "name": "Miami (OH)",
     "mascot": "RedHawks",
     "conference": "Mid-American",
@@ -861,6 +947,7 @@
   },
   {
     "id": "OHIO",
+    "ticker": "OHIO",
     "name": "Ohio",
     "mascot": "Bobcats",
     "conference": "Mid-American",
@@ -871,6 +958,7 @@
   },
   {
     "id": "SACST",
+    "ticker": "SACST",
     "name": "Sacramento State",
     "mascot": "Hornets",
     "conference": "Mid-American",
@@ -881,6 +969,7 @@
   },
   {
     "id": "NDSU",
+    "ticker": "NDST",
     "name": "North Dakota State",
     "mascot": "Bison",
     "conference": "Mountain West",
@@ -891,6 +980,7 @@
   },
   {
     "id": "TOL",
+    "ticker": "TOL",
     "name": "Toledo",
     "mascot": "Rockets",
     "conference": "Mid-American",
@@ -901,6 +991,7 @@
   },
   {
     "id": "WMU",
+    "ticker": "WMICH",
     "name": "Western Michigan",
     "mascot": "Broncos",
     "conference": "Mid-American",
@@ -911,6 +1002,7 @@
   },
   {
     "id": "AF",
+    "ticker": "AIRF",
     "name": "Air Force",
     "mascot": "Falcons",
     "conference": "Mountain West",
@@ -921,6 +1013,7 @@
   },
   {
     "id": "HAW",
+    "ticker": "HAW",
     "name": "Hawai'i",
     "mascot": "Rainbow Warriors",
     "conference": "Mountain West",
@@ -931,6 +1024,7 @@
   },
   {
     "id": "NEV",
+    "ticker": "NEV",
     "name": "Nevada",
     "mascot": "Wolf Pack",
     "conference": "Mountain West",
@@ -941,6 +1035,7 @@
   },
   {
     "id": "UNM",
+    "ticker": "NM",
     "name": "New Mexico",
     "mascot": "Lobos",
     "conference": "Mountain West",
@@ -951,6 +1046,7 @@
   },
   {
     "id": "NIU",
+    "ticker": "NILL",
     "name": "Northern Illinois",
     "mascot": "Huskies",
     "conference": "Mountain West",
@@ -961,6 +1057,7 @@
   },
   {
     "id": "SJSU",
+    "ticker": "SJST",
     "name": "San José State",
     "mascot": "Spartans",
     "conference": "Mountain West",
@@ -971,6 +1068,7 @@
   },
   {
     "id": "UNLV",
+    "ticker": "LV",
     "name": "UNLV",
     "mascot": "Rebels",
     "conference": "Mountain West",
@@ -981,6 +1079,7 @@
   },
   {
     "id": "UTEP",
+    "ticker": "ELP",
     "name": "UTEP",
     "mascot": "Miners",
     "conference": "Mountain West",
@@ -991,6 +1090,7 @@
   },
   {
     "id": "WYO",
+    "ticker": "WYO",
     "name": "Wyoming",
     "mascot": "Cowboys",
     "conference": "Mountain West",
@@ -1001,6 +1101,7 @@
   },
   {
     "id": "BSU",
+    "ticker": "BOIS",
     "name": "Boise State",
     "mascot": "Broncos",
     "conference": "Pac-12",
@@ -1011,6 +1112,7 @@
   },
   {
     "id": "CSU",
+    "ticker": "COST",
     "name": "Colorado State",
     "mascot": "Rams",
     "conference": "Pac-12",
@@ -1021,6 +1123,7 @@
   },
   {
     "id": "FRES",
+    "ticker": "FRES",
     "name": "Fresno State",
     "mascot": "Bulldogs",
     "conference": "Pac-12",
@@ -1031,6 +1134,7 @@
   },
   {
     "id": "ORST",
+    "ticker": "ORST",
     "name": "Oregon State",
     "mascot": "Beavers",
     "conference": "Pac-12",
@@ -1041,6 +1145,7 @@
   },
   {
     "id": "SDSU",
+    "ticker": "SDST",
     "name": "San Diego State",
     "mascot": "Aztecs",
     "conference": "Pac-12",
@@ -1051,6 +1156,7 @@
   },
   {
     "id": "TXST",
+    "ticker": "TXST",
     "name": "Texas State",
     "mascot": "Bobcats",
     "conference": "Pac-12",
@@ -1061,6 +1167,7 @@
   },
   {
     "id": "USU",
+    "ticker": "UTST",
     "name": "Utah State",
     "mascot": "Aggies",
     "conference": "Pac-12",
@@ -1071,6 +1178,7 @@
   },
   {
     "id": "WSU",
+    "ticker": "WAST",
     "name": "Washington State",
     "mascot": "Cougars",
     "conference": "Pac-12",
@@ -1081,6 +1189,7 @@
   },
   {
     "id": "ALA",
+    "ticker": "ALA",
     "name": "Alabama",
     "mascot": "Crimson Tide",
     "conference": "SEC",
@@ -1091,6 +1200,7 @@
   },
   {
     "id": "ARK",
+    "ticker": "ARK",
     "name": "Arkansas",
     "mascot": "Razorbacks",
     "conference": "SEC",
@@ -1101,6 +1211,7 @@
   },
   {
     "id": "AUB",
+    "ticker": "AUB",
     "name": "Auburn",
     "mascot": "Tigers",
     "conference": "SEC",
@@ -1111,6 +1222,7 @@
   },
   {
     "id": "FLA",
+    "ticker": "FLA",
     "name": "Florida",
     "mascot": "Gators",
     "conference": "SEC",
@@ -1121,6 +1233,7 @@
   },
   {
     "id": "UGA",
+    "ticker": "GA",
     "name": "Georgia",
     "mascot": "Bulldogs",
     "conference": "SEC",
@@ -1131,6 +1244,7 @@
   },
   {
     "id": "UK",
+    "ticker": "KY",
     "name": "Kentucky",
     "mascot": "Wildcats",
     "conference": "SEC",
@@ -1141,6 +1255,7 @@
   },
   {
     "id": "LSU",
+    "ticker": "BTRG",
     "name": "LSU",
     "mascot": "Tigers",
     "conference": "SEC",
@@ -1151,6 +1266,7 @@
   },
   {
     "id": "MSST",
+    "ticker": "MSST",
     "name": "Mississippi State",
     "mascot": "Bulldogs",
     "conference": "SEC",
@@ -1161,6 +1277,7 @@
   },
   {
     "id": "MIZ",
+    "ticker": "MIZ",
     "name": "Missouri",
     "mascot": "Tigers",
     "conference": "SEC",
@@ -1171,6 +1288,7 @@
   },
   {
     "id": "OU",
+    "ticker": "OKLA",
     "name": "Oklahoma",
     "mascot": "Sooners",
     "conference": "SEC",
@@ -1181,6 +1299,7 @@
   },
   {
     "id": "OLE",
+    "ticker": "MISS",
     "name": "Ole Miss",
     "mascot": "Rebels",
     "conference": "SEC",
@@ -1191,6 +1310,7 @@
   },
   {
     "id": "SC",
+    "ticker": "SC",
     "name": "South Carolina",
     "mascot": "Gamecocks",
     "conference": "SEC",
@@ -1201,6 +1321,7 @@
   },
   {
     "id": "TENN",
+    "ticker": "TENN",
     "name": "Tennessee",
     "mascot": "Volunteers",
     "conference": "SEC",
@@ -1211,6 +1332,7 @@
   },
   {
     "id": "TEX",
+    "ticker": "TEX",
     "name": "Texas",
     "mascot": "Longhorns",
     "conference": "SEC",
@@ -1221,6 +1343,7 @@
   },
   {
     "id": "TAMU",
+    "ticker": "TXAM",
     "name": "Texas A&M",
     "mascot": "Aggies",
     "conference": "SEC",
@@ -1231,6 +1354,7 @@
   },
   {
     "id": "VAN",
+    "ticker": "VAND",
     "name": "Vanderbilt",
     "mascot": "Commodores",
     "conference": "SEC",
@@ -1241,6 +1365,7 @@
   },
   {
     "id": "APP",
+    "ticker": "APST",
     "name": "App State",
     "mascot": "Mountaineers",
     "conference": "Sun Belt",
@@ -1251,6 +1376,7 @@
   },
   {
     "id": "ARST",
+    "ticker": "ARST",
     "name": "Arkansas State",
     "mascot": "Red Wolves",
     "conference": "Sun Belt",
@@ -1261,6 +1387,7 @@
   },
   {
     "id": "CCU",
+    "ticker": "CSTL",
     "name": "Coastal Carolina",
     "mascot": "Chanticleers",
     "conference": "Sun Belt",
@@ -1271,6 +1398,7 @@
   },
   {
     "id": "GASO",
+    "ticker": "GASO",
     "name": "Georgia Southern",
     "mascot": "Eagles",
     "conference": "Sun Belt",
@@ -1281,6 +1409,7 @@
   },
   {
     "id": "GAST",
+    "ticker": "GAST",
     "name": "Georgia State",
     "mascot": "Panthers",
     "conference": "Sun Belt",
@@ -1291,6 +1420,7 @@
   },
   {
     "id": "JMU",
+    "ticker": "JMAD",
     "name": "James Madison",
     "mascot": "Dukes",
     "conference": "Sun Belt",
@@ -1301,6 +1431,7 @@
   },
   {
     "id": "LA",
+    "ticker": "LAF",
     "name": "Louisiana",
     "mascot": "Ragin' Cajuns",
     "conference": "Sun Belt",
@@ -1311,6 +1442,7 @@
   },
   {
     "id": "LT",
+    "ticker": "LATC",
     "name": "Louisiana Tech",
     "mascot": "Bulldogs",
     "conference": "Sun Belt",
@@ -1321,6 +1453,7 @@
   },
   {
     "id": "MRSH",
+    "ticker": "MRSH",
     "name": "Marshall",
     "mascot": "Thundering Herd",
     "conference": "Sun Belt",
@@ -1331,6 +1464,7 @@
   },
   {
     "id": "ODU",
+    "ticker": "ODOM",
     "name": "Old Dominion",
     "mascot": "Monarchs",
     "conference": "Sun Belt",
@@ -1341,6 +1475,7 @@
   },
   {
     "id": "USA",
+    "ticker": "SOAL",
     "name": "South Alabama",
     "mascot": "Jaguars",
     "conference": "Sun Belt",
@@ -1351,6 +1486,7 @@
   },
   {
     "id": "USM",
+    "ticker": "SOMS",
     "name": "Southern Miss",
     "mascot": "Golden Eagles",
     "conference": "Sun Belt",
@@ -1361,6 +1497,7 @@
   },
   {
     "id": "TROY",
+    "ticker": "TROY",
     "name": "Troy",
     "mascot": "Trojans",
     "conference": "Sun Belt",
@@ -1371,6 +1508,7 @@
   },
   {
     "id": "ULM",
+    "ticker": "LAMO",
     "name": "UL Monroe",
     "mascot": "Warhawks",
     "conference": "Sun Belt",

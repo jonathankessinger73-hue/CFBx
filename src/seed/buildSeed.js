@@ -15,6 +15,7 @@ export function buildSeed({ teams, results, schedule, season, random = Math.rand
 
   const teamRows = [...market.values()].map((t) => ({
     id: t.id,
+    ticker: t.ticker ?? null,
     name: t.name,
     mascot: t.mascot,
     conference: t.conference,

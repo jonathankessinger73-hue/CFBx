@@ -27,7 +27,7 @@ export const OPTION_ERRORS = new Set([
   "options_limit",
 ]);
 
-const TEAM_COLUMNS = `id, name, mascot, conference, strength, primary_color, secondary_color,
+const TEAM_COLUMNS = `id, ticker, name, mascot, conference, strength, primary_color, secondary_color,
   ipo_price, current_price, last_change_pct, last_covered, last_expected, last_actual,
   last_line_is_real, logo_url, logo_dark_url, live_status`;
 

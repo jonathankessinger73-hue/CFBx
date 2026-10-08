@@ -24,7 +24,8 @@ const WINDOW_AFTER_HOURS = 5; // and stop this long after it
 export async function liveTick({ pool, cfbd, log = console.log, now = new Date(), finalized = new Set() }) {
   const { rows: open } = await pool.query(
     `select s.id, s.season, s.week, s.season_type, s.home_team_id, s.away_team_id, s.line, s.cfbd_game_id,
-            h.strength as home_strength, a.strength as away_strength
+            h.strength as home_strength, a.strength as away_strength,
+            coalesce(h.ticker, h.id) as home_ticker, coalesce(a.ticker, a.id) as away_ticker
        from schedule s
        join teams h on h.id = s.home_team_id
        join teams a on a.id = s.away_team_id
@@ -94,7 +95,7 @@ export async function liveTick({ pool, cfbd, log = console.log, now = new Date()
     const elapsed = gameElapsed(g.period, g.clock);
     const homePct = liveMovePct(expected, homeScore - awayScore, elapsed);
     const status = `${g.period > 4 ? "OT" : `Q${g.period ?? 1}`} ${g.period > 4 ? "" : clockText(g.clock)}`.trim() +
-      ` · ${row.away_team_id} ${awayScore}, ${row.home_team_id} ${homeScore}`;
+      ` · ${row.away_ticker} ${awayScore}, ${row.home_ticker} ${homeScore}`;
     moves.push({ id: row.home_team_id, pct: homePct, status });
     moves.push({ id: row.away_team_id, pct: liveMovePct(-expected, awayScore - homeScore, elapsed), status });
   }

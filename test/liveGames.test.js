@@ -85,7 +85,7 @@ test("live games: no calls outside game windows; live moves during a game; the f
   const [uga1, ou1] = [await team("UGA"), await team("OU")];
   assert.equal(uga1.live_pct, liveMovePct(14, -7, 0.5));
   assert.equal(ou1.live_pct, liveMovePct(-14, 7, 0.5));
-  assert.equal(uga1.live_status, "Q2 0:00 · OU 17, UGA 10");
+  assert.equal(uga1.live_status, "Q2 0:00 · OKLA 17, GA 10"); // tickers
   assert.equal(uga1.fundamental_price, uga0.fundamental_price, "live moves don't touch the fundamental");
   assert.ok(uga1.current_price < uga0.current_price && ou1.current_price > ou0.current_price);
 

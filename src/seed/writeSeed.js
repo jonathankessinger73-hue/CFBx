@@ -12,11 +12,11 @@ export async function writeSeed(pool, seed) {
     if (rows[0].n > 0) throw new Error("teams table is not empty; refusing to re-seed");
 
     await client.query(
-      `insert into teams (id, name, mascot, conference, strength, primary_color, secondary_color,
+      `insert into teams (id, ticker, name, mascot, conference, strength, primary_color, secondary_color,
                           ipo_price, current_price, last_change_pct, last_covered, last_expected,
                           last_actual, last_line_is_real)
        select * from jsonb_to_recordset($1::jsonb) as x(
-         id text, name text, mascot text, conference text, strength numeric,
+         id text, ticker text, name text, mascot text, conference text, strength numeric,
          primary_color text, secondary_color text, ipo_price numeric, current_price numeric,
          last_change_pct numeric, last_covered boolean, last_expected numeric,
          last_actual numeric, last_line_is_real boolean)`,
