@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       team:
-        description: "Team ticker, e.g. UGA"
+        description: "Team ticker, e.g. GA"
         required: true
         type: string
       pct:

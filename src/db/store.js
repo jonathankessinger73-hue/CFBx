@@ -15,6 +15,16 @@ export const TRADE_ERRORS = new Set([
 ]);
 
 // Errors raised by execute_option_trade that are the caller's fault.
+// Competition errors and the HTTP status each maps to.
+export const COMPETITION_ERRORS = new Map([
+  ["unknown_competition", 404],
+  ["competition_closed", 409],
+  ["display_name_required", 409],
+  ["invalid_league_name", 400],
+  ["invalid_league_length", 400],
+  ["league_limit", 409],
+]);
+
 export const OPTION_ERRORS = new Set([
   "invalid_side",
   "invalid_shares",
@@ -32,6 +42,9 @@ const TEAM_COLUMNS = `id, ticker, name, mascot, conference, strength, primary_co
   last_line_is_real, logo_url, logo_dark_url, live_status`;
 
 const round2 = (n) => Math.round(n * 100) / 100;
+
+const COMPETITION_COLUMNS = `c.code, c.kind, c.name, c.starts_at, c.ends_at, c.min_trades, c.is_private,
+  c.late_join, c.prize, c.sponsor_name, c.sponsor_url, c.started, c.finished`;
 
 export function createStore(pool) {
   return {
@@ -392,6 +405,166 @@ export function createStore(pool) {
         [userId]
       );
       return rows[0] || null;
+    },
+
+    // Public competitions that are open, live or recently finished, plus the
+    // player's own (leagues included), with their standing in each.
+    async listCompetitions(userId = null) {
+      const { rows } = await pool.query(
+        `select c.id, ${COMPETITION_COLUMNS},
+                (select count(*) from competition_entries x where x.competition_id = c.id)::int as entrants,
+                (select u.display_name from competition_entries x join users u on u.id = x.user_id
+                  where x.competition_id = c.id and x.final_rank = 1 order by lower(u.display_name) limit 1) as winner,
+                e.user_id is not null as joined
+           from competitions c
+           left join competition_entries e on e.competition_id = c.id and e.user_id = $1
+          where (not c.is_private or e.user_id is not null)
+            and (not c.finished or c.ends_at > now() - interval '30 days')
+          order by c.finished, c.starts_at, c.id`,
+        [userId]
+      );
+      for (const c of rows) {
+        if (c.joined && c.started) c.me = await this.competitionEntry(c.id, userId);
+        delete c.id;
+      }
+      return rows;
+    },
+
+    async competitionEntry(competitionId, userId) {
+      const { rows } = await pool.query(
+        "select rank, return_pct, trades, qualified from competition_standings($1) where user_id = $2",
+        [competitionId, userId]
+      );
+      return rows[0] || null;
+    },
+
+    // One competition by its code, with standings (top 100, plus the player).
+    async getCompetition(code, userId = null) {
+      const { rows } = await pool.query(
+        `select c.id, ${COMPETITION_COLUMNS},
+                (select display_name from users where id = c.created_by) as created_by_name,
+                (select count(*) from competition_entries x where x.competition_id = c.id)::int as entrants,
+                exists (select 1 from competition_entries x where x.competition_id = c.id and x.user_id = $2) as joined
+           from competitions c where c.code = $1`,
+        [code, userId]
+      );
+      const c = rows[0];
+      if (!c) return null;
+      const { rows: standings } = await pool.query(
+        "select rank, user_id, display_name, return_pct, trades, qualified from competition_standings($1)",
+        [c.id]
+      );
+      c.standings = standings
+        .filter((r, i) => i < 100 || r.user_id === userId)
+        .map(({ user_id, ...r }) => ({ ...r, is_me: user_id === userId }));
+      c.me = c.standings.find((r) => r.is_me) || null;
+      delete c.id;
+      return c;
+    },
+
+    async joinCompetition(userId, code) {
+      await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
+      await pool.query("select join_competition($1, $2)", [userId, code]);
+    },
+
+    async leaveCompetition(userId, code) {
+      await pool.query("select leave_competition($1, $2)", [userId, code]);
+    },
+
+    async createLeague(userId, name, length) {
+      await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
+      const { rows } = await pool.query("select create_league($1, $2, $3) as r", [userId, name, length]);
+      return rows[0].r;
+    },
+
+    // A player's fund card: returns, trading record and competition results.
+    // Public for players with a display name (no holdings are shown).
+    async fundStats(userId) {
+      const { rows: acct } = await pool.query(
+        `select n.display_name, n.net_worth, u.created_at
+           from user_net_worth n join users u on u.id = n.user_id where n.user_id = $1`,
+        [userId]
+      );
+      if (!acct[0]) return null;
+      const [{ rows: txs }, { rows: opts }, { rows: hist }, { rows: comps }] = await Promise.all([
+        pool.query(
+          `select team_id, side, shares, coalesce(amount, shares * price) as amount
+             from transactions where user_id = $1 order by id`,
+          [userId]
+        ),
+        pool.query(
+          `select t.series_id, s.team_id, t.side, t.qty, t.amount
+             from option_trades t join option_series s on s.id = t.series_id
+            where t.user_id = $1 order by t.id`,
+          [userId]
+        ),
+        pool.query("select net_worth from net_worth_history where user_id = $1 order by day", [userId]),
+        pool.query(
+          `select count(*) filter (where e.final_rank = 1)::int as wins,
+                  min(e.final_rank) as best_finish,
+                  count(*) filter (where c.finished)::int as finished
+             from competition_entries e join competitions c on c.id = e.competition_id
+            where e.user_id = $1`,
+          [userId]
+        ),
+      ]);
+
+      // Realized gains, selling against the running average cost.
+      const closed = [];
+      const book = new Map();
+      const fill = (key, team, side, qty, amount) => {
+        const pos = book.get(key) || { qty: 0, cost: 0 };
+        if (side === "buy") {
+          pos.qty += qty;
+          pos.cost += amount;
+        } else if (pos.qty > 0) {
+          const n = Math.min(qty, pos.qty);
+          const basis = (pos.cost / pos.qty) * n;
+          closed.push({ team_id: team, gain: round2(amount - basis), gain_pct: basis ? round2(((amount - basis) / basis) * 100) : 0 });
+          pos.cost -= basis;
+          pos.qty -= n;
+        }
+        book.set(key, pos);
+      };
+      const traded = new Map();
+      for (const t of txs) {
+        fill(`s:${t.team_id}`, t.team_id, t.side, t.shares, t.amount);
+        traded.set(t.team_id, (traded.get(t.team_id) || 0) + 1);
+      }
+      for (const o of opts) fill(`o:${o.series_id}`, o.team_id, o.side === "buy" ? "buy" : "sell", o.qty, o.amount);
+
+      // Largest drop from a high, over the daily values and today.
+      let peak = 0;
+      let drawdown = 0;
+      for (const v of [...hist.map((h) => h.net_worth), acct[0].net_worth]) {
+        peak = Math.max(peak, v);
+        if (peak > 0) drawdown = Math.max(drawdown, (peak - v) / peak);
+      }
+
+      const best = closed.reduce((b, c) => (!b || c.gain > b.gain ? c : b), null);
+      const favorite = [...traded.entries()].sort((a, b) => b[1] - a[1])[0];
+      const nw = acct[0].net_worth;
+      return {
+        display_name: acct[0].display_name,
+        member_since: acct[0].created_at,
+        net_worth: round2(nw),
+        total_return: round2(nw - 10000),
+        total_return_pct: round2(((nw - 10000) / 10000) * 100),
+        trades: txs.length + opts.filter((o) => o.side !== "settle").length,
+        closed_trades: closed.length,
+        win_rate: closed.length ? round2((closed.filter((c) => c.gain > 0).length / closed.length) * 100) : null,
+        best_trade: best,
+        max_drawdown_pct: round2(drawdown * 100),
+        favorite_team: favorite ? favorite[0] : null,
+        competition_wins: comps[0].wins,
+        best_finish: comps[0].best_finish,
+        competitions_finished: comps[0].finished,
+      };
+    },
+
+    async fundByName(name) {
+      const { rows } = await pool.query("select id from users where lower(display_name) = lower($1)", [name]);
+      return rows[0] ? this.fundStats(rows[0].id) : null;
     },
   };
 }

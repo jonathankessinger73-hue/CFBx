@@ -399,3 +399,55 @@ test("SUPABASE_URL is reduced to the bare project address", () => {
   }
   assert.throws(() => supabaseBaseUrl("abcd.supabase.co"), /not a valid URL/);
 });
+
+test("competitions: list, join (needs a fund name), standings; leagues by link; fund cards", { skip }, async () => {
+  await pool.query(
+    `insert into competitions (code, kind, name, starts_at, ends_at, min_trades, prize, sponsor_name, sponsor_url)
+     values ('api-cup', 'event', 'API Cup', now() + interval '1 hour', now() + interval '3 days', 1,
+             '$100 gift card', 'Acme Tailgate', 'https://example.com')`
+  );
+  const me = await login();
+  const list = await request(app).get("/competitions").set("Authorization", me.auth).expect(200);
+  const cup = list.body.competitions.find((c) => c.code === "api-cup");
+  assert.equal(cup.joined, false);
+  assert.equal(cup.sponsor_name, "Acme Tailgate");
+  assert.equal(cup.prize, "$100 gift card");
+
+  const noName = await request(app).post("/competitions/api-cup/join").set("Authorization", me.auth).expect(409);
+  assert.equal(noName.body.error, "display_name_required");
+  await request(app).patch("/me").set("Authorization", me.auth).send({ display_name: "Api Fund" }).expect(200);
+  const joined = await request(app).post("/competitions/api-cup/join").set("Authorization", me.auth).expect(200);
+  assert.equal(joined.body.joined, true);
+  assert.deepEqual(joined.body.standings.map((r) => [r.display_name, r.is_me]), [["Api Fund", true]]);
+  assert.equal(joined.body.standings[0].user_id, undefined, "ids aren't exposed");
+  await request(app).post("/competitions/nope/join").set("Authorization", me.auth).expect(404);
+  await request(app).post("/competitions/api-cup/join").expect(401);
+  const left = await request(app).post("/competitions/api-cup/leave").set("Authorization", me.auth).expect(200);
+  assert.equal(left.body.joined, false);
+
+  // Leagues are private: not listed for others, but open to anyone with the link.
+  const created = await request(app)
+    .post("/leagues")
+    .set("Authorization", me.auth)
+    .send({ name: "Office League", length: "week" })
+    .expect(201);
+  assert.equal(created.body.kind, "league");
+  assert.equal(created.body.joined, true);
+  await request(app).post("/leagues").set("Authorization", me.auth).send({ name: "Office League", length: "year" }).expect(400);
+  const friend = await login();
+  await request(app).patch("/me").set("Authorization", friend.auth).send({ display_name: "Friend Api" }).expect(200);
+  const theirs = await request(app).get("/competitions").set("Authorization", friend.auth).expect(200);
+  assert.ok(!theirs.body.competitions.some((c) => c.code === created.body.code));
+  const via = await request(app).post(`/competitions/${created.body.code}/join`).set("Authorization", friend.auth).expect(200);
+  assert.equal(via.body.standings.length, 2);
+  assert.equal(via.body.created_by_name, "Api Fund");
+
+  // Fund card, public by name.
+  const fund = await request(app).get("/funds/api%20fund").expect(200);
+  assert.equal(fund.body.display_name, "Api Fund");
+  assert.equal(fund.body.total_return, 0);
+  assert.equal(fund.body.trades, 0);
+  await request(app).get("/funds/Nobody%20Here").expect(404);
+  const mine = await request(app).get("/me/fund").set("Authorization", me.auth).expect(200);
+  assert.equal(mine.body.display_name, "Api Fund");
+});

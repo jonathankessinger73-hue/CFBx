@@ -301,7 +301,7 @@ test.describe("with fake auth", () => {
 
     await page.getByLabel("Display name").fill("Buckeye Bull");
     await page.getByRole("button", { name: "Join leaderboard" }).click();
-    await expect(page.locator("#toast")).toContainText("You're on the leaderboard as Buckeye Bull");
+    await expect(page.locator("#toast")).toContainText("Your fund is Buckeye Bull");
     await expect(page.locator(".summary-card").first()).toContainText("#1");
     const myRow = page.locator("tr.me-row");
     await expect(myRow).toContainText("Buckeye Bull");
@@ -334,6 +334,63 @@ test.describe("with fake auth", () => {
     await expect(page.locator("tr.me-row")).toContainText("Buckeye Bear");
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.getByText("Playing as")).toContainText("Buckeye Bear");
+  });
+
+  test("compete: name your fund, join a competition, start a league, fund cards", async ({ page }) => {
+    await page.goto("/#/signin");
+    await page.getByLabel("Email").fill("trader@example.com");
+    await page.getByRole("button", { name: "Email me a link" }).click();
+    await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
+
+    await page.getByRole("link", { name: "Compete" }).click();
+    await expect(page.getByRole("heading", { name: "Compete" })).toBeVisible();
+    const cup = page.locator('a.comp-card[href="#/compete/rivalry-cup"]');
+    await expect(cup).toContainText("presented by Acme Tailgate");
+    await expect(cup).toContainText("Prize: $100 gift card");
+    await expect(page.locator('a.comp-card[href="#/compete/live-cup"]')).toContainText("Live");
+
+    // A fund name is needed to play.
+    await page.getByLabel("Display name").fill("Saturday Capital");
+    await page.getByRole("button", { name: "Save fund name" }).click();
+    await expect(page.locator("#toast")).toContainText("Your fund is Saturday Capital");
+
+    await cup.click();
+    await expect(page.getByRole("heading", { name: "Rivalry Cup" })).toBeVisible();
+    await expect(page.locator(".comp-rules")).toContainText("Entries close when it starts");
+    await page.getByRole("button", { name: "Join as Saturday Capital" }).click();
+    await expect(page.locator("#toast")).toContainText("You're in Rivalry Cup");
+    await expect(page.locator("table.comp-table")).toContainText("Saturday Capital");
+    await expect(page.getByText("You're in. Scoring starts")).toBeVisible();
+    await page.getByRole("button", { name: "Leave" }).click();
+    await expect(page.getByRole("button", { name: "Join as Saturday Capital" })).toBeVisible();
+    await page.getByRole("button", { name: "Join as Saturday Capital" }).click();
+    await expect(page.locator("table.comp-table")).toContainText("Saturday Capital");
+
+    // Live competitions are closed to new entries.
+    await page.goto("/#/compete/live-cup");
+    await expect(page.getByRole("heading", { name: "Live Cup" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Join as/ })).toHaveCount(0);
+
+    // Private league: created, then shown under your competitions.
+    await page.getByRole("link", { name: "All competitions" }).click();
+    await expect(page.locator('a.comp-card[href="#/compete/rivalry-cup"]')).toContainText("entered");
+    await page.getByLabel("League name").fill("Office Pool");
+    await page.getByLabel("How long it runs").selectOption("month");
+    await page.getByRole("button", { name: "Create league" }).click();
+    await expect(page.getByRole("heading", { name: "Office Pool" })).toBeVisible();
+    await expect(page.locator(".comp-rules")).toContainText("started by Saturday Capital");
+    await expect(page.getByRole("button", { name: "Copy invite link" })).toBeVisible();
+    await expect(page.locator("table.comp-table")).toContainText("Saturday Capital");
+
+    // Fund cards: public by name, and on the portfolio.
+    await page.locator("table.comp-table").getByRole("link", { name: "Saturday Capital" }).click();
+    await expect(page.getByRole("heading", { name: "Saturday Capital" })).toBeVisible();
+    await expect(page.locator(".fund-grid")).toContainText("total return");
+    await expect(page.locator(".fund-grid")).toContainText("win rate");
+    await page.getByRole("link", { name: "Portfolio" }).click();
+    await expect(page.getByRole("heading", { name: "your fund" })).toBeVisible();
+    await page.getByRole("link", { name: "Leaders" }).click();
+    await expect(page.locator("table.holdings").getByRole("link", { name: "Saturday Capital" })).toBeVisible();
   });
 
   test("fits a phone-width screen without horizontal scroll", async ({ page }) => {

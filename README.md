@@ -188,6 +188,37 @@ it; the trade box uses it to show the real total. Net worth and the leaderboard 
 holdings at what selling them now would bring (`sell_value`), so pushing up a team you
 hold doesn't raise your own net worth.
 
+## Competitions
+
+Competitions are scoreboards on top of the one market. Everyone trades the same teams
+at the same prices, and a competition ranks funds by **percent return** over its window,
+so a big account has no head start (`db/migrations/017_competitions.sql`).
+
+- **Listed automatically** by `run_competitions()`. The API server runs it every 5 minutes, and the daily job runs it too:
+  - **Weekly sprint**: Thursday noon to Sunday noon, Eastern. Listed when games are scheduled in the window.
+  - **Monthly**: September to January.
+  - **Season championship**: from Week 0, or from the next Thursday if the season is underway, until February 1.
+- **Entries close at the start** for public competitions. Each fund is scored from its net worth at the start.
+- **Ranking needs a minimum number of trades** during the window: 1 for weekly, 3 for monthly, 5 for the season. Funds below the minimum are listed but not ranked.
+- **When a competition ends**, final values and ranks are recorded, and later price moves don't change them.
+- **Private leagues** are created by players (1 week, 1 month or the rest of the season) and shared by link.
+  - Members can join any time and are scored from when they join.
+  - There's no trade minimum.
+  - A player can run at most 5 leagues at once.
+- **A fund name is required to play.** That's the player's display name, the same one the leaderboard uses.
+- **Prizes, sponsors and one-off events** (Rivalry Week, Bowl Season, ...) are set by hand:
+  `npm run competition -- --list | --code <code> --prize ... --sponsor-name ... --sponsor-url https://... | --create --name ... --starts 2026-11-26T12:00 --ends ...` (times Eastern),
+  or **Actions → Competition → Run workflow**.
+- **Fund cards** (`/funds/:name`) are public for named players. They show:
+  - total return
+  - trades, and win rate on closed trades (gains against average cost)
+  - best trade
+  - biggest drop from a high
+  - most-traded team
+  - competition results
+
+  Holdings stay private.
+
 ## Options
 
 Players can buy calls and puts on every team, and sell them back to the house before
@@ -307,6 +338,13 @@ aren't in the source as plain text. Maintenance commands:
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
 | GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
 | GET | `/me/returns` | ✓ | Gain or loss over the past week, month, 3 months, this season (from Week 0), year to date and all time. Each player's net worth is saved daily; days before that were rebuilt from the trade log. |
+| GET | `/me/fund` | ✓ | Your fund card (see Competitions). |
+| GET | `/competitions` | optional | Open, live and recently finished public competitions, plus your own leagues, with your standing. |
+| GET | `/competitions/:code` | optional | One competition with its standings (top 100 plus you). |
+| POST | `/competitions/:code/join` | ✓ | Join. Needs a fund (display) name. Public competitions close when they start. |
+| POST | `/competitions/:code/leave` | ✓ | Leave before the start (leagues: any time). |
+| POST | `/leagues` | ✓ | `{name, length}`, length `week`, `month` or `season`: start a private league. |
+| GET | `/funds/:name` | | A named player's public fund card. |
 | GET | `/teams/:id/options` | — | Open calls and puts with house quotes (`bid`, `ask`), `football_price`, `paused` |
 | POST | `/options/trade` | ✓ | `{series_id, side: "buy"\|"sell", qty}` (1–1000). Errors include `options_paused`, `options_limit`, `position_limit`, `insufficient_options`, `option_expired`. |
 | GET | `/me/teams/:id` | ✓ | Your stake in one team: `shares`, `avg_cost`, `shares_value`, `options_value`, `invested`, `returned`, `total_return` (+ `_pct`), and `history` (share trades, option trades and settlements, payouts) |
