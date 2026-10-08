@@ -46,7 +46,7 @@ const state = {
   detail: null, // { id, data, error } for the team detail view
   leaderboard: null, // { data, error } from GET /leaderboard
   editingName: false,
-  view: { conf: "all", q: "", priceMode: "week", returnsPeriod: "week", ...loadPrefs() },
+  view: { conf: "all", q: "", priceMode: "week", returnsPeriod: "week", layout: "grid", ...loadPrefs() },
   tradePending: false,
   tradeQty: {}, // ticker -> share count being typed in the trade box
   options: { positions: [], activity: [] }, // the player's options
@@ -69,6 +69,7 @@ function loadPrefs() {
       conf: p.conf || "all",
       priceMode: p.priceMode === "season" ? "season" : "week",
       returnsPeriod: RETURN_PERIODS.some((r) => r.key === p.returnsPeriod) ? p.returnsPeriod : "week",
+      layout: p.layout === "list" ? "list" : "grid",
     };
   } catch {
     return {};
@@ -78,7 +79,12 @@ function savePrefs() {
   try {
     localStorage.setItem(
       PREFS_KEY,
-      JSON.stringify({ conf: state.view.conf, priceMode: state.view.priceMode, returnsPeriod: state.view.returnsPeriod })
+      JSON.stringify({
+        conf: state.view.conf,
+        priceMode: state.view.priceMode,
+        returnsPeriod: state.view.returnsPeriod,
+        layout: state.view.layout,
+      })
     );
   } catch {
     /* storage unavailable: prefs just won't persist */
@@ -516,13 +522,22 @@ function renderMarket() {
   const weekLabel = state.week ? `Week ${state.week}` : "Preseason";
   $("main").innerHTML =
     `<div class="section-head"><div><h1>Market — ${weekLabel}</h1>` +
-    `<p>${all.length} programs, ranked by current price. Prices move on final scores, football news and every trade. Tap a card to trade.</p></div></div>` +
+    `<p>${all.length} programs, ranked by current price. Prices move on final scores, football news and every trade. Tap a team to trade.</p></div></div>` +
     `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">` +
     `<input type="search" id="mkt-search" aria-label="Search programs" placeholder="Search team, mascot, or ticker…" value="${esc(state.view.q)}" style="flex:1;min-width:180px;background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px">` +
     `<select id="mkt-conf" aria-label="Conference" style="background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;padding:9px 10px">${confOptions}</select>` +
     `<nav class="tabs" id="mkt-pricemode">` +
     `<button data-mode="week" class="${mode === "week" ? "active" : ""}">This Week</button>` +
     `<button data-mode="season" class="${mode === "season" ? "active" : ""}">Season</button>` +
+    `</nav>` +
+    `<nav class="tabs" id="mkt-layout" aria-label="Layout">` +
+    ["grid", "list"]
+      .map(
+        (l) =>
+          `<button data-layout="${l}" class="${state.view.layout === l ? "active" : ""}" aria-pressed="${state.view.layout === l}" title="${l === "grid" ? "Grid" : "List"} view">` +
+          `${LAYOUT_ICON[l]}<span>${l === "grid" ? "Grid" : "List"}</span></button>`
+      )
+      .join("") +
     `</nav></div>` +
     `<div id="mkt-grid"></div>`;
 
@@ -539,6 +554,17 @@ function renderMarket() {
     savePrefs();
     renderGrid();
   });
+  document.querySelectorAll("#mkt-layout button").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.view.layout = btn.dataset.layout;
+      savePrefs();
+      document.querySelectorAll("#mkt-layout button").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      renderGrid();
+    })
+  );
   document.querySelectorAll("#mkt-pricemode button").forEach((btn) =>
     btn.addEventListener("click", () => {
       state.view.priceMode = btn.dataset.mode;
@@ -564,6 +590,15 @@ function renderGrid() {
     )
     .sort((a, b) => b.current_price - a.current_price);
 
+  if (!teams.length) {
+    $("mkt-grid").innerHTML = `<div class="panel"><div class="empty-state">No programs match that search.</div></div>`;
+    return;
+  }
+  if (state.view.layout === "list") {
+    $("mkt-grid").innerHTML = marketList(teams);
+    return;
+  }
+
   const cards = teams
     .map((t) => {
       const pct = headlinePct(t);
@@ -586,9 +621,53 @@ function renderGrid() {
     })
     .join("");
 
-  $("mkt-grid").innerHTML = teams.length
-    ? `<div class="grid">${cards}</div>`
-    : `<div class="panel"><div class="empty-state">No programs match that search.</div></div>`;
+  $("mkt-grid").innerHTML = `<div class="grid">${cards}</div>`;
+}
+
+const LAYOUT_ICON = {
+  grid:
+    `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">` +
+    `<rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/>` +
+    `<rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>`,
+  list:
+    `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">` +
+    `<rect x="0" y="1" width="14" height="2.5" rx="1"/><rect x="0" y="5.75" width="14" height="2.5" rx="1"/>` +
+    `<rect x="0" y="10.5" width="14" height="2.5" rx="1"/></svg>`,
+};
+
+// The market as one row per team: rank, team, record, price, change, trend.
+function marketList(teams) {
+  const rows = teams
+    .map((t, i) => {
+      const pct = headlinePct(t);
+      const held = state.holdings.get(t.id);
+      const hist = t.history && t.history.length ? t.history : [t.current_price];
+      const stroke = hist[hist.length - 1] >= hist[0] ? "var(--positive)" : "var(--negative)";
+      return (
+        `<a class="mkt-row" role="row" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
+        `<span class="mr-rank" role="cell">${i + 1}</span>` +
+        `<span class="mr-team" role="cell">${teamMark(t, 30)}<span class="mr-names">` +
+        `<span class="tn">${esc(t.name)} <span class="tk">${esc(tick(t.id))}</span>` +
+        `${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}${held ? ` <span class="held-badge">${held.shares} sh</span>` : ""}</span>` +
+        `<span class="mr-sub">${esc(t.conference)}${t.mascot ? `<span class="mr-mascot"> &middot; ${esc(t.mascot)}</span>` : ""}</span></span></span>` +
+        `<span class="mr-rec" role="cell">${t.records ? `${overallRec(t.records)} <span class="mr-ats">ATS ${atsRec(t.records)}</span>` : ""}</span>` +
+        `<span class="mr-px" role="cell">$${t.current_price.toFixed(2)}</span>` +
+        `<span class="mr-ch" role="cell"><span class="ch ${dirClass(pct)}">${fmtPct(pct)}</span>${coverTag(t)}</span>` +
+        `<span class="mr-spark" role="cell"><svg viewBox="0 0 90 26" preserveAspectRatio="none" aria-hidden="true">` +
+        `<polyline points="${sparklinePath(hist, 90, 26)}" fill="none" stroke="${stroke}" stroke-width="1.6"/></svg></span>` +
+        `</a>`
+      );
+    })
+    .join("");
+  return (
+    `<div class="mkt-list" role="table" aria-label="Market">` +
+    `<div class="mkt-row mkt-head" role="row"><span role="columnheader">#</span><span role="columnheader">program</span>` +
+    `<span class="mr-rec" role="columnheader">record</span><span class="mr-px" role="columnheader">price</span>` +
+    `<span class="mr-ch" role="columnheader">${state.view.priceMode === "season" ? "season" : "last game"}</span>` +
+    `<span class="mr-spark" role="columnheader">trend</span></div>` +
+    rows +
+    `</div>`
+  );
 }
 
 /* ---------- Rendering: team detail ---------- */
