@@ -35,6 +35,20 @@ test.describe("with fake auth", () => {
 
     await page.getByLabel("Search programs").fill("bulldogs");
     await expect(page.locator("a.card")).toHaveCount(4); // UGA, MSST, FRES, LT
+    // Grid or list layout, remembered across visits.
+    await page.getByLabel("Search programs").fill("");
+    await page.getByRole("button", { name: "List" }).click();
+    await expect(page.locator("a.card")).toHaveCount(0);
+    await expect(page.locator("a.mkt-row")).toHaveCount(138);
+    await expect(page.locator("a.mkt-row").first().locator(".mr-rank")).toHaveText("1");
+    await page.reload();
+    await expect(page.locator("a.mkt-row")).toHaveCount(138);
+    await page.getByLabel("Search programs").fill("bulldogs");
+    await expect(page.locator("a.mkt-row")).toHaveCount(4);
+    await page.getByLabel("Search programs").fill("");
+    await page.getByRole("button", { name: "Grid" }).click();
+    await expect(page.locator("a.card")).toHaveCount(138);
+
     // Tickers: name first, then the ticker; searchable by ticker.
     await page.getByLabel("Search programs").fill("ohst");
     await expect(page.locator("a.card")).toHaveCount(1);
