@@ -11,6 +11,15 @@ const API = (cfg.apiUrl || "").replace(/\/$/, "");
 const STARTING_CASH = 10000;
 const SPREAD_FACTOR = 0.75; // only for labelling projected lines on upcoming games
 const PREFS_KEY = "cfbx_view_prefs_v1";
+// Portfolio return periods (GET /me/returns), in button order.
+const RETURN_PERIODS = [
+  { key: "week", short: "1W", long: "Past week" },
+  { key: "month", short: "1M", long: "Past month" },
+  { key: "3months", short: "3M", long: "Past 3 months" },
+  { key: "season", short: "Season", long: "This season, from Week 0" },
+  { key: "ytd", short: "YTD", long: "Year to date" },
+  { key: "all", short: "All-time", long: "All time" },
+];
 
 const supabase =
   cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase
@@ -29,10 +38,11 @@ const state = {
   holdings: new Map(), // team_id -> holding row
   transactions: [],
   payouts: [], // season payouts received
+  returns: [], // gain or loss per period, from GET /me/returns
   detail: null, // { id, data, error } for the team detail view
   leaderboard: null, // { data, error } from GET /leaderboard
   editingName: false,
-  view: { conf: "all", q: "", priceMode: "week", ...loadPrefs() },
+  view: { conf: "all", q: "", priceMode: "week", returnsPeriod: "week", ...loadPrefs() },
   tradePending: false,
   tradeQty: {}, // ticker -> share count being typed in the trade box
   options: { positions: [], activity: [] }, // the player's options
@@ -42,14 +52,21 @@ const state = {
 function loadPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
-    return { conf: p.conf || "all", priceMode: p.priceMode === "season" ? "season" : "week" };
+    return {
+      conf: p.conf || "all",
+      priceMode: p.priceMode === "season" ? "season" : "week",
+      returnsPeriod: RETURN_PERIODS.some((r) => r.key === p.returnsPeriod) ? p.returnsPeriod : "week",
+    };
   } catch {
     return {};
   }
 }
 function savePrefs() {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ conf: state.view.conf, priceMode: state.view.priceMode }));
+    localStorage.setItem(
+      PREFS_KEY,
+      JSON.stringify({ conf: state.view.conf, priceMode: state.view.priceMode, returnsPeriod: state.view.returnsPeriod })
+    );
   } catch {
     /* storage unavailable: prefs just won't persist */
   }
@@ -247,17 +264,20 @@ async function loadAccount() {
     state.holdings = new Map();
     state.transactions = [];
     state.payouts = [];
+    state.returns = [];
     state.options = { positions: [], activity: [] };
     return;
   }
   try {
-    const [me, holdings, txs, payouts, options] = await Promise.all([
+    const [me, holdings, txs, payouts, options, returns] = await Promise.all([
       api("/me", { auth: true }),
       api("/me/holdings", { auth: true }),
       api("/me/transactions?limit=25", { auth: true }),
       api("/me/payouts", { auth: true }),
       api("/me/options", { auth: true }),
+      api("/me/returns", { auth: true }),
     ]);
+    state.returns = returns.returns;
     state.options = options;
     state.me = me;
     state.holdings = new Map(holdings.holdings.map((h) => [h.team_id, h]));
@@ -1231,7 +1251,46 @@ function renderPortfolio() {
       `</div></div>`
     : "";
 
-  $("main").innerHTML = head + standing + summary + body + optionsBody + payouts + optionsActivity + trades;
+  const returns = state.returns.length
+    ? `<div class="panel returns-panel"><div class="returns-head"><h2>returns</h2>` +
+      `<nav class="tabs" id="returns-tabs" aria-label="Return period">` +
+      RETURN_PERIODS.map(
+        (p) =>
+          `<button data-period="${p.key}" class="${p.key === state.view.returnsPeriod ? "active" : ""}" title="${esc(p.long)}">${esc(p.short)}</button>`
+      ).join("") +
+      `</nav></div><div id="returns-body">${returnsBody()}</div></div>`
+    : "";
+
+  $("main").innerHTML = head + standing + summary + returns + body + optionsBody + payouts + optionsActivity + trades;
+  document.querySelectorAll("#returns-tabs button").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.view.returnsPeriod = btn.dataset.period;
+      savePrefs();
+      document.querySelectorAll("#returns-tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+      $("returns-body").innerHTML = returnsBody();
+    })
+  );
+}
+
+// The selected period's gain or loss, with where it was measured from.
+function returnsBody() {
+  const p = RETURN_PERIODS.find((x) => x.key === state.view.returnsPeriod) || RETURN_PERIODS[0];
+  const r = state.returns.find((x) => x.period === p.key);
+  if (!r) return "";
+  const [y, m, d] = r.since.split("-").map(Number);
+  const since = new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const from =
+    p.key === "all"
+      ? `Since you joined on ${since}`
+      : r.joined
+        ? `${p.long}: since you joined on ${since}`
+        : `${p.long}: since ${since}`;
+  const up = r.gain >= 0;
+  return (
+    `<div class="returns-val"><span class="ch ${up ? "up" : "down"}">${up ? "+" : "-"}${fmtMoney(Math.abs(r.gain))}</span>` +
+    `<span class="ch ${up ? "up" : "down"} returns-pct">${fmtPct(r.gain_pct)}</span></div>` +
+    `<div class="returns-note">${esc(from)} &middot; ${fmtMoney(r.start_value)} &rarr; ${fmtMoney(r.net_worth)}</div>`
+  );
 }
 
 /* ---------- Rendering: leaderboard ---------- */

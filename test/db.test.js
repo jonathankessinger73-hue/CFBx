@@ -242,3 +242,59 @@ test("apply_game_result is atomic, idempotent and applies moves to the current p
   assert.equal(rows[0].completed, true);
   assert.equal(rows[0].cfbd_game_id, 999);
 });
+
+test("portfolio returns: saved daily values, rebuilt history, and players who joined mid-period", { skip }, async () => {
+  const id = await newUser();
+  await setPrice("UGA", 60);
+  await pool.query("update users set created_at = now() - interval '40 days', cash = 9480 where id = $1", [id]);
+  // Bought 10 at $52 twenty days ago; a news move took UGA to $55 five days ago.
+  await pool.query(
+    `insert into transactions (user_id, team_id, side, shares, price, amount, created_at)
+     values ($1, 'UGA', 'buy', 10, 52, 520, now() - interval '20 days')`,
+    [id]
+  );
+  await pool.query("insert into holdings (user_id, team_id, shares, avg_cost) values ($1, 'UGA', 10, 52)", [id]);
+  await pool.query(
+    `insert into market_moves (team_id, season, kind, ref, pct_change, price_after, summary, created_at)
+     values ('UGA', 2026, 'news', 'test-nw', 5, 55, 'test', now() - interval '5 days')`
+  );
+
+  assert.equal((await q("select net_worth_at($1, now() - interval '30 days') as v", [id])).v, 10000);
+  assert.equal((await q("select net_worth_at($1, now() - interval '10 days') as v", [id])).v, 10000);
+  assert.equal((await q("select net_worth_at($1, now() - interval '1 day') as v", [id])).v, 10030);
+
+  // A saved value wins over the rebuilt estimate.
+  await pool.query(
+    `insert into net_worth_history (user_id, day, net_worth)
+     values ($1, (now() at time zone 'America/New_York')::date - 7, 9800)`,
+    [id]
+  );
+  const now = (await q("select net_worth from user_net_worth where user_id = $1", [id])).net_worth;
+  const rows = await store.getReturns(id);
+  assert.deepEqual(rows.map((r) => r.period), ["week", "month", "3months", "season", "ytd", "all"]);
+  const by = Object.fromEntries(rows.map((r) => [r.period, r]));
+  assert.equal(by.week.start_value, 9800);
+  assert.equal(by.week.joined, false);
+  assert.equal(by.week.gain, Math.round((now - 9800) * 100) / 100);
+  assert.equal(by.week.gain_pct, Math.round(((now - 9800) / 9800) * 10000) / 100);
+  assert.equal(by.month.start_value, 10000);
+  assert.equal(by.month.joined, false);
+  for (const p of ["3months", "ytd", "all"]) {
+    assert.equal(by[p].joined, true, p);
+    assert.equal(by[p].start_value, 10000, p);
+    assert.equal(by[p].gain, Math.round((now - 10000) * 100) / 100, p);
+  }
+  assert.match(by.week.since, /^\d{4}-\d{2}-\d{2}$/);
+  const joinedOn = (await q("select to_char((created_at at time zone 'America/New_York')::date, 'YYYY-MM-DD') as d from users where id = $1", [id])).d;
+  assert.equal(by.all.since, joinedOn);
+  assert.equal(by.ytd.since, joinedOn, "joined mid-period: measured from the day they joined");
+  assert.notEqual(by.month.since, joinedOn);
+
+  // Today's value is saved for every player.
+  await pool.query("select record_net_worth()");
+  const today = await q(
+    "select net_worth from net_worth_history where user_id = $1 and day = (now() at time zone 'America/New_York')::date",
+    [id]
+  );
+  assert.equal(today.net_worth, Math.round(now * 100) / 100);
+});

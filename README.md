@@ -302,6 +302,7 @@ aren't in the source as plain text. Maintenance commands:
 | GET | `/me/holdings` | ✓ | Holdings valued at current prices |
 | GET | `/me/transactions` | ✓ | Newest first. Page with `?before=<id>&limit=`. |
 | GET | `/me/payouts` | ✓ | Season payouts received, newest first. |
+| GET | `/me/returns` | ✓ | Gain or loss over the past week, month, 3 months, this season (from Week 0), year to date and all time. Each player's net worth is saved daily; days before that were rebuilt from the trade log. |
 | GET | `/teams/:id/options` | — | Open calls and puts with house quotes (`bid`, `ask`), `football_price`, `paused` |
 | POST | `/options/trade` | ✓ | `{series_id, side: "buy"\|"sell", qty}` (1–1000). Errors include `options_paused`, `options_limit`, `position_limit`, `insufficient_options`, `option_expired`. |
 | GET | `/me/teams/:id` | ✓ | Your stake in one team: `shares`, `avg_cost`, `shares_value`, `options_value`, `invested`, `returned`, `total_return` (+ `_pct`), and `history` (share trades, option trades and settlements, payouts) |
