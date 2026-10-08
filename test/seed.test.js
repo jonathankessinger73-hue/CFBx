@@ -46,3 +46,15 @@ test("seed replays every completed game and converts lines to CFBD convention", 
   assert.equal(tcuEvent.actual_margin, -5);
   assert.ok(tcuEvent.pct_change < 0);
 });
+
+test("every team has a unique ticker, and the tickers migration matches teams.json", () => {
+  const tickers = teams.map((t) => t.ticker);
+  assert.ok(tickers.every((tk) => /^[A-Z]{2,5}$/.test(tk)), "2-5 capital letters");
+  assert.equal(new Set(tickers).size, teams.length, "unique");
+  // A ticker that equals another team's id would break old #/team/<id> links.
+  const ids = new Set(teams.map((t) => t.id));
+  for (const t of teams) assert.ok(!ids.has(t.ticker) || t.ticker === t.id, `${t.ticker} is another team's id`);
+  const sql = fs.readFileSync(new URL("../db/migrations/016_tickers.sql", import.meta.url), "utf8");
+  const pairs = new Map([...sql.matchAll(/\('([A-Z]+)', '([A-Z]+)'\)/g)].map((m) => [m[1], m[2]]));
+  assert.deepEqual(Object.fromEntries(pairs), Object.fromEntries(teams.map((t) => [t.id, t.ticker])));
+});

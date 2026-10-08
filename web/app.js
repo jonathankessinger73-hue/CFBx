@@ -49,6 +49,15 @@ const state = {
   optView: { expiry: "weekly", kind: "call", seriesId: null, qty: "1" },
 };
 
+// Teams are shown by name and ticker (Georgia GA). The internal id (UGA)
+// stays behind the scenes: it's what trades and records point at.
+const tick = (id) => state.teams.get(id)?.ticker || id;
+const teamHref = (id) => `#/team/${encodeURIComponent(tick(id))}`;
+const teamLabel = (id) => {
+  const t = state.teams.get(id);
+  return t ? `${esc(t.name)} <span class="tk-inline">${esc(tick(id))}</span>` : esc(id);
+};
+
 function loadPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
@@ -250,6 +259,7 @@ async function loadTeams() {
   try {
     const data = await api("/teams");
     state.teams = new Map(data.teams.map((t) => [t.id, t]));
+    state.byTicker = new Map(data.teams.filter((t) => t.ticker).map((t) => [t.ticker, t.id]));
     state.season = data.season;
     state.week = data.week;
     state.teamsError = null;
@@ -338,7 +348,11 @@ async function loadOptions(id) {
 function parseRoute() {
   const hash = location.hash.replace(/^#\/?/, "");
   const [page, arg] = hash.split("/");
-  if (page === "team" && arg) return { page: "detail", ticker: decodeURIComponent(arg).toUpperCase() };
+  if (page === "team" && arg) {
+    // Links use the ticker (#/team/GA); older links with the id (#/team/UGA) still work.
+    const key = decodeURIComponent(arg).toUpperCase();
+    return { page: "detail", ticker: state.byTicker?.get(key) || key };
+  }
   if (page === "portfolio") return { page: "portfolio" };
   if (page === "leaderboard") return { page: "leaderboard" };
   if (page === "signin") return { page: "signin" };
@@ -370,7 +384,7 @@ function renderTape() {
       const ch = t.last_change_pct;
       const arrow = ch > 0 ? "▲" : ch < 0 ? "▼" : "–";
       return (
-        `<span class="tape-item"><span class="tk">${esc(t.id)}</span>` +
+        `<span class="tape-item"><span class="tk">${esc(tick(t.id))}</span>` +
         `<span class="px">${t.current_price.toFixed(2)}</span>` +
         `<span class="ch ${dirClass(ch)}">${arrow} ${Math.abs(ch).toFixed(2)}%</span></span>`
       );
@@ -485,6 +499,7 @@ function renderGrid() {
         (!q ||
           t.name.toLowerCase().includes(q) ||
           t.id.toLowerCase().includes(q) ||
+          (t.ticker || "").toLowerCase().includes(q) ||
           (t.mascot || "").toLowerCase().includes(q))
     )
     .sort((a, b) => b.current_price - a.current_price);
@@ -496,11 +511,11 @@ function renderGrid() {
       const hist = t.history && t.history.length ? t.history : [t.current_price];
       const stroke = hist[hist.length - 1] >= hist[0] ? "var(--positive)" : "var(--negative)";
       return (
-        `<a class="card" href="#/team/${encodeURIComponent(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
+        `<a class="card" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
         teamMark(t, 44) +
-        `<div><div class="tk">${esc(t.id)}${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}</div>` +
-        `<div class="nm">${esc(t.name)}${t.mascot ? " " + esc(t.mascot) : ""}</div>${recordLine(t)}</div>` +
+        `<div><div class="tn">${esc(t.name)} <span class="tk">${esc(tick(t.id))}</span>${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}</div>` +
+        `${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}${recordLine(t)}</div>` +
         `</div>${held ? `<span class="held-badge">${held.shares} sh</span>` : ""}</div>` +
         `<div class="card-mid"><div class="px">$${t.current_price.toFixed(2)}</div>` +
         `<div style="text-align:right"><div class="ch ${dirClass(pct)}">${fmtPct(pct)}</div>${coverTag(t)}</div></div>` +
@@ -734,7 +749,7 @@ function upcomingItem(team, g) {
           : `underdog by ${Math.abs(margin).toFixed(1)}`;
   return (
     `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">${isPostseason(g) ? weekShort(g) : `Wk ${g.week}`}</span> ` +
-    `${g.is_home ? "vs" : "@"} <a class="opp" href="#/team/${encodeURIComponent(g.opponent_id)}">${esc(oppName)}</a>` +
+    `${g.is_home ? "vs" : "@"} <a class="opp" href="${teamHref(g.opponent_id)}">${esc(oppName)}</a>` +
     `${g.notes ? ` <span class="up-note">${esc(g.notes)}</span>` : ""}</span>` +
     `<span>${lineText} ${tag}</span></div>`
   );
@@ -800,8 +815,8 @@ function renderDetail(ticker) {
     `<a class="detail-back" href="#/">&larr; Back to market</a>` +
     `<div class="detail-head"><div style="display:flex;align-items:center;gap:16px">` +
     teamMark(t, 84) +
-    `<div class="tk-name"><div class="tk">${esc(t.id)} &middot; ${esc(t.conference)} &middot; STRENGTH ${t.strength}</div>` +
-    `<h1>${esc(t.name)}</h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}${recordChips(t)}</div></div>` +
+    `<div class="tk-name"><div class="tk">${esc(t.conference)} &middot; STRENGTH ${t.strength}</div>` +
+    `<h1>${esc(t.name)} <span class="h1-tk">${esc(tick(t.id))}</span></h1>${t.mascot ? `<div class="nm">${esc(t.mascot)}</div>` : ""}${recordChips(t)}</div></div>` +
     `<div class="detail-price">` +
     `<nav class="tabs" id="detail-pricemode" style="margin-bottom:8px;display:inline-flex">` +
     `<button data-mode="week" class="${mode === "week" ? "active" : ""}" style="padding:5px 11px;font-size:12px">Week</button>` +
@@ -977,7 +992,7 @@ function fmtExpiry(ts) {
     }) + " ET"
   );
 }
-const contractLabel = (o) => `${o.team_id ? o.team_id + " " : ""}${fmtStrike(o.strike)} ${o.kind}`;
+const contractLabel = (o) => `${o.team_id ? tick(o.team_id) + " " : ""}${fmtStrike(o.strike)} ${o.kind}`;
 
 function optionsPanel(t) {
   const board = state.detail?.id === t.id ? state.detail.options : null;
@@ -1022,7 +1037,7 @@ function optionsPanel(t) {
     order =
       `<div class="trade-form opt-order">` +
       (selected
-        ? `<div class="opt-contract"><strong>${esc(t.id)} ${fmtStrike(selected.strike)} ${selected.kind}</strong> &middot; expires ${esc(expiryLabel(selected))}</div>`
+        ? `<div class="opt-contract"><strong>${esc(tick(t.id))} ${fmtStrike(selected.strike)} ${selected.kind}</strong> &middot; expires ${esc(expiryLabel(selected))}</div>`
         : "") +
       `<div class="trade-row"><input type="number" id="opt-qty" aria-label="Options" min="1" max="1000" step="1" inputmode="numeric" value="${esc(v.qty)}"></div>` +
       `<div class="opt-summary" id="opt-summary"></div>` +
@@ -1108,7 +1123,7 @@ async function optionTrade(ticker, seriesId, side, qty) {
   state.tradePending = true;
   try {
     const r = await api("/options/trade", { method: "POST", auth: true, body: { series_id: seriesId, side, qty } });
-    toast(`${side === "buy" ? "Bought" : "Sold"} ${r.qty} ${r.team_id} ${fmtStrike(r.strike)} ${r.kind}${r.qty === 1 ? "" : "s"} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
+    toast(`${side === "buy" ? "Bought" : "Sold"} ${r.qty} ${tick(r.team_id)} ${fmtStrike(r.strike)} ${r.kind}${r.qty === 1 ? "" : "s"} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
     await Promise.all([loadAccount(), loadOptions(ticker), loadMine(ticker)]);
   } catch (err) {
     toast(errorText(err), true);
@@ -1126,7 +1141,7 @@ async function trade(ticker, side, shares) {
   $("btn-sell").disabled = true;
   try {
     const r = await api("/trade", { method: "POST", auth: true, body: { team_id: ticker, side, shares } });
-    toast(`${side === "buy" ? "Bought" : "Sold"} ${r.shares} ${r.team_id} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
+    toast(`${side === "buy" ? "Bought" : "Sold"} ${r.shares} ${tick(r.team_id)} @ $${r.price.toFixed(2)} · ${fmtMoney(r.amount)}`);
     // Pull fresh numbers: the server is the authority, and the trade moved the price.
     await Promise.all([loadAccount(), loadTeams(), loadMine(ticker)]);
   } catch (err) {
@@ -1180,7 +1195,7 @@ function renderPortfolio() {
           const glPct = cost ? round2((gl / cost) * 100) : 0;
           return (
             `<tr><td class="nm-cell"><div class="nm-flex">${miniMark(h.team_id, 32)}<div>` +
-            `<a href="#/team/${encodeURIComponent(h.team_id)}" style="text-decoration:none">${esc(h.name)}</a><br><span class="tk-mini">${esc(h.team_id)}</span></div></div></td>` +
+            `<a href="${teamHref(h.team_id)}" style="text-decoration:none">${esc(h.name)}</a><br><span class="tk-mini">${esc(tick(h.team_id))}</span></div></div></td>` +
             `<td>${h.shares}</td><td>$${h.avg_cost.toFixed(2)}</td><td>$${h.current_price.toFixed(2)}</td>` +
             `<td>$${h.market_value.toFixed(2)}</td>` +
             `<td class="ch ${gl >= 0 ? "up" : "down"}" style="background:none;padding:12px 10px">${gl >= 0 ? "+" : "-"}$${Math.abs(gl).toFixed(2)} (${fmtPct(glPct)})</td></tr>`
@@ -1195,7 +1210,7 @@ function renderPortfolio() {
         .map(
           (x) =>
             `<div class="log-item"><span class="lw">${esc(new Date(x.created_at).toLocaleString())}</span> &middot; ` +
-            `${x.side === "buy" ? "Bought" : "Sold"} ${x.shares} ${miniMark(x.team_id, 18, { iconOnly: true })}<a href="#/team/${encodeURIComponent(x.team_id)}">${esc(x.team_id)}</a> @ $${x.price.toFixed(2)} ` +
+            `${x.side === "buy" ? "Bought" : "Sold"} ${x.shares} ${miniMark(x.team_id, 18, { iconOnly: true })}<a href="${teamHref(x.team_id)}">${teamLabel(x.team_id)}</a> @ $${x.price.toFixed(2)} ` +
             `<span class="ld">${fmtMoney(x.amount)}</span></div>`
         )
         .join("") +
@@ -1208,7 +1223,7 @@ function renderPortfolio() {
         .map(
           (p) =>
             `<div class="log-item"><span class="lw">${esc(new Date(p.paid_at).toLocaleDateString())}</span> &middot; ` +
-            `${miniMark(p.team_id, 18, { iconOnly: true })}<a href="#/team/${encodeURIComponent(p.team_id)}">${esc(p.team_id)}</a> ` +
+            `${miniMark(p.team_id, 18, { iconOnly: true })}<a href="${teamHref(p.team_id)}">${teamLabel(p.team_id)}</a> ` +
             `${esc(p.summary)}: ${p.shares} sh &times; $${p.per_share.toFixed(2)} ` +
             `<span class="ld ch up">+${fmtMoney(p.amount)}</span></div>`
         )
@@ -1223,7 +1238,7 @@ function renderPortfolio() {
       opt.positions
         .map(
           (p) =>
-            `<tr><td class="nm-cell"><a href="#/team/${encodeURIComponent(p.team_id)}" style="text-decoration:none">${esc(contractLabel(p))}</a>` +
+            `<tr><td class="nm-cell"><a href="${teamHref(p.team_id)}" style="text-decoration:none">${esc(contractLabel(p))}</a>` +
             `${p.paused ? ` <span class="live-tag">LIVE</span>` : ""}</td>` +
             `<td>${esc(expiryLabel(p))}</td><td>${p.qty}</td><td>$${p.avg_cost.toFixed(2)}</td><td>$${p.value.toFixed(2)}</td>` +
             `<td class="ch ${p.unrealized_pl >= 0 ? "up" : "down"}" style="background:none;padding:12px 10px">${p.unrealized_pl >= 0 ? "+" : "-"}$${Math.abs(p.unrealized_pl).toFixed(2)}</td></tr>`

@@ -35,14 +35,19 @@ test.describe("with fake auth", () => {
 
     await page.getByLabel("Search programs").fill("bulldogs");
     await expect(page.locator("a.card")).toHaveCount(4); // UGA, MSST, FRES, LT
+    // Tickers: name first, then the ticker; searchable by ticker.
+    await page.getByLabel("Search programs").fill("ohst");
+    await expect(page.locator("a.card")).toHaveCount(1);
+    await expect(page.locator('a.card[href="#/team/OHST"] .tn')).toHaveText(/^Ohio State OHST/);
     await page.getByLabel("Search programs").fill("");
     await page.getByLabel("Conference").selectOption("SEC");
     await expect(page.locator("a.card")).toHaveCount(16);
 
     // Market cards show the overall and ATS record.
-    await expect(page.locator('a.card[href="#/team/UGA"] .rec')).toHaveText("2-0 · ATS 2-0");
-    await page.locator('a.card[href="#/team/UGA"]').click();
-    await expect(page.getByRole("heading", { name: "Georgia" })).toBeVisible();
+    await expect(page.locator('a.card[href="#/team/GA"] .rec')).toHaveText("2-0 · ATS 2-0");
+    await page.locator('a.card[href="#/team/GA"]').click();
+    await expect(page.getByRole("heading", { name: "Georgia GA" })).toBeVisible();
+    await expect(page).toHaveURL(/#\/team\/GA$/);
     // Team page: overall, conference (labelled with its name) and ATS.
     await expect(page.locator(".rec-chip")).toHaveText([/overall\s*2-0/, /SEC\s*1-0/, /vs spread\s*2-0/]);
     await expect(page.locator(".log-item").first()).toContainText("Week 3");
@@ -82,15 +87,17 @@ test.describe("with fake auth", () => {
 
   test("team logos show where known; a logo that can't load falls back to the helmet", async ({ page }) => {
     await page.goto("/");
-    const uga = page.locator('a.card[href="#/team/UGA"]');
+    const uga = page.locator('a.card[href="#/team/GA"]');
     await expect(uga.locator("img.team-logo")).toHaveJSProperty("complete", true);
     expect(await uga.locator("img.team-logo").evaluate((img) => img.naturalWidth > 0)).toBe(true);
     const ala = page.locator('a.card[href="#/team/ALA"]');
     await expect(ala.locator("img.team-logo")).toHaveCount(0);
     await expect(ala.locator(".team-mark-fallback svg")).toBeVisible();
-    await expect(page.locator('a.card[href="#/team/OSU"] svg').first()).toBeVisible();
+    await expect(page.locator('a.card[href="#/team/OHST"] svg').first()).toBeVisible();
 
+    // Old links with the internal id still open the team.
     await page.goto("/#/team/UGA");
+    await expect(page.getByRole("heading", { name: "Georgia GA" })).toBeVisible();
     await expect(page.locator(".detail-head img.team-logo")).toBeVisible();
     // Price moves between games show under "market news".
     await expect(page.getByRole("heading", { name: "market news" })).toBeVisible();
@@ -103,7 +110,7 @@ test.describe("with fake auth", () => {
     await page.getByRole("button", { name: "Email me a link" }).click();
     await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
 
-    await page.goto("/#/team/UGA");
+    await page.goto("/#/team/GA");
     const panel = page.locator(".options-panel");
     await expect(panel).toContainText("Football price now");
     await expect(panel.locator(".opt-row")).toHaveCount(5);
@@ -112,7 +119,7 @@ test.describe("with fake auth", () => {
     await expect(panel.locator(".opt-row").first().locator(".opt-px-buy")).toHaveText(/^Buy \$\d+\.\d\d$/);
     await panel.locator(".opt-row").first().locator(".opt-px-buy").click();
     await expect(panel.locator(".opt-row").first()).toHaveClass(/selected/);
-    await expect(page.locator(".opt-contract")).toContainText("UGA");
+    await expect(page.locator(".opt-contract")).toContainText("GA");
     await panel.getByRole("button", { name: "Puts" }).click();
     await expect(panel.getByRole("button", { name: "Puts" })).toHaveClass(/active/);
     await panel.getByRole("button", { name: "Calls" }).click();
@@ -125,14 +132,14 @@ test.describe("with fake auth", () => {
     await expect(panel.getByRole("button", { name: /^Buy 4 @ \$\d+\.\d\d$/ })).toBeVisible();
     await panel.getByRole("button", { name: /^Buy 4 @/ }).click();
     // Strikes can be fractional (e.g. $56.50) depending on the seed prices.
-    await expect(page.locator("#toast")).toContainText(/Bought 4 UGA \$\d+(\.\d+)? calls @/);
+    await expect(page.locator("#toast")).toContainText(/Bought 4 GA \$\d+(\.\d+)? calls @/);
     await expect(panel.locator(".opt-row.selected td").last()).toHaveText("4");
 
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.getByRole("heading", { name: "options", exact: true })).toBeVisible();
-    await expect(page.locator("table.holdings").last()).toContainText("UGA");
+    await expect(page.locator("table.holdings").last()).toContainText("GA");
     await expect(page.getByRole("heading", { name: "options activity" })).toBeVisible();
-    await expect(page.getByText(/Bought 4 UGA \$\d+(\.\d+)? call @/)).toBeVisible();
+    await expect(page.getByText(/Bought 4 GA \$\d+(\.\d+)? call @/)).toBeVisible();
 
     // TEX is mid-game in the e2e data: its options are paused.
     await page.goto("/#/team/TEX");
@@ -143,7 +150,7 @@ test.describe("with fake auth", () => {
   test("a team playing right now shows LIVE with the score", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator('a.card[href="#/team/TEX"] .live-tag')).toHaveText("LIVE");
-    await expect(page.locator('a.card[href="#/team/UGA"] .live-tag')).toHaveCount(0);
+    await expect(page.locator('a.card[href="#/team/GA"] .live-tag')).toHaveCount(0);
     await page.goto("/#/team/TEX");
     await expect(page.locator(".live-line")).toContainText("Q3 7:32 · TENN 10, TEX 21");
   });
@@ -204,7 +211,7 @@ test.describe("with fake auth", () => {
     await page.getByRole("button", { name: "Email me a link" }).click();
     await expect(page.locator("#hdr-cash")).toHaveText("$10,000.00");
 
-    await page.goto("/#/team/UGA");
+    await page.goto("/#/team/GA");
     const money = (text) => Number(text.replace(/[$,]/g, ""));
     const price = money(await page.locator(".detail-price .px").innerText());
     await page.getByLabel("Shares").fill("3");
@@ -215,7 +222,7 @@ test.describe("with fake auth", () => {
     const total = await cost();
     expect(total).toBeLessThan(price * 3 * 1.01);
     await page.getByRole("button", { name: "Buy", exact: true }).click();
-    await expect(page.locator("#toast")).toContainText("Bought 3 UGA @ $");
+    await expect(page.locator("#toast")).toContainText("Bought 3 GA @ $");
     await expect(page.locator("#hdr-cash")).toHaveText(
       "$" + (10000 - total).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     );
@@ -237,12 +244,12 @@ test.describe("with fake auth", () => {
     await expect(page.getByRole("button", { name: "Sell", exact: true })).toBeDisabled();
 
     await page.getByRole("link", { name: "Back to market" }).click();
-    await expect(page.locator('a.card[href="#/team/UGA"] .held-badge')).toHaveText("3 sh");
+    await expect(page.locator('a.card[href="#/team/GA"] .held-badge')).toHaveText("3 sh");
 
     await page.getByRole("link", { name: "Portfolio" }).click();
     await expect(page.locator("table.holdings tbody tr")).toHaveCount(1);
     await expect(page.locator("table.holdings")).toContainText("Georgia");
-    await expect(page.locator(".log-list .log-item").first()).toContainText("Bought 3 UGA @ $");
+    await expect(page.locator(".log-list .log-item").first()).toContainText("Bought 3 Georgia GA @ $");
     // Team logos (UGA has one in the e2e data) next to the holding and the trade.
     await expect(page.locator("table.holdings tbody tr img.team-logo")).toBeVisible();
     await expect(page.locator(".log-list .log-item").first().locator("img.team-logo")).toBeVisible();
@@ -256,10 +263,10 @@ test.describe("with fake auth", () => {
     await expect(returns.locator(".returns-note")).toContainText("$10,000.00 →");
     await expect(returns.locator(".returns-val .ch").first()).toHaveText(/^[+-]\$\d/);
 
-    await page.goto("/#/team/UGA");
+    await page.goto("/#/team/GA");
     await page.getByLabel("Shares").fill("3");
     await page.getByRole("button", { name: "Sell", exact: true }).click();
-    await expect(page.locator("#toast")).toContainText("Sold 3 UGA");
+    await expect(page.locator("#toast")).toContainText("Sold 3 GA");
     // Selling straight back costs only the 0.5% spread.
     await expect
       .poll(async () => money(await page.locator("#hdr-cash").innerText()))

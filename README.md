@@ -74,6 +74,10 @@ and portfolio. The styling is carried over from the artifact. What changed:
 - Every price, cash balance and holding comes from the API. Buy and Sell send a
   request, and the server fills it at its own current price. The confirmation
   message shows the price the order actually filled at.
+- **Tickers.** Teams show as name then ticker (Georgia GA, Ohio State OHST,
+  USC SOCAL), and links use the ticker (`#/team/GA`). Each team keeps its
+  internal id (UGA) for trades and records, and old `#/team/UGA` links still
+  work. Tickers live in `data/teams.json` and migration 016.
 - The prototype's "Play Week" simulation is gone. Prices now move only when the
   daily job records real results.
 - **Sign-in** uses Supabase magic links: enter an email, click the link. The
