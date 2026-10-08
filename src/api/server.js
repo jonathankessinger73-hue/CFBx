@@ -12,6 +12,8 @@ const app = createApp({
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
+  // e.g. cfbxchange.com: visits to www. or the onrender.com address go there.
+  canonicalHost: (process.env.CANONICAL_HOST || "").trim() || undefined,
   web:
     process.env.SERVE_WEB === "false"
       ? undefined

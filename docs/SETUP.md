@@ -311,6 +311,7 @@ the error.
    | `SUPABASE_ANON_KEY` | same as your `.env` |
    | `AUTH_EMAIL_FROM` | the sender address from Part 6, e.g. `noreply@mail.cfbxchange.com` |
    | `AUTH_PROVIDERS` | `google`, once Part 7 is done |
+   | `CANONICAL_HOST` | your own domain, e.g. `cfbxchange.com`, once Part 6b is done |
    | `CFBD_API_KEY` | your CollegeFootballData key (for live in-game prices) |
    | `LIVE_GAMES` | `true` to move prices during games (needs an always-on plan, not Free) |
    | `LIVE_POLL_SECONDS` | optional, default `180`; raise it if you get near your CFBD monthly call limit |
@@ -368,9 +369,16 @@ site to your domain first:
 2. In Cloudflare, go to **DNS → Records → Add record**: type **CNAME**, name `@`,
    target your `….onrender.com` address, **DNS only** (grey cloud). Then click
    **Verify** in Render and wait for the certificate.
+   Add `www.cfbxchange.com` the same way, with a second CNAME named `www`.
 3. In Supabase, go to **Authentication → URL Configuration**. Change **Site URL** to
    `https://cfbxchange.com` and add `https://cfbxchange.com/**` to Redirect URLs.
-4. The pages list `contact@cfbxchange.com`. To receive those emails, go to Cloudflare
+   Keep the onrender.com entry, so email links sent before the switch still work.
+4. On Render, set `CANONICAL_HOST` = `cfbxchange.com`. Visits to `www.` or the
+   onrender.com address then move to the main domain. Sign-ins are saved per
+   address, so this keeps people from looking signed out on one of them.
+5. In Google Cloud (if you did Part 7), add `https://cfbxchange.com` to the client's
+   **Authorized JavaScript origins**.
+6. The pages list `contact@cfbxchange.com`. To receive those emails, go to Cloudflare
    → **Email → Email Routing** and forward `contact@` to your own inbox. Email Routing
    uses the main domain, so it doesn't clash with Resend's `mail.` subdomain.
 
