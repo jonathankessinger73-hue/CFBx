@@ -440,6 +440,19 @@
   @media (prefers-reduced-motion: reduce){ .live-tag{ animation: none; } }
   .opt-explain{ font-size: 13px; color: var(--text-muted); line-height: 1.55; margin: 0 0 12px; }
   .opt-explain strong{ color: var(--text); }
+  .returns-panel{ margin-bottom: 16px; }
+  .returns-head{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .returns-head h2{ margin: 0; }
+  .returns-head nav.tabs{ flex-wrap: wrap; }
+  .returns-head nav.tabs button{ padding: 5px 11px; font-size: 12.5px; }
+  .returns-val{ display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .returns-val .ch{ background: none; padding: 0; font-family: var(--font-mono); font-size: 26px; font-weight: 600; }
+  .returns-val .returns-pct{ font-size: 16px; }
+  .returns-note{ margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+  @media (max-width: 640px){
+    .returns-head nav.tabs{ width: 100%; flex-wrap: nowrap; }
+    .returns-head nav.tabs button{ flex: 1; padding: 5px 2px; font-size: 12px; white-space: nowrap; }
+  }
   .opt-tabs{ display: flex; flex-wrap: wrap; gap: 10px; }
   .opt-tabs nav.tabs button{ padding: 5px 11px; font-size: 12px; }
   .opt-table tbody tr.opt-row{ cursor: pointer; }

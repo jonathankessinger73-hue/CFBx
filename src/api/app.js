@@ -232,6 +232,10 @@ export function createApp({ store, verifyToken, allowedOrigins = [], web }) {
     res.json(await store.getOptionAccount(req.userId));
   });
 
+  app.get("/me/returns", auth, async (req, res) => {
+    res.json({ returns: await store.getReturns(req.userId) });
+  });
+
   app.get("/me/payouts", auth, async (req, res) => {
     res.json({ payouts: await store.listPayouts(req.userId) });
   });

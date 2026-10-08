@@ -214,6 +214,18 @@ export function createStore(pool) {
       return rows[0].result;
     },
 
+    // Gain or loss over 1 week, 1 month, 3 months, this season, year to date
+    // and all time (see portfolio_returns in migration 014).
+    async getReturns(userId) {
+      await pool.query("insert into users (id) values ($1) on conflict (id) do nothing", [userId]);
+      const { rows } = await pool.query(
+        `select period, to_char(since, 'YYYY-MM-DD') as since, joined, start_value, net_worth, gain, gain_pct
+           from portfolio_returns($1)`,
+        [userId]
+      );
+      return rows;
+    },
+
     // Season payouts this player received, newest first.
     async listPayouts(userId) {
       const { rows } = await pool.query(

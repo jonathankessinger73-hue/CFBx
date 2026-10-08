@@ -223,6 +223,15 @@ test.describe("with fake auth", () => {
     // Team logos (UGA has one in the e2e data) next to the holding and the trade.
     await expect(page.locator("table.holdings tbody tr img.team-logo")).toBeVisible();
     await expect(page.locator(".log-list .log-item").first().locator("img.team-logo")).toBeVisible();
+    // Returns panel: one period at a time, switched with its buttons.
+    const returns = page.locator(".returns-panel");
+    await expect(returns.getByRole("button", { name: "1W" })).toHaveClass(/active/);
+    await expect(returns.locator(".returns-note")).toContainText("Past week: since you joined on");
+    await returns.getByRole("button", { name: "All-time" }).click();
+    await expect(returns.getByRole("button", { name: "All-time" })).toHaveClass(/active/);
+    await expect(returns.locator(".returns-note")).toContainText("Since you joined on");
+    await expect(returns.locator(".returns-note")).toContainText("$10,000.00 →");
+    await expect(returns.locator(".returns-val .ch").first()).toHaveText(/^[+-]\$\d/);
 
     await page.goto("/#/team/UGA");
     await page.getByLabel("Shares").fill("3");

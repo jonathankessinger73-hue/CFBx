@@ -21,7 +21,10 @@ try {
   }
   const summary = await syncSeason({ pool, cfbd: createCfbdClient(), season, dryRun });
   // List options around the prices this run just moved.
-  if (!dryRun) await pool.query("select ensure_option_series()");
+  if (!dryRun) {
+    await pool.query("select ensure_option_series()");
+    await pool.query("select record_net_worth()");
+  }
   console.log(
     `${dryRun ? "[dry run] " : ""}season ${season}: ${summary.linesPosted} lines posted, ${summary.lineMoves} line moves, ` +
       `${summary.gamesApplied} games applied, ${summary.fcsGames} FCS games recorded, ${summary.unmatched.length} unmatched, ` +

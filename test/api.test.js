@@ -189,6 +189,18 @@ test("GET /me/payouts lists the season payouts a player received", { skip }, asy
   await request(app).get("/me/payouts").expect(401);
 });
 
+test("GET /me/returns gives gain or loss for each period", { skip }, async () => {
+  const me = await login();
+  const res = await request(app).get("/me/returns").set("Authorization", me.auth).expect(200);
+  assert.deepEqual(res.body.returns.map((r) => r.period), ["week", "month", "3months", "season", "ytd", "all"]);
+  for (const r of res.body.returns) {
+    assert.equal(r.joined, true); // a brand-new account is measured from its starting cash
+    assert.equal(r.start_value, 10000);
+    assert.equal(r.gain, Math.round((r.net_worth - 10000) * 100) / 100);
+  }
+  await request(app).get("/me/returns").expect(401);
+});
+
 test("options: board, buy and sell back, portfolio, and errors", { skip }, async () => {
   await pool.query("select ensure_option_series()");
   const board = await request(app).get("/teams/uga/options").expect(200);

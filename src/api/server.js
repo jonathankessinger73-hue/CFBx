@@ -40,9 +40,10 @@ app.listen(port, () => console.log(`cfbx api listening on :${port}`));
 // drift back even when nobody trades.
 const DECAY_EVERY_MS = 5 * 60 * 1000;
 // Options: pay out expired ones and keep strikes listed near current prices.
+// Also saves each player's net worth for today (portfolio returns).
 // Safe to run from several places.
 const marketTick = async () => {
-  for (const sql of ["select decay_hype()", "select settle_options()", "select ensure_option_series()"]) {
+  for (const sql of ["select decay_hype()", "select settle_options()", "select ensure_option_series()", "select record_net_worth()"]) {
     await store.pool.query(sql).catch((err) => console.error(`${sql} failed:`, err.message));
   }
 };
