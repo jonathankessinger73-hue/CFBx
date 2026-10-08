@@ -402,7 +402,11 @@ async function onRouteChange() {
 async function loadRoutePage(route = parseRoute()) {
   if (route.page === "compete") {
     try {
-      state.compete = { data: await api("/competitions", { auth: "optional" }), error: null };
+      const [data, opts] = await Promise.all([
+        api("/competitions", { auth: "optional" }),
+        api("/leagues/options").catch(() => null),
+      ]);
+      state.compete = { data, leagueOptions: opts?.options || null, error: null };
     } catch (err) {
       state.compete = { data: state.compete?.data || null, error: err };
     }
@@ -1589,7 +1593,14 @@ function renderCompete() {
         `<form id="league-form" class="league-form" novalidate>` +
         `<input class="field" id="league-name" maxlength="40" placeholder="League name" aria-label="League name" style="margin:0">` +
         `<select id="league-length" aria-label="How long it runs" class="field" style="margin:0">` +
-        `<option value="week">1 week</option><option value="month">1 month</option><option value="season" selected>Rest of the season</option></select>` +
+        (cs.leagueOptions || [{ value: "week", label: "1 week" }, { value: "season", label: "Rest of the season" }])
+          .map(
+            (o) =>
+              `<option value="${esc(o.value)}"${o.value === "season" ? " selected" : ""}` +
+              `${o.ends_at ? ` title="Ends ${esc(fmtWhen(o.ends_at))}"` : ""}>${esc(o.label)}</option>`
+          )
+          .join("") +
+        `</select>` +
         `<button class="btn-primary" type="submit" id="league-create">Create league</button></form>` +
         `<div class="form-msg" id="league-msg" role="status" aria-live="polite"></div>`
       : `<div class="position-note"><a href="#/signin">Sign in</a> to start a league with friends.</div>`) +
