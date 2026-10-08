@@ -758,3 +758,26 @@
     .mr-ch .cover-tag{ display: none; }
   }
 
+  /* Market grid on phones: three compact cards per row (name, ticker,
+     price, change, trend). Record, mascot and the cover tag are on the team
+     page and in the list view. */
+  @media (max-width: 640px){
+    .grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .card{ padding: 9px 8px 8px; border-radius: 8px; min-width: 0; }
+    .card:hover{ transform: none; }
+    .card-top{ position: relative; margin-bottom: 6px; }
+    .card-top > div{ flex-direction: column; align-items: flex-start !important; gap: 5px !important; min-width: 0; }
+    .card-top .team-mark, .card-top .team-mark img, .card-top > div > svg{ width: 28px !important; height: 28px !important; }
+    .card-top .tn{ font-size: 12.5px; line-height: 1.2; overflow-wrap: anywhere; }
+    .card-top .tn .tk{ display: block; margin: 1px 0 0; font-size: 10.5px; }
+    .card-top .tn .live-tag{ font-size: 8.5px; padding: 1px 4px; }
+    .card-top .nm, .card-top .rec{ display: none; }
+    .card-top .held-badge{ position: absolute; top: -3px; right: -3px; font-size: 9.5px; padding: 1px 5px; }
+    .card-mid{ flex-direction: column; align-items: flex-start; gap: 3px; margin-bottom: 6px; }
+    .card-mid > div{ text-align: left !important; }
+    .card-mid .px{ font-size: 15px; }
+    .card-mid .ch{ font-size: 11px; padding: 1px 5px; }
+    .card-mid .cover-tag{ display: none; }
+    .spark{ height: 20px; }
+  }
+
