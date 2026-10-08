@@ -36,6 +36,7 @@ test.describe("with fake auth", () => {
     await page.getByLabel("Search programs").fill("bulldogs");
     await expect(page.locator("a.card")).toHaveCount(4); // UGA, MSST, FRES, LT
     // Grid or list layout, remembered across visits.
+    await page.getByLabel("Search programs").fill("");
     await page.getByRole("button", { name: "List" }).click();
     await expect(page.locator("a.card")).toHaveCount(0);
     await expect(page.locator("a.mkt-row")).toHaveCount(138);
