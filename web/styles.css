@@ -79,21 +79,25 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+  /* Logo: the CFBx wordmark with "College Football Exchange" under it, as
+     in the brand artwork (web/brand/). */
   .brand{
-    display:flex;
-    align-items:baseline;
-    gap: 10px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--text);
   }
-  .brand .mark{
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 21px;
-    letter-spacing: 0.3px;
-  }
-  .brand .mark span{ color: var(--accent); }
+  .brand-logo{ display: block; height: 32px; width: auto; }
   .brand .tag{
-    font-size: 12.5px;
-    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.19em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--text);
   }
   nav.tabs{
     display:flex;
