@@ -606,7 +606,7 @@ function renderGrid() {
       const hist = t.history && t.history.length ? t.history : [t.current_price];
       const stroke = hist[hist.length - 1] >= hist[0] ? "var(--positive)" : "var(--negative)";
       return (
-        `<a class="card" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
+        `<a class="card" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#80F724")}">` +
         `<div class="card-top"><div style="display:flex;align-items:center;gap:10px">` +
         teamMark(t, 44) +
         `<div><div class="tn">${esc(t.name)} <span class="tk">${esc(tick(t.id))}</span>${t.live_status ? ` <span class="live-tag">LIVE</span>` : ""}</div>` +
@@ -644,7 +644,7 @@ function marketList(teams) {
       const hist = t.history && t.history.length ? t.history : [t.current_price];
       const stroke = hist[hist.length - 1] >= hist[0] ? "var(--positive)" : "var(--negative)";
       return (
-        `<a class="mkt-row" role="row" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#E8A33D")}">` +
+        `<a class="mkt-row" role="row" href="${teamHref(t.id)}" style="--tag-color:${safeColor(t.primary_color, "#80F724")}">` +
         `<span class="mr-rank" role="cell">${i + 1}</span>` +
         `<span class="mr-team" role="cell">${teamMark(t, 30)}<span class="mr-names">` +
         `<span class="tn">${esc(t.name)} <span class="tk">${esc(tick(t.id))}</span>` +
