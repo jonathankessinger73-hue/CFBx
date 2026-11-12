@@ -78,6 +78,11 @@ and portfolio. The styling is carried over from the artifact. What changed:
   USC SOCAL), and links use the ticker (`#/team/GA`). Each team keeps its
   internal id (UGA) for trades and records, and old `#/team/UGA` links still
   work. Tickers live in `data/teams.json` and migration 016.
+- **Logo and icons** live in `web/brand/`:
+  - `cfbx-wordmark.png`: the header logo, on a transparent background.
+  - `cfbx-logo.png`: the full logo with "College Football Exchange".
+  - `icon-*.png`, `apple-touch-icon.png` and `web/favicon.ico`: the X mark, used as the browser-tab and home-screen icon.
+  - `og.jpg`: the link-preview image shown when someone shares a cfbxchange.com link.
 - The prototype's "Play Week" simulation is gone. Prices now move only when the
   daily job records real results.
 - **Sign-in** uses Supabase magic links: enter an email, click the link. The

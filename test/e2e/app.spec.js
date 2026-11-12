@@ -30,6 +30,10 @@ test.describe("with fake auth", () => {
   test("signed-out visitors can browse the market and team pages", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Market — Week 3" })).toBeVisible();
+    // The CFBx logo in the header links home; the tab icon is the X mark.
+    await expect(page.locator("a.brand").getByRole("img", { name: "CFBx" })).toBeVisible();
+    expect(await page.locator("img.brand-logo").evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+    await expect(page.locator('link[rel="icon"][sizes="32x32"]')).toHaveAttribute("href", "/brand/icon-32.png");
     await expect(page.locator("a.card")).toHaveCount(138);
     await expect(page.locator("#tape .tape-item").first()).toBeVisible();
 
