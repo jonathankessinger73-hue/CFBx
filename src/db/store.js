@@ -182,7 +182,7 @@ export function createStore(pool) {
         `select s.id, s.season, s.week,
                 (s.home_team_id = $1) as is_home,
                 case when s.home_team_id = $1 then s.away_team_id else s.home_team_id end as opponent_id,
-                s.line, s.season_type, s.notes
+                s.line, s.season_type, s.notes, s.start_date
            from schedule s
           where not s.completed and $1 in (s.home_team_id, s.away_team_id)
           order by s.season, s.season_type = 'postseason', s.week, s.id`,

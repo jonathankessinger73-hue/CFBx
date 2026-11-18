@@ -787,3 +787,62 @@
     .spark{ height: 20px; }
   }
 
+
+  /* Team page sections (up next, market news, game log): a marked heading
+     with a one-line description, then rows. */
+  .detail-section{ margin-top: 16px; }
+  .sec-head{ display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+    padding-left: 12px; border-left: 3px solid var(--accent); margin-bottom: 14px; }
+  .sec-head h2{ margin: 0; font-size: 17px; color: var(--text); letter-spacing: .3px; }
+  .sec-count{ font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); margin-left: 4px; text-transform: none; }
+  .sec-sub{ font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+  .btn-link{ background: none; border: none; padding: 0; cursor: pointer; color: var(--accent);
+    font: inherit; font-size: 13px; font-weight: 600; }
+  .btn-link:hover{ text-decoration: underline; }
+
+  /* Up next */
+  .game-list{ display: flex; flex-direction: column; }
+  .game-row{ display: grid; grid-template-columns: 124px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+    padding: 12px 8px; border-top: 1px solid var(--border); color: var(--text); text-decoration: none; border-radius: 6px; }
+  .game-row:first-child{ border-top: none; }
+  .game-row:hover{ background: var(--bg-card-hover); }
+  .gr-when{ display: flex; flex-direction: column; gap: 2px; }
+  .gr-wk{ font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-faint); letter-spacing: .5px; }
+  .gr-date{ font-size: 12.5px; color: var(--text-muted); }
+  .gr-team{ display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .gr-ha{ font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); width: 18px; text-align: center; flex: none; }
+  .gr-team .team-mark, .gr-team > svg{ flex: none; }
+  .game-mark-blank{ width: 34px; height: 34px; flex: none; }
+  .gr-names{ display: flex; flex-direction: column; min-width: 0; }
+  .gr-opp{ font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gr-sub{ font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gr-line{ display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+  .gr-line-text{ font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+  .gr-line-text.fav{ color: var(--text); }
+  .gr-line-text.dog{ color: var(--text); }
+  .gr-line-text.flat{ color: var(--text-muted); }
+
+  /* Market news */
+  .news-list{ display: flex; flex-direction: column; }
+  .news-row{ display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 14px; align-items: center;
+    padding: 12px 8px; border-top: 1px solid var(--border); }
+  .news-row:first-child{ border-top: none; }
+  .news-kind{ justify-self: start; font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    padding: 4px 8px; border-radius: 5px; white-space: nowrap; }
+  .kind-poll{ color: var(--accent); background: var(--accent-soft); }
+  .kind-line{ color: #6CB6FF; background: rgba(108,182,255,0.13); }
+  .kind-recruiting{ color: #C9A0FF; background: rgba(201,160,255,0.13); }
+  .kind-news{ color: var(--warn); background: var(--warn-soft); }
+  .news-head{ font-size: 14px; color: var(--text); }
+  .news-date{ font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+  .news-move{ display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .news-move .ch{ font-family: var(--font-mono); font-size: 13px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+  .news-price{ font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+  .news-more{ margin: 10px 8px 0; }
+
+  @media (max-width: 640px){
+    .game-row{ grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 4px; }
+    .gr-when{ grid-column: 1 / -1; flex-direction: row; gap: 8px; align-items: baseline; }
+    .news-row{ grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 4px; }
+    .news-kind{ grid-column: 1 / -1; }
+  }

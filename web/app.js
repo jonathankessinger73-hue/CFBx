@@ -856,14 +856,58 @@ function gameLogItem(e) {
   );
 }
 
+// A section's heading: a marked title, a one-line description, a count.
+function sectionHead(title, sub, count) {
+  return (
+    `<div class="sec-head"><div><h2>${esc(title)}${count ? ` <span class="sec-count">${count}</span>` : ""}</h2>` +
+    `${sub ? `<div class="sec-sub">${esc(sub)}</div>` : ""}</div></div>`
+  );
+}
+
+// What kind of news moved the price, as a short badge.
+function newsKind(m) {
+  if (m.kind === "poll") return /CFP/.test(m.summary) ? ["CFP rankings", "poll"] : ["AP poll", "poll"];
+  if (m.kind === "line") return ["Betting line", "line"];
+  if (m.kind === "recruiting") return ["Recruiting", "recruiting"];
+  return ["News", "news"];
+}
+
 // A price move between games: a line move, a poll, and so on.
 function newsItem(m) {
-  const when = new Date(m.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const when = new Date(m.created_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  const [label, cls] = newsKind(m);
   return (
-    `<div class="log-item"><span class="lw">${esc(when)}</span> &middot; ${esc(m.summary)} ` +
-    `<span class="ld ch ${m.pct_change >= 0 ? "up" : "down"}">${fmtPct(m.pct_change)}</span> ` +
-    `<span class="log-price">&rarr; $${m.price_after.toFixed(2)}</span></div>`
+    `<div class="news-row">` +
+    `<span class="news-kind kind-${cls}">${esc(label)}</span>` +
+    `<div class="news-text"><div class="news-head">${esc(m.summary)}</div><div class="news-date">${esc(when)}</div></div>` +
+    `<div class="news-move"><span class="ch ${dirClass(m.pct_change)}">${fmtPct(m.pct_change)}</span>` +
+    `<span class="news-price">now $${m.price_after.toFixed(2)}</span></div>` +
+    `</div>`
   );
+}
+
+const NEWS_SHOWN = 5;
+function newsPanel(t, news) {
+  const all = state.detail?.newsAll;
+  const shown = all ? news : news.slice(0, NEWS_SHOWN);
+  return (
+    `<div class="panel detail-section" id="news-panel">` +
+    sectionHead("market news", `What moved ${t.name}'s price between games: rankings, betting lines, recruiting`, news.length) +
+    `<div class="news-list">${shown.map(newsItem).join("")}</div>` +
+    (news.length > NEWS_SHOWN
+      ? `<button class="btn-link news-more" id="news-more">${all ? "Show fewer" : `Show all ${news.length}`}</button>`
+      : "") +
+    `</div>`
+  );
+}
+
+function kickoffText(g) {
+  if (!g.start_date) return "Date TBA";
+  const d = new Date(g.start_date);
+  const day = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  // Midnight Eastern is how CFBD marks "time not set yet".
+  const et = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hourCycle: "h23" }).format(d);
+  return et === "00:00" ? `${day} · time TBA` : `${day} · ${d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
 }
 
 function upcomingItem(team, g) {
@@ -880,17 +924,24 @@ function upcomingItem(team, g) {
   }
   const lineText =
     margin === null
-      ? "no line yet"
+      ? "No line yet"
       : margin === 0
-        ? "pick'em"
+        ? "Pick'em"
         : margin > 0
-          ? `favored by ${Math.abs(margin).toFixed(1)}`
-          : `underdog by ${Math.abs(margin).toFixed(1)}`;
+          ? `Favored by ${Math.abs(margin).toFixed(1)}`
+          : `Underdog by ${Math.abs(margin).toFixed(1)}`;
+  const lineCls = margin === null || margin === 0 ? "flat" : margin > 0 ? "fav" : "dog";
+  const oppMark = opp ? teamMark(opp, 34) : `<span class="game-mark-blank"></span>`;
+  const sub = g.notes ? esc(g.notes) : opp?.records ? `${overallRec(opp.records)} · ${esc(opp.conference)}` : esc(opp?.conference || "");
   return (
-    `<div class="upcoming-item"><span><span class="lw" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">${isPostseason(g) ? weekShort(g) : `Wk ${g.week}`}</span> ` +
-    `${g.is_home ? "vs" : "@"} <a class="opp" href="${teamHref(g.opponent_id)}">${esc(oppName)}</a>` +
-    `${g.notes ? ` <span class="up-note">${esc(g.notes)}</span>` : ""}</span>` +
-    `<span>${lineText} ${tag}</span></div>`
+    `<a class="game-row" href="${teamHref(g.opponent_id)}">` +
+    `<div class="gr-when"><span class="gr-wk">${isPostseason(g) ? esc(weekShort(g)) : `WK ${g.week}`}</span>` +
+    `<span class="gr-date">${esc(kickoffText(g))}</span></div>` +
+    `<div class="gr-team"><span class="gr-ha">${g.is_home ? "vs" : "@"}</span>${oppMark}` +
+    `<div class="gr-names"><span class="gr-opp">${esc(oppName)} <span class="tk-inline">${esc(tick(g.opponent_id))}</span></span>` +
+    `<span class="gr-sub">${sub}</span></div></div>` +
+    `<div class="gr-line"><span class="gr-line-text ${lineCls}">${lineText}</span>${tag}</div>` +
+    `</a>`
   );
 }
 
@@ -974,21 +1025,26 @@ function renderDetail(ticker) {
     `</div>` +
     `<div class="panel options-panel" style="margin-top:16px"><h2>options</h2>${optionsPanel(t)}</div>` +
     historyPanel(t) +
-    `<div class="detail-body" style="margin-top:16px">` +
-    `<div class="panel"><h2>game log</h2><div class="log-list">${panelBody((d) =>
-      d.game_log.length ? d.game_log.map(gameLogItem).join("") : `<div class="log-item">No games played yet this season.</div>`
-    )}</div></div>` +
-    `<div class="panel"><h2>up next</h2><div class="upcoming-list">${panelBody((d) =>
+    `<div class="panel detail-section">` +
+    sectionHead("up next", `${t.name}'s next games and the line on each. Beat the line and the price rises`, data?.upcoming?.length ? Math.min(5, data.upcoming.length) : 0) +
+    `<div class="game-list">${panelBody((d) =>
       d.upcoming.length
         ? d.upcoming.slice(0, 5).map((g) => upcomingItem(t, g)).join("")
         : `<div class="log-item">No more games scheduled.</div>`
     )}</div></div>` +
-    `</div>` +
-    (data?.news?.length
-      ? `<div class="panel" style="margin-top:16px"><h2>market news</h2><div class="log-list">${data.news.map(newsItem).join("")}</div></div>`
-      : "");
+    (data?.news?.length ? newsPanel(t, data.news) : "") +
+    `<div class="panel detail-section">` +
+    sectionHead("game log", "Every result this season and how it moved the price", data?.game_log?.length || 0) +
+    `<div class="log-list">${panelBody((d) =>
+      d.game_log.length ? d.game_log.map(gameLogItem).join("") : `<div class="log-item">No games played yet this season.</div>`
+    )}</div></div>`;
 
   if (data) bindPriceChart($("main"), chartPoints(data));
+  $("news-more")?.addEventListener("click", () => {
+    state.detail.newsAll = !state.detail.newsAll;
+    renderDetail(ticker);
+    $("news-panel")?.scrollIntoView({ block: "nearest" });
+  });
   bindOptionsPanel(t);
 
   document.querySelectorAll("#detail-pricemode button").forEach((btn) =>

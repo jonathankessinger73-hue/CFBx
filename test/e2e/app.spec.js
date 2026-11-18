@@ -69,9 +69,13 @@ test.describe("with fake auth", () => {
     // Team page: overall, conference (labelled with its name) and ATS.
     await expect(page.locator(".rec-chip")).toHaveText([/overall\s*2-0/, /SEC\s*1-0/, /vs spread\s*2-0/]);
     await expect(page.locator(".log-item").first()).toContainText("Week 3");
-    const upNext = page.locator(".upcoming-item");
-    await expect(upNext.first()).toContainText("Oklahoma");
-    await expect(upNext.first()).toContainText("favored by 14.0");
+    // Up next: its own section; each game shows the opponent's mark, name and ticker, and links to it.
+    await expect(page.getByRole("heading", { name: /up next/ })).toBeVisible();
+    const upNext = page.locator("a.game-row");
+    await expect(upNext.first()).toContainText("Oklahoma OKLA");
+    await expect(upNext.first().locator("svg, img").first()).toBeVisible();
+    await expect(upNext.first()).toHaveAttribute("href", "#/team/OKLA");
+    await expect(upNext.first()).toContainText("Favored by 14.0");
     await expect(upNext.first()).toContainText("REAL LINE");
     await expect(upNext.nth(1)).toContainText("PROJECTED");
     await expect(page.getByText("Sign in to trade.")).toBeVisible();
@@ -118,8 +122,10 @@ test.describe("with fake auth", () => {
     await expect(page.getByRole("heading", { name: "Georgia GA" })).toBeVisible();
     await expect(page.locator(".detail-head img.team-logo")).toBeVisible();
     // Price moves between games show under "market news".
-    await expect(page.getByRole("heading", { name: "market news" })).toBeVisible();
-    await expect(page.getByText("Up 3 spots to No. 2 in the AP poll")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /market news/ })).toBeVisible();
+    const news = page.locator(".news-row").first();
+    await expect(news).toContainText("Up 3 spots to No. 2 in the AP poll");
+    await expect(news.locator(".news-kind")).toHaveText("AP poll");
   });
 
   test("options: buy a call from the team page, see it in the portfolio; paused during a live game", async ({ page }) => {
