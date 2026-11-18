@@ -11,6 +11,11 @@ on:
     - cron: "0 21 * * 6"   # Sat, 5pm ET (early games)
     - cron: "0 1 * * 0"    # Sat, 9pm ET (afternoon games)
     - cron: "30 5 * * 0"   # Sat night, 1:30am ET (late games)
+    # CFP rankings (Nov-Dec, ET = UTC-5): Tue + Wed nights at 10:30pm and
+    # 12:30am ET so a new release moves prices that night, and Sunday
+    # afternoons in December for the final rankings / Playoff selection.
+    - cron: "30 3,5 * 11,12 3,4"
+    - cron: "0 18,20 * 12 0"
   workflow_dispatch:
     inputs:
       dry_run:
